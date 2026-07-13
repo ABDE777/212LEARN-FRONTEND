@@ -5,7 +5,6 @@ const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://backend-212learn.v
 
 const api = axios.create({
   baseURL,
-  withCredentials: true, // needed for HttpOnly cookies if backend uses them
 });
 
 // Request interceptor – attach JWT if stored in memory (AuthContext will set it)
