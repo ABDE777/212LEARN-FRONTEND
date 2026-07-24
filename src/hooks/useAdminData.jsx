@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 
 export function useAdminUsers() {
@@ -29,32 +29,84 @@ export function useAdminUsers() {
   return { users, loading, error };
 }
 
-export function useAdminCourses() {
-  const [courses, setCourses] = useState([]);
+export function useAdminInstructors() {
+  const [instructors, setInstructors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchCourses = async () => {
+    const fetchInstructors = async () => {
       try {
-        const response = await api.get('/courses');
-        setCourses(response.data.data.courses);
+        const response = await api.get('/users', {
+          params: { role: 'instructor', limit: 100, order: 'asc', sort: 'firstName' },
+        });
+        setInstructors(response.data?.data?.users || []);
       } catch (err) {
-        console.error('Failed to fetch courses:', err);
-        setError('Impossible de charger les cours.');
-        setCourses([
-          { id: '1', title: 'Introduction à Python', status: 'draft' },
-          { id: '2', title: 'Développement Web', status: 'published' }
-        ]);
+        console.error('Failed to fetch instructors:', err);
+        setError('Impossible de charger les instructeurs.');
+        setInstructors([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCourses();
+    fetchInstructors();
   }, []);
 
-  return { courses, loading, error };
+  return { instructors, loading, error };
+}
+
+export function useAdminCourses() {
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchCourses = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await api.get('/courses', { params: { limit: 100 } });
+      setCourses(response.data?.data?.courses || []);
+    } catch (err) {
+      console.error('Failed to fetch courses:', err);
+      setError('Impossible de charger les cours.');
+      setCourses([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCourses();
+  }, [fetchCourses]);
+
+  return { courses, loading, error, refreshCourses: fetchCourses };
+}
+
+export function useAdminCreateCourse() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const createCourse = async (courseData) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await api.post('/courses', courseData);
+      return response.data?.data?.course || response.data?.data;
+    } catch (err) {
+      console.error('Failed to create course:', err);
+      const message =
+        err.response?.data?.error?.message ||
+        err.response?.data?.message ||
+        'Impossible de créer le cours.';
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { createCourse, loading, error };
 }
 
 export function usePublishCourse() {

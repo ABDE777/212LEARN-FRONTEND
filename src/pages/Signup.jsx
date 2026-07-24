@@ -8,7 +8,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Signup() {
-  const [formData, setFormData] = useState({ firstName: '', lastName: '', email: '', password: '', role: 'STUDENT' });
+  const [formData, setFormData] = useState({ firstName: '', lastName: '', email: '', password: '', role: 'student' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const { signup } = useAuth();
@@ -114,8 +114,8 @@ export default function Signup() {
                 value={formData.role}
                 onChange={e => setFormData({ ...formData, role: e.target.value })}
               >
-                <option value="STUDENT">Étudiant(e)</option>
-                <option value="INSTRUCTOR">Professeur</option>
+                <option value="student">Étudiant(e)</option>
+                <option value="instructor">Professeur</option>
               </select>
             </div>
 

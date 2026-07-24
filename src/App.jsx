@@ -23,6 +23,7 @@ import AssignmentSubmit from './pages/AssignmentSubmit';
 import StudentDashboard from './pages/StudentDashboard';
 import InstructorDashboard from './pages/InstructorDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import InstructorCourseManage from './pages/InstructorCourseManage';
 
 // Components
 import Footer from './components/Footer';
@@ -68,6 +69,7 @@ function App() {
           {/* Instructor Routes */}
           <Route element={<InstructorLayout />}>
             <Route path="/instructor/dashboard" element={<InstructorDashboard />} />
+            <Route path="/instructor/courses/:id/manage" element={<InstructorCourseManage />} />
           </Route>
 
           {/* Admin Routes */}

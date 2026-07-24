@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 
 export function useCategories() {
@@ -6,27 +6,28 @@ export function useCategories() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await api.get('/categories');
-        setCategories(response.data.data.categories);
-      } catch (err) {
-        console.error('Failed to fetch categories:', err);
-        setError('Impossible de charger les catégories. Le serveur est temporairement indisponible.');
-        // Set fallback categories so UI still works
-        setCategories([
-          { id: '1', name: 'Informatique', description: 'Programmation et développement' },
-          { id: '2', name: 'Base de données', description: 'SQL et NoSQL' },
-          { id: '3', name: 'Développement Web', description: 'Frontend et Backend' }
-        ]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCategories();
+  const fetchCategories = useCallback(async () => {
+    try {
+      const response = await api.get('/categories');
+      const backendCategories = response.data?.data?.categories || response.data?.categories || response.data || [];
+      setCategories(backendCategories);
+    } catch (err) {
+      console.error('Failed to fetch categories:', err);
+      setError('Impossible de charger les catégories. Le serveur est temporairement indisponible.');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  return { categories, loading, error };
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  const createCategory = async (categoryData) => {
+    const response = await api.post('/categories', categoryData);
+    await fetchCategories(); // Refresh tree
+    return response.data?.data?.category || response.data;
+  };
+
+  return { categories, loading, error, refreshCategories: fetchCategories, createCategory };
 }

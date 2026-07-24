@@ -23,7 +23,8 @@ function AdminLayout() {
     return <Navigate to="/login" replace />;
   }
 
-  if (user && user.role !== 'admin') {
+  const role = (user?.role || '').toUpperCase();
+  if (user && role !== 'ADMIN') {
     return <Navigate to="/" replace />;
   }
 

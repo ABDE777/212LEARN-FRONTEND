@@ -7,11 +7,10 @@ const api = axios.create({
   baseURL,
 });
 
-// Request interceptor – attach JWT if stored in memory (AuthContext will set it)
+// Request interceptor – attach JWT if stored in localStorage or memory
 api.interceptors.request.use(
   config => {
-    // Expect token to be stored on window.__AUTH_TOKEN__ by AuthContext
-    const token = window.__AUTH_TOKEN__;
+    const token = window.__AUTH_TOKEN__ || localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -24,11 +23,11 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   response => response,
   async error => {
-    const originalRequest = error.config;
-        // No refresh endpoint – clear token and redirect to login
-        window.__AUTH_TOKEN__ = null;
-        // Optionally you could trigger a logout via AuthContext, but here we just reject
-        return Promise.reject(error);
+    if (error.response && error.response.status === 401) {
+      window.__AUTH_TOKEN__ = null;
+      localStorage.removeItem('token');
+    }
+    return Promise.reject(error);
   }
 );
 

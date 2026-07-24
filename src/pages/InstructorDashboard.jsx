@@ -1,15 +1,34 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { BookOpen, Plus, Video, Users, Award, User, LogOut } from 'lucide-react';
-import { useInstructorCourses } from '../hooks/useInstructorCourses';
+import { useInstructorCourses, useCreateCourse } from '../hooks/useInstructorCourses';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useAuth } from '../context/AuthContext';
 import ProfileEditForm from '../components/ProfileEditForm';
 
 export default function InstructorDashboard() {
   const [activeTab, setActiveTab] = useState('courses');
+  const navigate = useNavigate();
   const { courses, loading, error } = useInstructorCourses();
+  const { createCourse, loading: createLoading, error: createError } = useCreateCourse();
   const { user, logout } = useAuth();
+
+  const [newCourseTitle, setNewCourseTitle] = useState('');
+  const [newCourseCategory, setNewCourseCategory] = useState('');
+
+  const handleCreateCourse = async (e) => {
+    e.preventDefault();
+    try {
+      const course = await createCourse({
+        title: newCourseTitle,
+        categoryId: newCourseCategory || undefined
+      });
+      navigate(`/instructor/courses/${course.id}/manage`);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-color)' }}>
@@ -107,7 +126,14 @@ export default function InstructorDashboard() {
                             </span>
                           </p>
                           <p style={{ color: 'var(--secondary)' }}>{course.enrolledCount} students enrolled</p>
-                          {course.price && <p style={{ color: 'var(--text-color)', fontWeight: 600 }}>{course.price} €</p>}
+                          {course.price && <p style={{ color: 'var(--text-color)', fontWeight: 600, marginBottom: '1rem' }}>{course.price} €</p>}
+                          <button
+                            onClick={() => navigate(`/instructor/courses/${course.id}/manage`)}
+                            className="btn-primary"
+                            style={{ padding: '0.5rem 1rem', width: '100%', cursor: 'pointer' }}
+                          >
+                            Gérer le cours
+                          </button>
                         </div>
                       ))}
                     </div>
@@ -118,7 +144,33 @@ export default function InstructorDashboard() {
               {activeTab === 'create' && (
                 <div>
                   <h2 style={{ marginBottom: '1.5rem', fontSize: '1.5rem' }}>Create New Course</h2>
-                  <p style={{ color: 'var(--secondary)' }}>Coming soon: Course creation form</p>
+                  {createError && <p style={{ color: 'var(--error-color)', marginBottom: '1rem' }}>{createError}</p>}
+                  <form onSubmit={handleCreateCourse} style={{ maxWidth: '500px' }}>
+                    <div className="form-group" style={{ marginBottom: '1rem' }}>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Course Title *</label>
+                      <input 
+                        type="text" 
+                        className="form-control" 
+                        value={newCourseTitle} 
+                        onChange={e => setNewCourseTitle(e.target.value)} 
+                        required 
+                        placeholder="e.g. Master React in 2026"
+                      />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Category ID</label>
+                      <input 
+                        type="text" 
+                        className="form-control" 
+                        value={newCourseCategory} 
+                        onChange={e => setNewCourseCategory(e.target.value)} 
+                        placeholder="Optional"
+                      />
+                    </div>
+                    <button type="submit" className="btn-primary" disabled={createLoading} style={{ padding: '0.75rem 1.5rem' }}>
+                      {createLoading ? 'Creating...' : 'Create Draft Course'}
+                    </button>
+                  </form>
                 </div>
               )}
 

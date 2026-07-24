@@ -6,7 +6,13 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState(null);
+  const [token, setToken] = useState(() => {
+    const savedToken = localStorage.getItem('token') || window.__AUTH_TOKEN__;
+    if (savedToken) {
+      window.__AUTH_TOKEN__ = savedToken;
+    }
+    return savedToken;
+  });
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -17,6 +23,8 @@ export function AuthProvider({ children }) {
         } catch (error) {
           console.error('Failed to fetch user:', error);
           setToken(null);
+          window.__AUTH_TOKEN__ = null;
+          localStorage.removeItem('token');
           setUser(null);
         }
       }
@@ -32,17 +40,19 @@ export function AuthProvider({ children }) {
     const userData = data?.user || response.data.user;
     setToken(newToken);
     window.__AUTH_TOKEN__ = newToken;
+    localStorage.setItem('token', newToken);
     setUser(userData);
     return userData;
   };
 
   const signup = async (userData) => {
-    const response = await api.post('/auth/signup', userData);
+    const response = await api.post('/auth/register', userData);
     const { token: newToken, data } = response.data;
     const newUser = data?.user || response.data.user;
     if (newToken) {
       setToken(newToken);
       window.__AUTH_TOKEN__ = newToken;
+      localStorage.setItem('token', newToken);
       setUser(newUser);
     }
     return newUser;
@@ -51,6 +61,7 @@ export function AuthProvider({ children }) {
   const logout = () => {
     setToken(null);
     window.__AUTH_TOKEN__ = null;
+    localStorage.removeItem('token');
     setUser(null);
   };
 

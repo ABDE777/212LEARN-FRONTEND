@@ -1,19 +1,131 @@
 import { useState } from 'react';
 import Navbar from '../components/Navbar';
 import { Users, BookOpen, Folder, Settings, User, LogOut } from 'lucide-react';
-import { useAdminUsers, useAdminCourses, usePublishCourse } from '../hooks/useAdminData';
+import {
+  useAdminUsers,
+  useAdminCourses,
+  useAdminInstructors,
+  useAdminCreateCourse,
+  usePublishCourse,
+} from '../hooks/useAdminData';
 import { useCategories } from '../hooks/useCategories';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useAuth } from '../context/AuthContext';
 import ProfileEditForm from '../components/ProfileEditForm';
 
+function flattenCategories(categories, prefix = '') {
+  return categories.flatMap((cat) => [
+    { id: cat.id, label: prefix ? `${prefix} > ${cat.name}` : cat.name },
+    ...(cat.children ? flattenCategories(cat.children, prefix ? `${prefix} > ${cat.name}` : cat.name) : []),
+  ]);
+}
+
+function getCourseInstructorLabel(course) {
+  const assigned = course.instructors?.[0]?.user || course.instructor;
+  if (!assigned) return 'Non assigné';
+  return `${assigned.firstName || ''} ${assigned.lastName || ''}`.trim() || assigned.email || 'Instructeur';
+}
+
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('users');
   const { users, loading: usersLoading, error: usersError } = useAdminUsers();
-  const { courses, loading: coursesLoading, error: coursesError } = useAdminCourses();
-  const { categories, loading: categoriesLoading, error: categoriesError } = useCategories();
+  const { courses, loading: coursesLoading, error: coursesError, refreshCourses } = useAdminCourses();
+  const { instructors, loading: instructorsLoading, error: instructorsError } = useAdminInstructors();
+  const { categories, loading: categoriesLoading, error: categoriesError, createCategory } = useCategories();
+  const { createCourse, loading: createCourseLoading } = useAdminCreateCourse();
   const { publishCourse, loading: publishLoading } = usePublishCourse();
   const { user, logout } = useAuth();
+
+  const flatCategories = flattenCategories(categories);
+
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [catName, setCatName] = useState('');
+  const [catDesc, setCatDesc] = useState('');
+  const [catParentId, setCatParentId] = useState('');
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createError, setCreateError] = useState(null);
+  const [createSuccess, setCreateSuccess] = useState(false);
+
+  const [showCreateCourseForm, setShowCreateCourseForm] = useState(false);
+  const [courseTitle, setCourseTitle] = useState('');
+  const [courseDescription, setCourseDescription] = useState('');
+  const [courseCategoryId, setCourseCategoryId] = useState('');
+  const [coursePrice, setCoursePrice] = useState('');
+  const [courseLevel, setCourseLevel] = useState('');
+  const [courseInstructorId, setCourseInstructorId] = useState('');
+  const [createCourseError, setCreateCourseError] = useState(null);
+  const [createCourseSuccess, setCreateCourseSuccess] = useState(false);
+
+  const handleCreateCategory = async (e) => {
+    e.preventDefault();
+    setCreateLoading(true);
+    setCreateError(null);
+    setCreateSuccess(false);
+    try {
+      const payload = { name: catName };
+      if (catDesc) payload.description = catDesc;
+      if (catParentId) payload.parentId = catParentId;
+      await createCategory(payload);
+      setCreateSuccess(true);
+      setCatName('');
+      setCatDesc('');
+      setCatParentId('');
+      setTimeout(() => {
+        setShowAddForm(false);
+        setCreateSuccess(false);
+      }, 1500);
+    } catch (err) {
+      console.error(err);
+      setCreateError(err.response?.data?.error?.message || err.response?.data?.message || 'Erreur lors de la création de la catégorie.');
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
+  const handleCreateCourse = async (e) => {
+    e.preventDefault();
+    setCreateCourseError(null);
+    setCreateCourseSuccess(false);
+    try {
+      const payload = {
+        title: courseTitle.trim(),
+        categoryId: courseCategoryId,
+        price: parseFloat(coursePrice),
+        instructorId: courseInstructorId,
+      };
+      if (courseDescription.trim()) payload.description = courseDescription.trim();
+      if (courseLevel) payload.level = courseLevel;
+
+      await createCourse(payload);
+      setCreateCourseSuccess(true);
+      setCourseTitle('');
+      setCourseDescription('');
+      setCourseCategoryId('');
+      setCoursePrice('');
+      setCourseLevel('');
+      setCourseInstructorId('');
+      await refreshCourses();
+      setTimeout(() => {
+        setShowCreateCourseForm(false);
+        setCreateCourseSuccess(false);
+      }, 1500);
+    } catch (err) {
+      setCreateCourseError(
+        err.response?.data?.error?.message ||
+          err.response?.data?.message ||
+          'Erreur lors de la création du cours.'
+      );
+    }
+  };
+
+  const handlePublishCourse = async (courseId) => {
+    try {
+      await publishCourse(courseId);
+      await refreshCourses();
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-color)' }}>
@@ -120,7 +232,180 @@ export default function AdminDashboard() {
 
               {activeTab === 'courses' && (
                 <div>
-                  <h2 style={{ marginBottom: '1.5rem', fontSize: '1.5rem' }}>Course Management</h2>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Course Management</h2>
+                    <button
+                      onClick={() => {
+                        setShowCreateCourseForm(!showCreateCourseForm);
+                        setCreateCourseError(null);
+                        setCreateCourseSuccess(false);
+                      }}
+                      className="btn-primary"
+                      style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', cursor: 'pointer' }}
+                    >
+                      {showCreateCourseForm ? 'Annuler' : '+ Créer un cours'}
+                    </button>
+                  </div>
+
+                  {showCreateCourseForm && (
+                    <div style={{
+                      padding: '1.5rem',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '12px',
+                      marginBottom: '2rem',
+                      background: '#fcfcfc',
+                    }}>
+                      <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem', color: 'var(--primary)' }}>
+                        Nouveau cours
+                      </h3>
+                      {createCourseSuccess && (
+                        <div style={{
+                          color: '#155724',
+                          background: '#d4edda',
+                          border: '1px solid #c3e6cb',
+                          padding: '0.75rem 1rem',
+                          borderRadius: '8px',
+                          marginBottom: '1rem',
+                        }}>
+                          Cours créé et assigné avec succès !
+                        </div>
+                      )}
+                      {createCourseError && (
+                        <div style={{
+                          color: '#721c24',
+                          background: '#f8d7da',
+                          border: '1px solid #f5c6cb',
+                          padding: '0.75rem 1rem',
+                          borderRadius: '8px',
+                          marginBottom: '1rem',
+                        }}>
+                          {createCourseError}
+                        </div>
+                      )}
+                      {instructorsError && (
+                        <div style={{
+                          color: '#856404',
+                          background: '#fff3cd',
+                          border: '1px solid #ffeeba',
+                          padding: '0.75rem 1rem',
+                          borderRadius: '8px',
+                          marginBottom: '1rem',
+                        }}>
+                          {instructorsError}
+                        </div>
+                      )}
+                      <form onSubmit={handleCreateCourse}>
+                        <div className="form-group" style={{ marginBottom: '1rem' }}>
+                          <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600 }}>
+                            Titre *
+                          </label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            required
+                            placeholder="Ex: React from Zero to Hero"
+                            value={courseTitle}
+                            onChange={(e) => setCourseTitle(e.target.value)}
+                          />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: '1rem' }}>
+                          <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600 }}>
+                            Instructeur *
+                          </label>
+                          <select
+                            className="form-control"
+                            required
+                            value={courseInstructorId}
+                            onChange={(e) => setCourseInstructorId(e.target.value)}
+                            disabled={instructorsLoading}
+                          >
+                            <option value="">
+                              {instructorsLoading ? 'Chargement des instructeurs...' : '-- Sélectionner un instructeur --'}
+                            </option>
+                            {instructors.map((instructor) => (
+                              <option key={instructor.id} value={instructor.id}>
+                                {instructor.firstName} {instructor.lastName} ({instructor.email})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="form-group" style={{ marginBottom: '1rem' }}>
+                          <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600 }}>
+                            Catégorie *
+                          </label>
+                          <select
+                            className="form-control"
+                            required
+                            value={courseCategoryId}
+                            onChange={(e) => setCourseCategoryId(e.target.value)}
+                            disabled={categoriesLoading}
+                          >
+                            <option value="">
+                              {categoriesLoading ? 'Chargement...' : '-- Sélectionner une catégorie --'}
+                            </option>
+                            {flatCategories.map((cat) => (
+                              <option key={cat.id} value={cat.id}>
+                                {cat.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                          <div className="form-group">
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600 }}>
+                              Prix (MAD) *
+                            </label>
+                            <input
+                              type="number"
+                              className="form-control"
+                              required
+                              min="0"
+                              step="0.01"
+                              placeholder="299.99"
+                              value={coursePrice}
+                              onChange={(e) => setCoursePrice(e.target.value)}
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600 }}>
+                              Niveau
+                            </label>
+                            <select
+                              className="form-control"
+                              value={courseLevel}
+                              onChange={(e) => setCourseLevel(e.target.value)}
+                            >
+                              <option value="">-- Optionnel --</option>
+                              <option value="beginner">Débutant</option>
+                              <option value="intermediate">Intermédiaire</option>
+                              <option value="advanced">Avancé</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                          <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600 }}>
+                            Description
+                          </label>
+                          <textarea
+                            className="form-control"
+                            placeholder="Description du cours..."
+                            rows={3}
+                            value={courseDescription}
+                            onChange={(e) => setCourseDescription(e.target.value)}
+                          />
+                        </div>
+                        <button
+                          type="submit"
+                          disabled={createCourseLoading || instructorsLoading || !courseInstructorId}
+                          className="btn-primary"
+                          style={{ padding: '0.6rem 1.5rem', cursor: 'pointer' }}
+                        >
+                          {createCourseLoading ? 'Création...' : 'Créer le cours'}
+                        </button>
+                      </form>
+                    </div>
+                  )}
+
                   {coursesLoading && <LoadingSpinner />}
                   {coursesError && <p style={{ color: 'var(--error-color)' }}>{coursesError}</p>}
                   {!coursesLoading && !coursesError && courses.length === 0 && (
@@ -131,6 +416,9 @@ export default function AdminDashboard() {
                       {courses.map((course) => (
                         <div key={course.id} style={{ padding: '1.5rem', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
                           <h3 style={{ marginBottom: '0.5rem', color: 'var(--text-color)' }}>{course.title}</h3>
+                          <p style={{ marginBottom: '0.25rem', color: 'var(--secondary)' }}>
+                            Instructeur: <span style={{ fontWeight: 600 }}>{getCourseInstructorLabel(course)}</span>
+                          </p>
                           <p style={{ marginBottom: '0.5rem', color: 'var(--secondary)' }}>
                             Status: <span style={{ fontWeight: 600, color: course.status === 'published' ? 'var(--primary)' : 'var(--secondary)' }}>
                               {course.status}
@@ -138,7 +426,7 @@ export default function AdminDashboard() {
                           </p>
                           {course.status === 'draft' && (
                             <button
-                              onClick={() => publishCourse(course.id)}
+                              onClick={() => handlePublishCourse(course.id)}
                               disabled={publishLoading}
                               style={{
                                 padding: '0.5rem 1rem',
@@ -147,7 +435,7 @@ export default function AdminDashboard() {
                                 border: 'none',
                                 borderRadius: '8px',
                                 cursor: 'pointer',
-                                fontWeight: 500
+                                fontWeight: 500,
                               }}
                             >
                               {publishLoading ? 'Publishing...' : 'Publish Course'}
@@ -162,7 +450,99 @@ export default function AdminDashboard() {
 
               {activeTab === 'categories' && (
                 <div>
-                  <h2 style={{ marginBottom: '1.5rem', fontSize: '1.5rem' }}>Category Management</h2>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Category Management</h2>
+                    <button
+                      onClick={() => setShowAddForm(!showAddForm)}
+                      className="btn-primary"
+                      style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', cursor: 'pointer' }}
+                    >
+                      {showAddForm ? 'Annuler' : '+ Ajouter une catégorie'}
+                    </button>
+                  </div>
+
+                  {showAddForm && (
+                    <div style={{
+                      padding: '1.5rem',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '12px',
+                      marginBottom: '2rem',
+                      background: '#fcfcfc'
+                    }}>
+                      <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem', color: 'var(--primary)' }}>Nouvelle catégorie</h3>
+                      {createSuccess && (
+                        <div style={{
+                          color: '#155724',
+                          background: '#d4edda',
+                          border: '1px solid #c3e6cb',
+                          padding: '0.75rem 1rem',
+                          borderRadius: '8px',
+                          marginBottom: '1rem'
+                        }}>
+                          Catégorie créée avec succès !
+                        </div>
+                      )}
+                      {createError && (
+                        <div style={{
+                          color: '#721c24',
+                          background: '#f8d7da',
+                          border: '1px solid #f5c6cb',
+                          padding: '0.75rem 1rem',
+                          borderRadius: '8px',
+                          marginBottom: '1rem'
+                        }}>
+                          {createError}
+                        </div>
+                      )}
+                      <form onSubmit={handleCreateCategory}>
+                        <div className="form-group" style={{ marginBottom: '1rem' }}>
+                          <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600 }}>Nom *</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            required
+                            placeholder="Ex: Machine Learning"
+                            value={catName}
+                            onChange={(e) => setCatName(e.target.value)}
+                          />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: '1rem' }}>
+                          <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600 }}>Description</label>
+                          <textarea
+                            className="form-control"
+                            placeholder="Description de la catégorie..."
+                            rows={3}
+                            value={catDesc}
+                            onChange={(e) => setCatDesc(e.target.value)}
+                          />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                          <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600 }}>Catégorie Parente (facultatif)</label>
+                          <select
+                            className="form-control"
+                            value={catParentId}
+                            onChange={(e) => setCatParentId(e.target.value)}
+                          >
+                            <option value="">-- Aucune (Catégorie principale) --</option>
+                            {categories.map((cat) => (
+                              <option key={cat.id} value={cat.id}>
+                                {cat.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <button
+                          type="submit"
+                          disabled={createLoading}
+                          className="btn-primary"
+                          style={{ padding: '0.6rem 1.5rem', cursor: 'pointer' }}
+                        >
+                          {createLoading ? 'Création...' : 'Créer la catégorie'}
+                        </button>
+                      </form>
+                    </div>
+                  )}
+
                   {categoriesLoading && <LoadingSpinner />}
                   {categoriesError && <p style={{ color: 'var(--error-color)' }}>{categoriesError}</p>}
                   {!categoriesLoading && !categoriesError && categories.length === 0 && (
