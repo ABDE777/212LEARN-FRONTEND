@@ -1,42 +1,34 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export function useInstructorCourses() {
+  const { user } = useAuth();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (!user?.id) return;
+
     const fetchCourses = async () => {
       try {
-        const response = await api.get('/courses');
-        setCourses(response.data.data.courses);
+        // Filter by the logged-in instructor's user ID so only their courses are returned
+        const response = await api.get('/courses', {
+          params: { instructorId: user.id, limit: 100 },
+        });
+        setCourses(response.data?.data?.courses || []);
       } catch (err) {
         console.error('Failed to fetch instructor courses:', err);
-        setError('Impossible de charger vos cours. Le serveur est temporairement indisponible.');
-        setCourses([
-          {
-            id: '1',
-            title: 'Introduction à la Programmation Python',
-            status: 'published',
-            enrolledCount: 1250,
-            price: 49
-          },
-          {
-            id: '2',
-            title: 'Développement Web Complet',
-            status: 'draft',
-            enrolledCount: 0,
-            price: 79
-          }
-        ]);
+        setError('Impossible de charger vos cours.');
+        setCourses([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchCourses();
-  }, []);
+  }, [user?.id]);
 
   return { courses, loading, error };
 }

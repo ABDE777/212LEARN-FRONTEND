@@ -16,9 +16,7 @@ export function useInstructorAssignments(lessonId) {
     } catch (err) {
       console.error('Failed to fetch assignments:', err);
       setError('Impossible de charger les devoirs.');
-      setAssignments([
-        { id: 'assign-1', title: 'Exercice 1', description: 'Faire l\'exercice 1', dueDate: '2026-12-31' }
-      ]);
+      setAssignments([]);
     } finally {
       setLoading(false);
     }
@@ -40,7 +38,36 @@ export function useInstructorAssignments(lessonId) {
     loading,
     error,
     fetchAssignments,
-    createAssignment
+    createAssignment,
+  };
+}
+
+export function useAssignmentDetails(assignmentId) {
+  const [assignment, setAssignment] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const fetchAssignment = useCallback(async () => {
+    if (!assignmentId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await api.get(`/assignments/${assignmentId}`);
+      setAssignment(response.data?.data?.assignment || response.data?.assignment || response.data?.data || response.data);
+    } catch (err) {
+      console.error('Failed to fetch assignment:', err);
+      setError('Impossible de charger le devoir.');
+      setAssignment(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [assignmentId]);
+
+  return {
+    assignment,
+    loading,
+    error,
+    fetchAssignment,
   };
 }
 
@@ -81,6 +108,6 @@ export function useSubmissions(assignmentId) {
     loading,
     error,
     fetchSubmissions,
-    gradeSubmission
+    gradeSubmission,
   };
 }

@@ -15,18 +15,7 @@ export function useCurriculumBuilder(courseId) {
     } catch (err) {
       console.error('Failed to fetch curriculum:', err);
       setError('Impossible de charger le curriculum.');
-      // Fallback for UI testing if the backend is not fully ready
-      setCurriculum([
-        {
-          id: 'section-1',
-          title: 'Introduction',
-          position: 1,
-          lessons: [
-            { id: 'lesson-1', title: 'Welcome to the course', position: 1, type: 'video' },
-            { id: 'lesson-2', title: 'Setting up your environment', position: 2, type: 'text' }
-          ]
-        }
-      ]);
+      setCurriculum([]);
     } finally {
       setLoading(false);
     }
@@ -97,6 +86,12 @@ export function useCurriculumBuilder(courseId) {
   };
 
   const addResource = async (lessonId, fileData) => {
+    // fileData === null means the upload was already done via XHR (with progress tracking);
+    // we only need to refresh the curriculum to show the new resource.
+    if (fileData === null) {
+      await fetchCurriculum();
+      return;
+    }
     try {
       const res = await api.post(`/lessons/${lessonId}/resources`, fileData, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -131,6 +126,6 @@ export function useCurriculumBuilder(courseId) {
     updateLesson,
     deleteLesson,
     addResource,
-    deleteResource
+    deleteResource,
   };
 }

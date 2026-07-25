@@ -25,9 +25,29 @@ export function useCategories() {
 
   const createCategory = async (categoryData) => {
     const response = await api.post('/categories', categoryData);
-    await fetchCategories(); // Refresh tree
+    await fetchCategories();
     return response.data?.data?.category || response.data;
   };
 
-  return { categories, loading, error, refreshCategories: fetchCategories, createCategory };
+  const updateCategory = async (categoryId, categoryData) => {
+    const response = await api.patch(`/categories/${categoryId}`, categoryData);
+    await fetchCategories();
+    return response.data?.data?.category || response.data?.data || response.data;
+  };
+
+  const deleteCategory = async (categoryId) => {
+    const response = await api.delete(`/categories/${categoryId}`);
+    await fetchCategories();
+    return response.data?.data || response.data;
+  };
+
+  return {
+    categories,
+    loading,
+    error,
+    refreshCategories: fetchCategories,
+    createCategory,
+    updateCategory,
+    deleteCategory,
+  };
 }

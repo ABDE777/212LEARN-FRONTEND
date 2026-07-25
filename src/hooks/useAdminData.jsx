@@ -65,8 +65,33 @@ export function useAdminCourses() {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.get('/courses', { params: { limit: 100 } });
-      setCourses(response.data?.data?.courses || []);
+      const [allCoursesResponse, draftCoursesResponse] = await Promise.allSettled([
+        api.get('/courses', { params: { limit: 100 } }),
+        api.get('/courses', { params: { limit: 100, status: 'draft' } }),
+      ]);
+
+      const allCourses =
+        allCoursesResponse.status === 'fulfilled'
+          ? allCoursesResponse.value.data?.data?.courses || []
+          : [];
+
+      const draftCourses =
+        draftCoursesResponse.status === 'fulfilled'
+          ? draftCoursesResponse.value.data?.data?.courses || []
+          : [];
+
+      const mergedCourses = [...allCourses, ...draftCourses].reduce((acc, course) => {
+        if (!acc.some((item) => item.id === course.id)) {
+          acc.push(course);
+        }
+        return acc;
+      }, []);
+
+      setCourses(mergedCourses);
+
+      if (allCoursesResponse.status === 'rejected' && draftCoursesResponse.status === 'rejected') {
+        throw allCoursesResponse.reason || draftCoursesResponse.reason;
+      }
     } catch (err) {
       console.error('Failed to fetch courses:', err);
       setError('Impossible de charger les cours.');
@@ -107,6 +132,58 @@ export function useAdminCreateCourse() {
   };
 
   return { createCourse, loading, error };
+}
+
+export function useAdminUpdateCourse() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const updateCourse = async (courseId, courseData) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await api.patch(`/courses/${courseId}`, courseData);
+      return response.data?.data?.course || response.data?.data || response.data;
+    } catch (err) {
+      console.error('Failed to update course:', err);
+      const message =
+        err.response?.data?.error?.message ||
+        err.response?.data?.message ||
+        'Impossible de mettre à jour le cours.';
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { updateCourse, loading, error };
+}
+
+export function useAdminDeleteCourse() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const deleteCourse = async (courseId) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await api.delete(`/courses/${courseId}`);
+      return response.data;
+    } catch (err) {
+      console.error('Failed to delete course:', err);
+      const message =
+        err.response?.data?.error?.message ||
+        err.response?.data?.message ||
+        'Impossible de supprimer le cours.';
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { deleteCourse, loading, error };
 }
 
 export function usePublishCourse() {
