@@ -6,27 +6,67 @@ export function useAdminUsers() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const response = await api.get('/users');
-        setUsers(response.data.data.users);
-      } catch (err) {
-        console.error('Failed to fetch users:', err);
-        setError('Impossible de charger les utilisateurs.');
-        setUsers([
-          { id: '1', firstName: 'John', lastName: 'Doe', email: 'john@example.com', role: 'student' },
-          { id: '2', firstName: 'Jane', lastName: 'Smith', email: 'jane@example.com', role: 'instructor' }
-        ]);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchUsers = useCallback(async (params = {}) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [activeRes, deletedRes] = await Promise.allSettled([
+        api.get('/users', { params: { limit: 200, ...params } }),
+        api.get('/users', { params: { limit: 200, deleted: true, ...params } }),
+      ]);
 
-    fetchUsers();
+      const activeUsers =
+        activeRes.status === 'fulfilled'
+          ? activeRes.value.data?.data?.users || []
+          : [];
+
+      const deletedUsers =
+        deletedRes.status === 'fulfilled'
+          ? deletedRes.value.data?.data?.users || []
+          : [];
+
+      const seen = new Set();
+      const merged = [];
+      for (const u of [...activeUsers, ...deletedUsers]) {
+        if (!seen.has(u.id)) {
+          seen.add(u.id);
+          merged.push(u);
+        }
+      }
+      setUsers(merged);
+
+      if (activeRes.status === 'rejected' && deletedRes.status === 'rejected') {
+        throw activeRes.reason || deletedRes.reason;
+      }
+    } catch (err) {
+      console.error('Failed to fetch users:', err);
+      setError('Impossible de charger les utilisateurs.');
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  return { users, loading, error };
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  const verifyInstructor = async (userId, notes = 'Compte vérifié après vérification manuelle') => {
+    const response = await api.patch(`/admin/users/${userId}/verify`, { isVerified: true, notes });
+    return response.data;
+  };
+
+  const verifyStudent = async (userId, notes = 'Compte vérifié après vérification manuelle') => {
+    const response = await api.patch(`/admin/users/${userId}/verify-student`, { isVerified: true, notes });
+    return response.data;
+  };
+
+  const restoreUser = async (userId) => {
+    const response = await api.patch(`/users/${userId}/restore`);
+    return response.data;
+  };
+
+  return { users, loading, error, refreshUsers: fetchUsers, verifyInstructor, verifyStudent, restoreUser };
 }
 
 export function useAdminInstructors() {
@@ -106,6 +146,32 @@ export function useAdminCourses() {
   }, [fetchCourses]);
 
   return { courses, loading, error, refreshCourses: fetchCourses };
+}
+
+export function useAssignFormateur() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const assignFormateur = async (groupId, formateurId) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await api.patch(`/admin/groups/${groupId}/formateur`, { formateurId });
+      return response.data;
+    } catch (err) {
+      console.error('Failed to assign formateur:', err);
+      const message =
+        err.response?.data?.error?.message ||
+        err.response?.data?.message ||
+        "Impossible d'assigner le formateur.";
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { assignFormateur, loading, error };
 }
 
 export function useAdminCreateCourse() {

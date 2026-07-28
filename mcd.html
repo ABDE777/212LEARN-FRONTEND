@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MLD — Plateforme 212Learning</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2128;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --text-dim: #484f58;
+    --pk: #f0883e;
+    --fk: #58a6ff;
+    --uq: #3fb950;
+    --type: #bc8cff;
+    --c-user:    #1a3a5c;
+    --c-course:  #1a3a2a;
+    --c-content: #2a2a1a;
+    --c-commerce:#3a1a2a;
+    --c-quiz:    #1a2a3a;
+    --c-social:  #2a1a3a;
+    --c-gamif:   #3a2a1a;
+    --c-meeting: #1a3a3a;
+    --h-user:    #58a6ff;
+    --h-course:  #3fb950;
+    --h-content: #d29922;
+    --h-commerce:#f078a8;
+    --h-quiz:    #79c0ff;
+    --h-social:  #bc8cff;
+    --h-gamif:   #e3b341;
+    --h-meeting: #39d353;
+  }
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    background: var(--bg);
+    font-family: 'Inter', sans-serif;
+    color: var(--text);
+    user-select: none;
+  }
+  /* ── Toolbar ── */
+  #toolbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    height: 56px;
+    background: rgba(22,27,34,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 16px; padding: 0 20px;
+  }
+  #toolbar h1 {
+    font-size: 15px; font-weight: 700; letter-spacing: .03em;
+    background: linear-gradient(90deg, #58a6ff, #bc8cff);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    flex: 1;
+  }
+  .tb-btn {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text-muted); border-radius: 6px;
+    padding: 6px 14px; font-size: 12px; cursor: pointer;
+    font-family: inherit; transition: all .2s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .tb-btn:hover { background: var(--surface); color: var(--text); border-color: #58a6ff40; }
+  .tb-zoom { font-family: 'JetBrains Mono', monospace; font-size: 11px; min-width: 52px; text-align: center; }
+  #stats { font-size: 11px; color: var(--text-dim); }
+  /* ── Legend ── */
+  #legend {
+    position: fixed; bottom: 20px; left: 20px; z-index: 100;
+    background: rgba(22,27,34,0.9); backdrop-filter: blur(12px);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 16px;
+  }
+  #legend h3 { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px; }
+  .leg-group { display: flex; flex-direction: column; gap: 6px; }
+  .leg-item { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-muted); }
+  .leg-dot { width: 10px; height: 10px; border-radius: 3px; }
+  .leg-sep { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .leg-badge { display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px; border-radius: 4px; font-size: 9px; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+  .badge-pk { background: #f0883e22; color: var(--pk); border: 1px solid #f0883e40; }
+  .badge-fk { background: #58a6ff22; color: var(--fk); border: 1px solid #58a6ff40; }
+  .badge-uq { background: #3fb95022; color: var(--uq); border: 1px solid #3fb95040; }
+  /* ── Canvas ── */
+  #canvas-wrap {
+    position: fixed; inset: 56px 0 0 0;
+    overflow: hidden; cursor: grab;
+  }
+  #canvas-wrap.grabbing { cursor: grabbing; }
+  #canvas { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
+  /* ── SVG lines ── */
+  #svg-layer {
+    position: absolute; top: 0; left: 0;
+    width: 6000px; height: 6000px;
+    pointer-events: none;
+    overflow: visible;
+  }
+  /* ── Tables ── */
+  .db-table {
+    position: absolute;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    min-width: 210px;
+    box-shadow: 0 4px 24px rgba(0,0,0,.4);
+    cursor: grab;
+    transition: box-shadow .2s, border-color .2s;
+    overflow: hidden;
+  }
+  .db-table:hover { box-shadow: 0 8px 40px rgba(0,0,0,.6); }
+  .db-table.dragging { cursor: grabbing; z-index: 50; box-shadow: 0 16px 64px rgba(0,0,0,.8); }
+  .table-header {
+    padding: 10px 12px 8px;
+    display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .table-icon { font-size: 14px; }
+  .table-name { font-size: 12px; font-weight: 700; letter-spacing: .04em; font-family: 'JetBrains Mono', monospace; }
+  .table-badge-count { margin-left: auto; font-size: 9px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+  .table-body { padding: 6px 0; }
+  .col-row {
+    display: flex; align-items: center; gap: 6px;
+    padding: 3px 12px;
+    font-size: 10.5px; font-family: 'JetBrains Mono', monospace;
+    transition: background .15s;
+  }
+  .col-row:hover { background: rgba(255,255,255,.03); }
+  .col-badge {
+    font-size: 8px; font-weight: 700; padding: 1px 4px; border-radius: 3px;
+    min-width: 20px; text-align: center; flex-shrink: 0;
+  }
+  .col-pk { background: #f0883e22; color: var(--pk); border: 1px solid #f0883e40; }
+  .col-fk { background: #58a6ff22; color: var(--fk); border: 1px solid #58a6ff40; }
+  .col-uq { background: #3fb95022; color: var(--uq); border: 1px solid #3fb95040; }
+  .col-name { color: var(--text); flex: 1; }
+  .col-name.is-fk { color: var(--fk); }
+  .col-name.is-pk { color: var(--pk); }
+  .col-type { color: var(--type); font-size: 9px; }
+  .col-nn { color: #d29922; font-size: 8px; margin-left: 2px; }
+  .table-divider { height: 1px; background: var(--border); margin: 4px 0; opacity: .5; }
+  /* SVG relationship lines */
+  .rel-line { stroke-width: 1.5; fill: none; opacity: .55; transition: opacity .2s; }
+  .rel-line:hover { opacity: 1; stroke-width: 2.5; }
+  .rel-fk   { stroke: #58a6ff; }
+  .rel-1to1 { stroke: #bc8cff; stroke-dasharray: 6,3; }
+  .rel-self { stroke: #f0883e; stroke-dasharray: 4,3; }
+  /* Mini-map */
+  #minimap {
+    position: fixed; bottom: 20px; right: 20px; z-index: 100;
+    width: 180px; height: 120px;
+    background: rgba(22,27,34,0.9); backdrop-filter: blur(8px);
+    border: 1px solid var(--border); border-radius: 8px;
+    overflow: hidden;
+  }
+  #minimap canvas { width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<!-- Toolbar -->
+<div id="toolbar">
+  <h1>⚡ MLD — Plateforme 212Learning</h1>
+  <span id="stats">25 tables · 47 relations</span>
+  <button class="tb-btn" onclick="zoomIn()">＋ Zoom</button>
+  <button class="tb-btn tb-zoom" id="zoom-label">100%</button>
+  <button class="tb-btn" onclick="zoomOut()">－ Zoom</button>
+  <button class="tb-btn" onclick="resetView()">⟳ Réinitialiser</button>
+  <button class="tb-btn" onclick="fitAll()">⊡ Ajuster</button>
+</div>
+<!-- Legend -->
+<div id="legend">
+  <h3>Domaines</h3>
+  <div class="leg-group">
+    <div class="leg-item"><div class="leg-dot" style="background:#58a6ff"></div>Utilisateurs</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#3fb950"></div>Cours & Catalogue</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#d29922"></div>Contenu pédagogique</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#f078a8"></div>Commerce</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#79c0ff"></div>Quiz & Évaluations</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#bc8cff"></div>Social & Suivi</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#e3b341"></div>Gamification</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#39d353"></div>Sessions live</div>
+  </div>
+  <div class="leg-sep leg-group">
+    <div class="leg-item"><span class="leg-badge badge-pk">PK</span>Clé primaire</div>
+    <div class="leg-item"><span class="leg-badge badge-fk">FK</span>Clé étrangère</div>
+    <div class="leg-item"><span class="leg-badge badge-uq">UQ</span>Unique</div>
+  </div>
+</div>
+<!-- Canvas -->
+<div id="canvas-wrap">
+  <div id="canvas">
+    <svg id="svg-layer"></svg>
+  </div>
+</div>
+<script>
+// ─── Schema Definition ──────────────────────────────────────────────────────
+const SCHEMA = [
+  {
+    id: 'USER', icon: '👤', group: 'user', x: 920, y: 100,
+    cols: [
+      { name: 'id', type: 'UUID', pk: true },
+      { name: 'firstName', type: 'VARCHAR(100)', nn: true },
+      { name: 'lastName', type: 'VARCHAR(100)', nn: true },
+      { name: 'email', type: 'VARCHAR(255)', nn: true, uq: true },
+      { name: 'passwordHash', type: 'VARCHAR(255)', nn: true },
+      { name: 'avatar', type: 'VARCHAR(500)' },
+      { name: 'bio', type: 'TEXT' },
+      { name: 'role', type: 'VARCHAR(50)', nn: true },
+      { name: 'isVerified', type: 'BOOLEAN', nn: true },
+      { name: 'lastLogin', type: 'TIMESTAMP' },
+      { name: 'createdAt', type: 'TIMESTAMP', nn: true },
+      { name: 'updatedAt', type: 'TIMESTAMP', nn: true },
+      { name: 'deletedAt', type: 'TIMESTAMP' },
+    ]
+  },
+  {
+    id: 'CATEGORY', icon: '🗂️', group: 'course', x: 80, y: 100,
+    cols: [
+      { name: 'id', type: 'UUID', pk: true },
+      { name: 'name', type: 'VARCHAR(150)', nn: true, uq: true },
+      { name: 'description', type: 'TEXT' },
+      { name: 'parentId', type: 'UUID', fk: 'CATEGORY' },
+      { name: 'createdAt', type: 'TIMESTAMP', nn: true },
+      { name: 'updatedAt', type: 'TIMESTAMP', nn: true },
+      { name: 'deletedAt', type: 'TIMESTAMP' },
+    ]
+  },
+  {
+    id: 'COURSE', icon: '📚', group: 'course', x: 480, y: 100,
+    cols: [
+      { name: 'id', type: 'UUID', pk: true },
+      { name: 'categoryId', type: 'UUID', fk: 'CATEGORY', nn: true },
+      { name: 'title', type: 'VARCHAR(255)', nn: true },
+      { name: 'description', type: 'TEXT' },
+      { name: 'price', type: 'DECIMAL(10,2)', nn: true },
+      { name: 'level', type: 'VARCHAR(50)' },
+      { name: 'language', type: 'VARCHAR(50)' },
+      { name: 'duration', type: 'INTEGER' },
+      { name: 'status', type: 'VARCHAR(50)', nn: true },
+      { name: 'createdAt', type: 'TIMESTAMP', nn: true },
+      { name: 'updatedAt', type: 'TIMESTAMP', nn: true },
+      { name: 'deletedAt', type: 'TIMESTAMP' },
+    ]
+  },
+  {
+    id: 'COURSE_INSTRUCTOR', icon: '🎓', group: 'course', x: 700, y: 340,
+    cols: [
+      { name: 'id', type: 'UUID', pk: true },
+      { name: 'courseId', type: 'UUID', fk: 'COURSE', nn: true },
+      { name: 'userId', type: 'UUID', fk: 'USER', nn: true },
+      { name: 'role', type: 'VARCHAR(50)', nn: true },
+    ]
+  },
+  {
+    id: 'SECTION', icon: '📑', group: 'content', x: 1380, y: 100,
+    cols: [
+      { name: 'id', type: 'UUID', pk: true },
+      { name: 'courseId', type: 'UUID', fk: 'COURSE', nn: true },
+      { name: 'title', type: 'VARCHAR(255)', nn: true },
+      { name: 'position', type: 'INTEGER', nn: true },
+    ]
+  },
+  {
+    id: 'LESSON', icon: '🎬', group: 'content', x: 1680, y: 100,
+    cols: [
+      { name: 'id', type: 'UUID', pk: true },
+      { name: 'sectionId', type: 'UUID', fk: 'SECTION', nn: true },
+      { name: 'title', type: 'VARCHAR(255)', nn: true },
+      { name: 'position', type: 'INTEGER', nn: true },
+    ]
+  },
+  {
+    id: 'RESOURCE', icon: '📎', group: 'content', x: 1980, y: 100,
+    cols: [
+      { name: 'id', type: 'UUID', pk: true },
+      { name: 'lessonId', type: 'UUID', fk: 'LESSON', nn: true },
+      { name: 'type', type: 'VARCHAR(50)', nn: true },
+      { name: 'url', type: 'VARCHAR(500)', nn: true },
+    ]
+  },
+  {
+    id: 'ENROLLMENT', icon: '📝', group: 'commerce', x: 480, y: 520,
+    cols: [
+      { name: 'id', type: 'UUID', pk: true },
+      { name: 'userId', type: 'UUID', fk: 'USER', nn: true },
+      { name: 'courseId', type: 'UUID', fk: 'COURSE', nn: true },
+      { name: 'enrolledAt', type: 'TIMESTAMP', nn: true },
+    ]
+  },
+  {
+    id: 'PAYMENT', icon: '💳', group: 'commerce', x: 200, y: 680,
+    cols: [
+      { name: 'id', type: 'UUID', pk: true },
+      { name: 'enrollmentId', type: 'UUID', fk: 'ENROLLMENT', nn: true, uq: true },
+      { name: 'amount', type: 'DECIMAL(10,2)', nn: true },
+      { name: 'currency', type: 'VARCHAR(10)', nn: true },
+      { name: 'provider', type: 'VARCHAR(50)', nn: true },
+      { name: 'transactionReference', type: 'VARCHAR(255)', nn: true, uq: true },
+      { name: 'status', type: 'VARCHAR(50)', nn: true },
+      { name: 'paidAt', type: 'TIMESTAMP' },
+      { name: 'couponId', type: 'UUID', fk: 'COUPON' },
+    ]
+  },
+  {
+    id: 'CART', icon: '🛒', group: 'commerce', x: 80, y: 480,
+    cols: [
+      { name: 'id', type: 'UUID', pk: true },
+      { name: 'userId', type: 'UUID', fk: 'USER', nn: true, uq: true },
+    ]
+  },
+  {
+    id: 'CART_ITEM', icon: '🏷️', group: 'commerce', x: 80, y: 640,
+    cols: [
+      { name: 'id', type: 'UUID', pk: true },
+      { name: 'cartId', type: 'UUID', fk: 'CART', nn: true },
+      { name: 'courseId', type: 'UUID', fk: 'COURSE', nn: true },
+    ]
+  },
+  {
+    id: 'WISHLIST', icon: '❤️', group: 'commerce', x: 80, y: 800,
+    cols: [
+      { name: 'id', type: 'UUID', pk: true },
+      { name: 'userId', type: 'UUID', fk: 'USER', nn: true },
+      { name: 'courseId', type: 'UUID', fk: 'COURSE', nn: true },
+    ]
+  },
+  {
+    id: 'COUPON', icon: '🎟️', group: 'commerce', x: 480, y: 800,
+    cols: [
+      { name: 'id', type: 'UUID', pk: true },
+      { name: 'code', type: 'VARCHAR(50)', nn: true, uq: true },
+      { name: 'discount', type: 'DECIMAL(5,2)', nn: true },
+      { name: 'expirationDate', type: 'TIMESTAMP', nn: true },
+    ]
+  },
+  {
+    id: 'MEETING', icon: '🎥', group: 'meeting', x: 700, y: 100,
+    cols: [
+      { name: 'id', type: 'UUID', pk: true },
+      { name: 'courseId', type: 'UUID', fk: 'COURSE', nn: true },
+      { name: 'title', type: 'VARCHAR(255)', nn: true },
+      { name: 'meetingUrl', type: 'VARCHAR(500)', nn: true },
+      { name: 'meetingDate', type: 'TIMESTAMP', nn: true },
+    ]
+  },
+  {
+    id: 'ASSIGNMENT', icon: '📋', group: 'content', x: 1980, y: 380,
+    cols: [
+      { name: 'id', type: 'UUID', pk: true },
+      { name: 'lessonId', type: 'UUID', fk: 'LESSON', nn: true },
+      { name: 'title', type: 'VARCHAR(255)', nn: true },
+      { name: 'dueDate', type: 'TIMESTAMP' },
+    ]
+  },
+  {
+    id: 'SUBMISSION', icon: '📤', group: 'content', x: 1680, y: 520,
+    cols: [
+      { name: 'id', type: 'UUID', pk: true },
+      { name: 'assignmentId', type: 'UUID', fk: 'ASSIGNMENT', nn: true },
+      { name: 'userId', type: 'UUID', fk: 'USER', nn: true },
+      { name: 'fileUrl', type: 'VARCHAR(500)' },
+      { name: 'grade', type: 'DECIMAL(5,2)' },
+      { name: 'feedback', type: 'TEXT' },
+      { name: 'submittedAt', type: 'TIMESTAMP', nn: true },
+    ]
+  },
+  {
+    id: 'QUIZ', icon: '❓', group: 'quiz', x: 1980, y: 560,
+    cols: [
+      { name: 'id', type: 'UUID', pk: true },
+      { name: 'lessonId', type: 'UUID', fk: 'LESSON', nn: true },
+      { name: 'title', type: 'VARCHAR(255)', nn: true },
+      { name: 'validationStatus', type: 'VARCHAR(50)', nn: true },
+    ]
+  },
+  {
+    id: 'QUESTION', icon: '💬', group: 'quiz', x: 2260, y: 560,
+    cols: [
+      { name: 'id', type: 'UUID', pk: true },
+      { name: 'quizId', type: 'UUID', fk: 'QUIZ', nn: true },
+      { name: 'statement', type: 'TEXT', nn: true },
+      { name: 'correctAnswer', type: 'TEXT', nn: true },
+    ]
+  },
+  {
+    id: 'QUIZ_ATTEMPT', icon: '🏆', group: 'quiz', x: 1680, y: 720,
+    cols: [
+      { name: 'id', type: 'UUID', pk: true },
+      { name: 'quizId', type: 'UUID', fk: 'QUIZ', nn: true },
+      { name: 'userId', type: 'UUID', fk: 'USER', nn: true },
+      { name: 'score', type: 'DECIMAL(5,2)' },
+      { name: 'duration', type: 'INTEGER' },
+      { name: 'attemptDate', type: 'TIMESTAMP', nn: true },
+    ]
+  },
+  {
+    id: 'LESSON_PROGRESS', icon: '📊', group: 'social', x: 1380, y: 520,
+    cols: [
+      { name: 'id', type: 'UUID', pk: true },
+      { name: 'userId', type: 'UUID', fk: 'USER', nn: true },
+      { name: 'lessonId', type: 'UUID', fk: 'LESSON', nn: true },
+      { name: 'completed', type: 'BOOLEAN', nn: true },
+      { name: 'videoPosition', type: 'INTEGER', nn: true },
+      { name: 'timeSpent', type: 'INTEGER', nn: true },
+      { name: 'startedAt', type: 'TIMESTAMP', nn: true },
+      { name: 'completedAt', type: 'TIMESTAMP' },
+    ]
+  },
+  {
+    id: 'REVIEW', icon: '⭐', group: 'social', x: 920, y: 520,
+    cols: [
+      { name: 'id', type: 'UUID', pk: true },
+      { name: 'userId', type: 'UUID', fk: 'USER', nn: true },
+      { name: 'courseId', type: 'UUID', fk: 'COURSE', nn: true },
+      { name: 'rating', type: 'SMALLINT', nn: true },
+      { name: 'comment', type: 'TEXT' },
+      { name: 'reviewDate', type: 'TIMESTAMP', nn: true },
+    ]
+  },
+  {
+    id: 'NOTIFICATION', icon: '🔔', group: 'social', x: 920, y: 740,
+    cols: [
+      { name: 'id', type: 'UUID', pk: true },
+      { name: 'userId', type: 'UUID', fk: 'USER', nn: true },
+      { name: 'content', type: 'TEXT', nn: true },
+      { name: 'isRead', type: 'BOOLEAN', nn: true },
+      { name: 'sentAt', type: 'TIMESTAMP', nn: true },
+    ]
+  },
+  {
+    id: 'BADGE_DEFINITION', icon: '🥇', group: 'gamif', x: 1380, y: 800,
+    cols: [
+      { name: 'id', type: 'UUID', pk: true },
+      { name: 'name', type: 'VARCHAR(150)', nn: true, uq: true },
+      { name: 'description', type: 'TEXT' },
+      { name: 'icon', type: 'VARCHAR(500)' },
+    ]
+  },
+  {
+    id: 'USER_BADGE', icon: '🎖️', group: 'gamif', x: 1160, y: 870,
+    cols: [
+      { name: 'id', type: 'UUID', pk: true },
+      { name: 'userId', type: 'UUID', fk: 'USER', nn: true },
+      { name: 'badgeDefinitionId', type: 'UUID', fk: 'BADGE_DEFINITION', nn: true },
+      { name: 'obtainedAt', type: 'TIMESTAMP', nn: true },
+    ]
+  },
+  {
+    id: 'CERTIFICATE', icon: '📜', group: 'gamif', x: 700, y: 900,
+    cols: [
+      { name: 'id', type: 'UUID', pk: true },
+      { name: 'userId', type: 'UUID', fk: 'USER', nn: true },
+      { name: 'courseId', type: 'UUID', fk: 'COURSE', nn: true },
+      { name: 'certificateNumber', type: 'VARCHAR(100)', nn: true, uq: true },
+      { name: 'issuedAt', type: 'TIMESTAMP', nn: true },
+    ]
+  },
+];
+// ─── Group colors ────────────────────────────────────────────────────────────
+const GROUP_COLORS = {
+  user:     { hdr: '#1d3557', accent: '#58a6ff' },
+  course:   { hdr: '#1a3a2a', accent: '#3fb950' },
+  content:  { hdr: '#2a2800', accent: '#d29922' },
+  commerce: { hdr: '#3a1a2a', accent: '#f078a8' },
+  quiz:     { hdr: '#152535', accent: '#79c0ff' },
+  social:   { hdr: '#2a1a3a', accent: '#bc8cff' },
+  gamif:    { hdr: '#2e2200', accent: '#e3b341' },
+  meeting:  { hdr: '#0e2e2e', accent: '#39d353' },
+};
+// ─── Relationships ────────────────────────────────────────────────────────────
+// Will be auto-derived from FK columns
+const RELATIONS = [];
+// ─── State ───────────────────────────────────────────────────────────────────
+let scale = 1, panX = 40, panY = 40;
+let isPanning = false, panStart = { x: 0, y: 0 };
+let draggingTable = null, dragOffset = { x: 0, y: 0 };
+let tablePositions = {}; // id → {x,y,w,h}
+const tableEls = {};
+// ─── Build & mount tables ─────────────────────────────────────────────────────
+function buildTables() {
+  const canvas = document.getElementById('canvas');
+  SCHEMA.forEach(tbl => {
+    tablePositions[tbl.id] = { x: tbl.x, y: tbl.y, w: 210, h: 0 };
+    const el = document.createElement('div');
+    el.className = 'db-table';
+    el.id = 'tbl-' + tbl.id;
+    el.style.left = tbl.x + 'px';
+    el.style.top  = tbl.y + 'px';
+    const gc = GROUP_COLORS[tbl.group] || GROUP_COLORS.course;
+    // Header
+    const hdr = document.createElement('div');
+    hdr.className = 'table-header';
+    hdr.style.background = gc.hdr;
+    hdr.style.borderBottom = '2px solid ' + gc.accent + '55';
+    hdr.innerHTML = `
+      <span class="table-icon">${tbl.icon}</span>
+      <span class="table-name" style="color:${gc.accent}">${tbl.id}</span>
+      <span class="table-badge-count">${tbl.cols.length} cols</span>
+    `;
+    el.appendChild(hdr);
+    // Body
+    const body = document.createElement('div');
+    body.className = 'table-body';
+    let firstFKAdded = false;
+    tbl.cols.forEach((col, idx) => {
+      // Divider before first FK
+      if (col.fk && !firstFKAdded && idx > 0) {
+        const d = document.createElement('div');
+        d.className = 'table-divider';
+        body.appendChild(d);
+        firstFKAdded = true;
+      }
+      const row = document.createElement('div');
+      row.className = 'col-row';
+      let badgeHtml = '<span style="width:20px;display:inline-block"></span>';
+      if (col.pk)  badgeHtml = '<span class="col-badge col-pk">PK</span>';
+      else if (col.fk && col.uq) badgeHtml = '<span class="col-badge col-fk" style="min-width:28px">FK/UQ</span>';
+      else if (col.fk) badgeHtml = '<span class="col-badge col-fk">FK</span>';
+      else if (col.uq) badgeHtml = '<span class="col-badge col-uq">UQ</span>';
+      const nameClass = col.pk ? 'col-name is-pk' : (col.fk ? 'col-name is-fk' : 'col-name');
+      const nnHtml = col.nn ? '<span class="col-nn" title="NOT NULL">!</span>' : '';
+      row.innerHTML = `
+        ${badgeHtml}
+        <span class="${nameClass}">${col.name}</span>
+        ${nnHtml}
+        <span class="col-type">${col.type}</span>
+      `;
+      body.appendChild(row);
+      // Build FK relations
+      if (col.fk) {
+        RELATIONS.push({ from: tbl.id, to: col.fk, col: col.name, type: col.uq ? '1to1' : 'fk' });
+      }
+    });
+    // Self-reference for CATEGORY
+    if (tbl.id === 'CATEGORY') {
+      RELATIONS.push({ from: 'CATEGORY', to: 'CATEGORY', col: 'parentId', type: 'self' });
+    }
+    el.appendChild(body);
+    canvas.appendChild(el);
+    tableEls[tbl.id] = el;
+    // Drag logic
+    el.addEventListener('mousedown', e => {
+      if (e.button !== 0) return;
+      e.stopPropagation();
+      draggingTable = tbl.id;
+      const pos = tablePositions[tbl.id];
+      dragOffset.x = e.clientX / scale - pos.x;
+      dragOffset.y = e.clientY / scale - pos.y;
+      el.classList.add('dragging');
+    });
+  });
+  // Measure heights
+  requestAnimationFrame(() => {
+    SCHEMA.forEach(tbl => {
+      const el = tableEls[tbl.id];
+      tablePositions[tbl.id].w = el.offsetWidth;
+      tablePositions[tbl.id].h = el.offsetHeight;
+    });
+    drawRelations();
+    applyTransform();
+  });
+}
+// ─── Draw SVG relationships ───────────────────────────────────────────────────
+function drawRelations() {
+  const svg = document.getElementById('svg-layer');
+  svg.innerHTML = '';
+  // Deduplicate self-ref
+  const seen = new Set();
+  const rels = RELATIONS.filter(r => {
+    const key = `${r.from}→${r.to}→${r.col}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  rels.forEach(rel => {
+    if (rel.type === 'self') {
+      drawSelfArrow(svg, rel.from);
+      return;
+    }
+    const fromPos = tablePositions[rel.from];
+    const toPos   = tablePositions[rel.to];
+    if (!fromPos || !toPos) return;
+    const fromCx = fromPos.x + fromPos.w / 2;
+    const fromCy = fromPos.y + fromPos.h / 2;
+    const toCx   = toPos.x + toPos.w / 2;
+    const toCy   = toPos.y + toPos.h / 2;
+    // Determine entry/exit sides
+    const dx = toCx - fromCx;
+    const dy = toCy - fromCy;
+    let x1, y1, x2, y2;
+    // From table exit
+    if (Math.abs(dx) > Math.abs(dy)) {
+      x1 = dx > 0 ? fromPos.x + fromPos.w : fromPos.x;
+      y1 = fromPos.y + fromPos.h / 2;
+      x2 = dx > 0 ? toPos.x : toPos.x + toPos.w;
+      y2 = toPos.y + toPos.h / 2;
+    } else {
+      x1 = fromPos.x + fromPos.w / 2;
+      y1 = dy > 0 ? fromPos.y + fromPos.h : fromPos.y;
+      x2 = toPos.x + toPos.w / 2;
+      y2 = dy > 0 ? toPos.y : toPos.y + toPos.h;
+    }
+    const mx = (x1 + x2) / 2;
+    const colorClass = rel.type === '1to1' ? 'rel-1to1' : 'rel-fk';
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('class', `rel-line ${colorClass}`);
+    path.setAttribute('d', `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`);
+    // Arrowhead
+    const defs = svg.querySelector('defs') || (() => {
+      const d = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+      svg.appendChild(d);
+      return d;
+    })();
+    svg.appendChild(path);
+    // Draw dot at FK end
+    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    dot.setAttribute('cx', x2);
+    dot.setAttribute('cy', y2);
+    dot.setAttribute('r', 3);
+    dot.setAttribute('fill', rel.type === '1to1' ? '#bc8cff' : '#58a6ff');
+    dot.setAttribute('opacity', '0.7');
+    svg.appendChild(dot);
+    const dot2 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    dot2.setAttribute('cx', x1);
+    dot2.setAttribute('cy', y1);
+    dot2.setAttribute('r', 2);
+    dot2.setAttribute('fill', rel.type === '1to1' ? '#bc8cff' : '#58a6ff');
+    dot2.setAttribute('opacity', '0.4');
+    svg.appendChild(dot2);
+  });
+}
+function drawSelfArrow(svg, tableId) {
+  const pos = tablePositions[tableId];
+  if (!pos) return;
+  const x = pos.x + pos.w;
+  const y = pos.y + 30;
+  const r = 30;
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path.setAttribute('class', 'rel-line rel-self');
+  path.setAttribute('d', `M${x},${y} Q${x+r},${y-r} ${x+r},${y+20} Q${x+r},${y+r} ${x},${y+40}`);
+  svg.appendChild(path);
+}
+// ─── Transform & Pan ──────────────────────────────────────────────────────────
+function applyTransform() {
+  document.getElementById('canvas').style.transform = `translate(${panX}px,${panY}px) scale(${scale})`;
+  document.getElementById('zoom-label').textContent = Math.round(scale * 100) + '%';
+}
+function zoomIn()  { scale = Math.min(scale * 1.2, 3);   applyTransform(); }
+function zoomOut() { scale = Math.max(scale / 1.2, 0.2); applyTransform(); }
+function resetView() { scale = 1; panX = 40; panY = 40; applyTransform(); }
+function fitAll() {
+  const wrap = document.getElementById('canvas-wrap');
+  const W = wrap.clientWidth, H = wrap.clientHeight;
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  SCHEMA.forEach(t => {
+    const p = tablePositions[t.id];
+    minX = Math.min(minX, p.x);
+    minY = Math.min(minY, p.y);
+    maxX = Math.max(maxX, p.x + p.w);
+    maxY = Math.max(maxY, p.y + p.h);
+  });
+  const contentW = maxX - minX + 80;
+  const contentH = maxY - minY + 80;
+  scale = Math.min(W / contentW, H / contentH, 1);
+  panX = (W - contentW * scale) / 2 - minX * scale + 40;
+  panY = (H - contentH * scale) / 2 - minY * scale + 40;
+  applyTransform();
+}
+// ─── Mouse events ─────────────────────────────────────────────────────────────
+const wrap = document.getElementById('canvas-wrap');
+wrap.addEventListener('mousedown', e => {
+  if (e.button === 0 && !draggingTable) {
+    isPanning = true;
+    panStart.x = e.clientX - panX;
+    panStart.y = e.clientY - panY;
+    wrap.classList.add('grabbing');
+  }
+});
+document.addEventListener('mousemove', e => {
+  if (isPanning) {
+    panX = e.clientX - panStart.x;
+    panY = e.clientY - panStart.y;
+    applyTransform();
+  }
+  if (draggingTable) {
+    const pos = tablePositions[draggingTable];
+    pos.x = e.clientX / scale - dragOffset.x;
+    pos.y = e.clientY / scale - dragOffset.y;
+    const el = tableEls[draggingTable];
+    el.style.left = pos.x + 'px';
+    el.style.top  = pos.y + 'px';
+    drawRelations();
+  }
+});
+document.addEventListener('mouseup', e => {
+  if (draggingTable) {
+    tableEls[draggingTable].classList.remove('dragging');
+    draggingTable = null;
+  }
+  isPanning = false;
+  wrap.classList.remove('grabbing');
+});
+wrap.addEventListener('wheel', e => {
+  e.preventDefault();
+  const delta = e.deltaY > 0 ? 0.9 : 1.1;
+  const rect = wrap.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+  panX = mouseX - (mouseX - panX) * delta;
+  panY = mouseY - (mouseY - panY) * delta;
+  scale = Math.max(0.15, Math.min(3, scale * delta));
+  applyTransform();
+}, { passive: false });
+// ─── Init ─────────────────────────────────────────────────────────────────────
+buildTables();
+setTimeout(() => {
+  SCHEMA.forEach(t => {
+    const el = tableEls[t.id];
+    tablePositions[t.id].w = el.offsetWidth;
+    tablePositions[t.id].h = el.offsetHeight;
+  });
+  drawRelations();
+  fitAll();
+}, 200);
+</script>
+</body>
+</html>

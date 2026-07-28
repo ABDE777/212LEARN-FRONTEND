@@ -1,6 +1,6 @@
 # 📊 212Learn — Frontend Progression
 
-> **Last updated:** 2026-07-13  
+> **Last updated:** 2026-07-27  
 > Ce fichier récapitule tout ce qui est déjà implémenté côté frontend.  
 > Il permet au développeur backend de savoir quels endpoints sont **déjà consommés**, quels features sont **visibles**, et ce qui **manque encore** côté API.
 
@@ -101,6 +101,31 @@
 |---|---|---|---|
 | `POST` | `/payments/checkout-session` | `Checkout.jsx` | ✅ Connecté |
 
+### 📊 Statistiques — `useAdminStats.jsx`
+
+| Méthode | Endpoint | Utilisé dans | Status |
+|---|---|---|---|
+| `GET` | `/admin/stats` | `AdminDashboard.jsx` → Statistiques tab | ✅ Connecté |
+
+### 📋 Étudiants par cours — `useCourseStudents.jsx`
+
+| Méthode | Endpoint | Utilisé dans | Status |
+|---|---|---|---|
+| `GET` | `/courses/:id/students` | `InstructorDashboard.jsx` → Students tab | ✅ Connecté |
+
+### 📅 Sessions Live — `useMeetings.jsx`
+
+| Méthode | Endpoint | Utilisé dans | Status |
+|---|---|---|---|
+| `GET` | `/courses/:id/meetings` | `InstructorDashboard.jsx` → Meetings tab | ✅ Connecté |
+| `POST` | `/courses/:id/meetings` | `InstructorDashboard.jsx` → Schedule form | ✅ Connecté |
+
+### 🖼️ Avatar — `ProfileEditForm.jsx`
+
+| Méthode | Endpoint | Utilisé dans | Status |
+|---|---|---|---|
+| `POST` | `/users/me/avatar` | `ProfileEditForm.jsx` (file upload) | ✅ Connecté |
+
 ---
 
 ## 🧩 Hooks Disponibles
@@ -121,6 +146,9 @@
 | `useAssignmentSubmissions()` | `useProgress.jsx` | Soumettre un devoir (multipart/form-data) |
 | `useStudentAchievements(userId)` | `useStudentDashboard.jsx` | Stats de progression de l'étudiant |
 | `useCheckout()` | `usePayments.jsx` | Créer une session de paiement |
+| `useCourseStudents(courseId)` | `useCourseStudents.jsx` | Étudiants inscrits à un cours (instructeur) |
+| `useAdminStats()` | `useAdminStats.jsx` | Statistiques globales de la plateforme (admin) |
+| `useMeetings(courseId)` | `useMeetings.jsx` | Sessions live (Zoom/Meet) d'un cours |
 
 ---
 
@@ -135,9 +163,9 @@
 ### 👨‍🏫 Instructor Dashboard (`/instructor/dashboard`)
 - Sidebar verticale avec avatar, nom, rôle "Instructeur"
 - **My Courses** : Liste des cours avec statut et nombre d'inscrits
-- **Create Course** : Placeholder (formulaire à venir)
-- **Meetings** : Placeholder (réunions à venir)
-- **Students** : Placeholder (liste des étudiants à venir)
+- **Create Course** : Formulaire de création de cours
+- **Sessions Live** : Planification et gestion des sessions Zoom/Meet (upcoming/past)
+- **Students** : Liste des étudiants inscrits par cours avec recherche par nom/email
 - **Mon Profil** : Voir et modifier ses informations personnelles via `PATCH /users/me`
 - Déconnexion depuis la sidebar
 
@@ -146,6 +174,7 @@
 - **Users** : Grille de tous les utilisateurs (nom, email, rôle)
 - **Courses** : Grille de tous les cours avec bouton "Publish" pour les drafts
 - **Categories** : Liste des catégories avec sous-catégories
+- **Statistiques** : KPIs (utilisateurs, cours, revenus) + répartition des rôles
 - **Settings** : Placeholder (paramètres à venir)
 - **Mon Profil** : Voir et modifier ses informations personnelles via `PATCH /users/me`
 - Déconnexion depuis la sidebar
@@ -175,12 +204,7 @@
 |---|---|---|
 | Achievements de l'étudiant | `GET /users/me/achievements` | 🔴 Haute |
 | Cours de l'instructeur seulement | `GET /courses/mine` ou `GET /instructor/courses` | 🔴 Haute |
-| Liste des étudiants inscrits à un cours | `GET /courses/:id/students` | 🟡 Moyenne |
-| Réunions (meetings/visio) | `GET /meetings`, `POST /meetings` | 🟡 Moyenne |
-| Statistiques globales admin | `GET /admin/stats` | 🟡 Moyenne |
-| Paramètres de plateforme | `GET /settings`, `PATCH /settings` | 🟢 Faible |
 | Refresh token | `POST /auth/refresh` | 🔴 Haute (sécurité) |
-| Upload avatar (fichier) | `POST /users/me/avatar` (multipart) | 🟡 Moyenne |
 
 ---
 

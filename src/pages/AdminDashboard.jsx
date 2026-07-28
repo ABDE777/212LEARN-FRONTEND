@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import Navbar from '../components/Navbar';
-import { Users, BookOpen, Folder, Settings, User, LogOut, FileText, Pencil, Trash2 } from 'lucide-react';
+import { Users, BookOpen, Folder, Settings, User, LogOut, FileText, Pencil, Trash2, BarChart3, TrendingUp, DollarSign, ShieldCheck, ShieldAlert, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import {
   useAdminUsers,
   useAdminCourses,
@@ -11,9 +11,131 @@ import {
   usePublishCourse,
 } from '../hooks/useAdminData';
 import { useCategories } from '../hooks/useCategories';
+import { useAdminStats } from '../hooks/useAdminStats';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useAuth } from '../context/AuthContext';
 import ProfileEditForm from '../components/ProfileEditForm';
+
+function AdminStatsTab() {
+  const { stats, loading, error } = useAdminStats();
+  const { users, loading: usersLoading } = useAdminUsers();
+  const { courses, loading: coursesLoading } = useAdminCourses();
+  const { categories, loading: categoriesLoading } = useCategories();
+
+  const isLoading = loading || usersLoading || coursesLoading || categoriesLoading;
+
+  const derivedStats = useMemo(() => {
+    if (stats) return stats;
+    if (isLoading) return null;
+    return {
+      totalUsers: users.length,
+      totalCourses: courses.length,
+      totalCategories: categories.length,
+      totalRevenue: 0,
+      activeCourses: courses.filter(c => c.status === 'published').length,
+      draftCourses: courses.filter(c => c.status === 'draft').length,
+      students: users.filter(u => u.role === 'student').length,
+      instructors: users.filter(u => u.role === 'instructor').length,
+      admins: users.filter(u => u.role === 'admin').length,
+    };
+  }, [stats, users, courses, categories, isLoading]);
+
+  return (
+    <div>
+      <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Statistiques de la plateforme</h2>
+      <p style={{ color: 'var(--secondary)', marginBottom: '2rem', fontSize: '0.9rem' }}>
+        Vue d'ensemble de l'activité et des performances de 212LEARN.
+      </p>
+
+      {isLoading && <LoadingSpinner />}
+      {error && <p style={{ color: 'var(--error-color)' }}>{error}</p>}
+
+      {!isLoading && !error && derivedStats && (
+        <>
+          {/* Top-level KPI cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
+            {[
+              { label: 'Utilisateurs', value: derivedStats.totalUsers ?? 0, icon: <Users size={22} />, color: '#2D8CFF', bg: '#e8f4fd' },
+              { label: 'Cours publiés', value: derivedStats.activeCourses ?? 0, icon: <BookOpen size={22} />, color: 'var(--primary)', bg: 'rgba(193,101,47,0.08)' },
+              { label: 'Cours brouillons', value: derivedStats.draftCourses ?? 0, icon: <FileText size={22} />, color: '#b26a00', bg: '#fff8e1' },
+              { label: 'Étudiants', value: derivedStats.students ?? 0, icon: <Users size={22} />, color: 'var(--accent)', bg: 'rgba(193,101,47,0.06)' },
+              { label: 'Instructeurs', value: derivedStats.instructors ?? 0, icon: <TrendingUp size={22} />, color: '#34A853', bg: '#e8f5e9' },
+              { label: 'Catégories', value: derivedStats.totalCategories ?? 0, icon: <Folder size={22} />, color: '#6264A7', bg: '#ede7f6' },
+              { label: 'Revenu total', value: `${derivedStats.totalRevenue ?? 0} MAD`, icon: <DollarSign size={22} />, color: '#27ae60', bg: '#e8f5e9' },
+            ].map((item, idx) => (
+              <div key={idx} style={{
+                padding: '1.5rem',
+                borderRadius: '16px',
+                border: '1px solid var(--border-color)',
+                background: '#fff',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+              }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = 'var(--shadow-md)'; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                  <div style={{
+                    width: '48px', height: '48px', borderRadius: '12px',
+                    background: item.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: item.color,
+                  }}>
+                    {item.icon}
+                  </div>
+                </div>
+                <div style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--text-color)', marginBottom: '0.2rem' }}>
+                  {item.value}
+                </div>
+                <div style={{ fontSize: '0.85rem', color: 'var(--secondary)' }}>
+                  {item.label}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Role breakdown table */}
+          <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden' }}>
+            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-color)' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-color)' }}>Répartition des utilisateurs</h3>
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: '#f8f9fa' }}>
+                  <th style={{ textAlign: 'left', padding: '0.85rem 1.5rem', borderBottom: '1px solid var(--border-color)', fontSize: '0.85rem', color: 'var(--secondary)', fontWeight: 600 }}>Rôle</th>
+                  <th style={{ textAlign: 'left', padding: '0.85rem 1.5rem', borderBottom: '1px solid var(--border-color)', fontSize: '0.85rem', color: 'var(--secondary)', fontWeight: 600 }}>Nombre</th>
+                  <th style={{ textAlign: 'left', padding: '0.85rem 1.5rem', borderBottom: '1px solid var(--border-color)', fontSize: '0.85rem', color: 'var(--secondary)', fontWeight: 600 }}>% du total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { role: 'Étudiants', count: derivedStats.students ?? 0 },
+                  { role: 'Instructeurs', count: derivedStats.instructors ?? 0 },
+                  { role: 'Administrateurs', count: derivedStats.admins ?? 0 },
+                ].map((row, idx) => {
+                  const total = derivedStats.totalUsers || 1;
+                  const pct = ((row.count / total) * 100).toFixed(1);
+                  return (
+                    <tr key={idx}>
+                      <td style={{ padding: '0.85rem 1.5rem', borderBottom: '1px solid var(--border-color)', fontWeight: 600, color: 'var(--text-color)' }}>{row.role}</td>
+                      <td style={{ padding: '0.85rem 1.5rem', borderBottom: '1px solid var(--border-color)', color: 'var(--secondary)' }}>{row.count}</td>
+                      <td style={{ padding: '0.85rem 1.5rem', borderBottom: '1px solid var(--border-color)', color: 'var(--secondary)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <div style={{ width: '80px', height: '6px', borderRadius: '3px', background: 'var(--border-color)', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${pct}%`, borderRadius: '3px', background: 'var(--primary)', transition: 'width 0.3s' }} />
+                          </div>
+                          <span>{pct}%</span>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 function flattenCategories(categories, prefix = '') {
   return categories.flatMap((cat) => [
@@ -23,6 +145,8 @@ function flattenCategories(categories, prefix = '') {
 }
 
 function getAssignedInstructor(course) {
+  if (course.formateur) return course.formateur;
+
   const instructors = Array.isArray(course.instructors) ? course.instructors : [];
 
   const preferredInstructor =
@@ -33,7 +157,10 @@ function getAssignedInstructor(course) {
     instructors.find((item) => (item.role || '').toLowerCase() !== 'owner') ||
     instructors[0];
 
-  return preferredInstructor?.user || course.instructor || null;
+  if (preferredInstructor?.user) return preferredInstructor.user;
+  if (course.instructor) return course.instructor;
+  if (course.formateurId) return { id: course.formateurId };
+  return null;
 }
 
 function getCourseInstructorLabel(course) {
@@ -489,11 +616,16 @@ function AdminCategoryCard({ category, parentOptions, onSave, saveLoading, saveE
 }
 
 export default function AdminDashboard() {
+  const USERS_PER_PAGE = 10;
   const [activeTab, setActiveTab] = useState('users');
+  const [userSubTab, setUserSubTab] = useState('active');
+  const [userPage, setUserPage] = useState(1);
   const [userRoleFilter, setUserRoleFilter] = useState('all');
   const [userSearch, setUserSearch] = useState('');
+  const [userActionLoading, setUserActionLoading] = useState(null);
+  const [userActionMsg, setUserActionMsg] = useState(null);
 
-  const { users, loading: usersLoading, error: usersError } = useAdminUsers();
+  const { users, loading: usersLoading, error: usersError, refreshUsers, verifyInstructor, verifyStudent, restoreUser } = useAdminUsers();
   const { courses, loading: coursesLoading, error: coursesError, refreshCourses } = useAdminCourses();
   const { instructors, loading: instructorsLoading, error: instructorsError } = useAdminInstructors();
   const {
@@ -511,10 +643,19 @@ export default function AdminDashboard() {
   const { user, logout } = useAuth();
 
   const flatCategories = useMemo(() => flattenCategories(categories), [categories]);
+
+  const deletedUsers = useMemo(() => users.filter(u => u.deletedAt), [users]);
+  const activeUsers = useMemo(() => users.filter(u => !u.deletedAt), [users]);
+  const unverifiedUsers = useMemo(() => activeUsers.filter(u => !u.isVerified), [activeUsers]);
+
+  const baseSubTabUsers = userSubTab === 'deleted' ? deletedUsers
+    : userSubTab === 'unverified' ? unverifiedUsers
+    : activeUsers;
+
   const filteredUsers = useMemo(() => {
     const normalizedSearch = userSearch.trim().toLowerCase();
 
-    return users.filter((listedUser) => {
+    return baseSubTabUsers.filter((listedUser) => {
       const matchesRole = userRoleFilter === 'all' || (listedUser.role || '').toLowerCase() === userRoleFilter;
       const fullName = `${listedUser.firstName || ''} ${listedUser.lastName || ''}`.trim().toLowerCase();
       const email = (listedUser.email || '').toLowerCase();
@@ -527,7 +668,13 @@ export default function AdminDashboard() {
 
       return matchesRole && matchesSearch;
     });
-  }, [users, userRoleFilter, userSearch]);
+  }, [baseSubTabUsers, userRoleFilter, userSearch]);
+
+  const totalUserPages = Math.max(1, Math.ceil(filteredUsers.length / USERS_PER_PAGE));
+  const paginatedUsers = useMemo(() => {
+    const start = (userPage - 1) * USERS_PER_PAGE;
+    return filteredUsers.slice(start, start + USERS_PER_PAGE);
+  }, [filteredUsers, userPage]);
 
   const draftCourses = useMemo(
     () => courses.filter((course) => (course.status || '').toLowerCase() === 'draft'),
@@ -558,6 +705,58 @@ export default function AdminDashboard() {
   const [createCourseError, setCreateCourseError] = useState(null);
   const [createCourseSuccess, setCreateCourseSuccess] = useState(false);
   const [courseActionSuccess, setCourseActionSuccess] = useState('');
+
+  const handleVerifyUser = async (userId, role) => {
+    setUserActionLoading(userId);
+    setUserActionMsg(null);
+    try {
+      if (role === 'instructor') {
+        await verifyInstructor(userId);
+      } else {
+        await verifyStudent(userId);
+      }
+      await refreshUsers();
+      setUserActionMsg({ type: 'success', text: 'Utilisateur vérifié avec succès.' });
+    } catch (err) {
+      const status = err.response?.status;
+      const msg = err.response?.data?.error?.message || err.response?.data?.message;
+      if (status === 404) {
+        setUserActionMsg({ type: 'error', text: 'Endpoint de vérification non disponible. Vérifiez que le backend implémente les routes PATCH /admin/users/:id/verify et PATCH /admin/users/:id/verify-student.' });
+      } else {
+        setUserActionMsg({ type: 'error', text: msg || 'Impossible de vérifier cet utilisateur.' });
+      }
+    } finally {
+      setUserActionLoading(null);
+    }
+  };
+
+  const handleRestoreUser = async (userId) => {
+    setUserActionLoading(userId);
+    setUserActionMsg(null);
+    try {
+      await restoreUser(userId);
+      await refreshUsers();
+      setUserActionMsg({ type: 'success', text: 'Utilisateur restauré avec succès.' });
+    } catch (err) {
+      const status = err.response?.status;
+      const msg = err.response?.data?.error?.message || err.response?.data?.message;
+      if (status === 404) {
+        setUserActionMsg({ type: 'error', text: 'Endpoint de restauration non disponible côté backend. Demandez au développeur backend d\'implémenter PATCH /users/:id/restore.' });
+      } else {
+        setUserActionMsg({ type: 'error', text: msg || 'Impossible de restaurer cet utilisateur.' });
+      }
+    } finally {
+      setUserActionLoading(null);
+    }
+  };
+
+  const handleUserSubTabChange = (tab) => {
+    setUserSubTab(tab);
+    setUserPage(1);
+    setUserSearch('');
+    setUserRoleFilter('all');
+    setUserActionMsg(null);
+  };
 
   const handleCreateCategory = async (e) => {
     e.preventDefault();
@@ -758,6 +957,13 @@ export default function AdminDashboard() {
               <span>Categories</span>
             </button>
             <button
+              onClick={() => setActiveTab('stats')}
+              className={`sidebar-menu-btn ${activeTab === 'stats' ? 'active' : ''}`}
+            >
+              <BarChart3 size={18} />
+              <span>Statistiques</span>
+            </button>
+            <button
               onClick={() => setActiveTab('settings')}
               className={`sidebar-menu-btn ${activeTab === 'settings' ? 'active' : ''}`}
             >
@@ -792,70 +998,284 @@ export default function AdminDashboard() {
             <div style={{ background: '#fff', padding: '2rem', borderRadius: '16px', boxShadow: 'var(--shadow-sm)' }}>
               {activeTab === 'users' && (
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-                    <div>
-                      <h2 style={{ marginBottom: '0.4rem', fontSize: '1.5rem' }}>User Management</h2>
-                      <p style={{ color: 'var(--secondary)' }}>Filtrer les utilisateurs par rôle ou rechercher par nom, email ou ID.</p>
-                    </div>
-                    <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Rechercher un utilisateur..."
-                        value={userSearch}
-                        onChange={(e) => setUserSearch(e.target.value)}
-                        style={{ minWidth: '240px' }}
-                      />
-                      <select
-                        className="form-control"
-                        value={userRoleFilter}
-                        onChange={(e) => setUserRoleFilter(e.target.value)}
-                        style={{ minWidth: '180px' }}
+                  <h2 style={{ marginBottom: '0.4rem', fontSize: '1.5rem' }}>User Management</h2>
+                  <p style={{ color: 'var(--secondary)', marginBottom: '1.5rem' }}>
+                    Gérez les utilisateurs actifs, non vérifiés et supprimés.
+                  </p>
+
+                  {/* Sub-tabs */}
+                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+                    {[
+                      { key: 'active', label: 'Actifs', icon: <Users size={15} />, count: activeUsers.length },
+                      { key: 'unverified', label: 'Non vérifiés', icon: <ShieldAlert size={15} />, count: unverifiedUsers.length },
+                      { key: 'deleted', label: 'Supprimés', icon: <Trash2 size={15} />, count: deletedUsers.length },
+                    ].map(tab => (
+                      <button
+                        key={tab.key}
+                        onClick={() => handleUserSubTabChange(tab.key)}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '0.45rem',
+                          padding: '0.5rem 1rem', borderRadius: '8px', fontSize: '0.88rem', fontWeight: 600,
+                          cursor: 'pointer', border: '1.5px solid',
+                          borderColor: userSubTab === tab.key ? 'var(--primary)' : 'var(--border-color)',
+                          background: userSubTab === tab.key ? 'rgba(193,101,47,0.08)' : '#fff',
+                          color: userSubTab === tab.key ? 'var(--primary)' : 'var(--secondary)',
+                          transition: 'all 0.15s',
+                        }}
                       >
-                        <option value="all">Tous les rôles</option>
-                        <option value="student">Student</option>
-                        <option value="instructor">Instructor</option>
-                        <option value="admin">Admin</option>
-                      </select>
+                        {tab.icon}
+                        {tab.label}
+                        <span style={{
+                          marginLeft: '0.15rem', padding: '0.1rem 0.5rem', borderRadius: '9999px',
+                          fontSize: '0.75rem', fontWeight: 700,
+                          background: userSubTab === tab.key ? 'var(--primary)' : 'var(--border-color)',
+                          color: userSubTab === tab.key ? '#fff' : 'var(--secondary)',
+                        }}>
+                          {tab.count}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Action message */}
+                  {userActionMsg && (
+                    <div style={{
+                      padding: '0.75rem 1rem', borderRadius: '8px', marginBottom: '1rem',
+                      background: userActionMsg.type === 'success' ? '#d4edda' : '#f8d7da',
+                      border: `1px solid ${userActionMsg.type === 'success' ? '#c3e6cb' : '#f5c6cb'}`,
+                      color: userActionMsg.type === 'success' ? '#155724' : '#721c24',
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    }}>
+                      <span>{userActionMsg.text}</span>
+                      <button onClick={() => setUserActionMsg(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', fontWeight: 700 }}>×</button>
                     </div>
+                  )}
+
+                  {/* Filters row */}
+                  <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Rechercher par nom, email ou ID..."
+                      value={userSearch}
+                      onChange={(e) => { setUserSearch(e.target.value); setUserPage(1); }}
+                      style={{ minWidth: '240px', flex: 1 }}
+                    />
+                    <select
+                      className="form-control"
+                      value={userRoleFilter}
+                      onChange={(e) => { setUserRoleFilter(e.target.value); setUserPage(1); }}
+                      style={{ minWidth: '180px' }}
+                    >
+                      <option value="all">Tous les rôles</option>
+                      <option value="student">Student</option>
+                      <option value="instructor">Instructor</option>
+                      <option value="admin">Admin</option>
+                    </select>
                   </div>
 
                   {usersLoading && <LoadingSpinner />}
                   {usersError && <p style={{ color: 'var(--error-color)' }}>{usersError}</p>}
+
                   {!usersLoading && !usersError && filteredUsers.length === 0 && (
-                    <p style={{ color: 'var(--secondary)' }}>Aucun utilisateur ne correspond au filtre.</p>
-                  )}
-                  {!usersLoading && !usersError && filteredUsers.length > 0 && (
-                    <div style={{ overflowX: 'auto', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff' }}>
-                        <thead>
-                          <tr style={{ background: 'var(--bg-color)' }}>
-                            <th style={{ textAlign: 'left', padding: '1rem', borderBottom: '1px solid var(--border-color)' }}>Nom</th>
-                            <th style={{ textAlign: 'left', padding: '1rem', borderBottom: '1px solid var(--border-color)' }}>Email</th>
-                            <th style={{ textAlign: 'left', padding: '1rem', borderBottom: '1px solid var(--border-color)' }}>Rôle</th>
-                            <th style={{ textAlign: 'left', padding: '1rem', borderBottom: '1px solid var(--border-color)' }}>ID</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredUsers.map((listedUser) => (
-                            <tr key={listedUser.id}>
-                              <td style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)', color: 'var(--text-color)', fontWeight: 600 }}>
-                                {[listedUser.firstName, listedUser.lastName].filter(Boolean).join(' ') || '—'}
-                              </td>
-                              <td style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)', color: 'var(--secondary)' }}>
-                                {listedUser.email || '—'}
-                              </td>
-                              <td style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)', color: 'var(--secondary)', textTransform: 'capitalize' }}>
-                                {listedUser.role || '—'}
-                              </td>
-                              <td style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)', color: 'var(--secondary)', fontSize: '0.9rem' }}>
-                                {listedUser.id}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                    <div style={{ textAlign: 'center', padding: '3rem', border: '2px dashed var(--border-color)', borderRadius: '12px' }}>
+                      <Users size={36} style={{ marginBottom: '1rem', opacity: 0.3, color: 'var(--secondary)' }} />
+                      <p style={{ color: 'var(--secondary)', fontSize: '0.95rem' }}>
+                        {userSubTab === 'deleted'
+                          ? 'Aucun utilisateur supprimé.'
+                          : userSubTab === 'unverified'
+                          ? 'Tous les utilisateurs sont vérifiés.'
+                          : 'Aucun utilisateur ne correspond au filtre.'}
+                      </p>
                     </div>
+                  )}
+
+                  {!usersLoading && !usersError && filteredUsers.length > 0 && (
+                    <>
+                      <div style={{ overflowX: 'auto', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff' }}>
+                          <thead>
+                            <tr style={{ background: 'var(--bg-color)' }}>
+                              <th style={{ textAlign: 'left', padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-color)', fontSize: '0.85rem' }}>Nom</th>
+                              <th style={{ textAlign: 'left', padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-color)', fontSize: '0.85rem' }}>Email</th>
+                              <th style={{ textAlign: 'left', padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-color)', fontSize: '0.85rem' }}>Rôle</th>
+                              {userSubTab === 'deleted' && (
+                                <th style={{ textAlign: 'left', padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-color)', fontSize: '0.85rem' }}>Supprimé le</th>
+                              )}
+                              {userSubTab === 'unverified' && (
+                                <th style={{ textAlign: 'left', padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-color)', fontSize: '0.85rem' }}>Statut</th>
+                              )}
+                              <th style={{ textAlign: 'right', padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-color)', fontSize: '0.85rem' }}>Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {paginatedUsers.map((listedUser) => (
+                              <tr key={listedUser.id} style={userSubTab === 'deleted' ? { opacity: 0.65 } : undefined}>
+                                <td style={{ padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-color)' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                                    {listedUser.avatar ? (
+                                      <img src={listedUser.avatar} alt="" style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
+                                    ) : (
+                                      <div style={{
+                                        width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
+                                        background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        color: '#fff', fontWeight: 700, fontSize: '0.8rem',
+                                      }}>
+                                        {listedUser.firstName?.charAt(0)?.toUpperCase() || '?'}
+                                      </div>
+                                    )}
+                                    <span style={{ fontWeight: 600, color: 'var(--text-color)' }}>
+                                      {[listedUser.firstName, listedUser.lastName].filter(Boolean).join(' ') || '—'}
+                                    </span>
+                                  </div>
+                                </td>
+                                <td style={{ padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-color)', color: 'var(--secondary)' }}>
+                                  {listedUser.email || '—'}
+                                </td>
+                                <td style={{ padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-color)' }}>
+                                  <span style={{
+                                    display: 'inline-block', padding: '0.2rem 0.65rem', borderRadius: '9999px',
+                                    fontSize: '0.78rem', fontWeight: 600, textTransform: 'capitalize',
+                                    background: listedUser.role === 'admin' ? '#ede7f6'
+                                      : listedUser.role === 'instructor' ? '#e8f5e9'
+                                      : '#e8f4fd',
+                                    color: listedUser.role === 'admin' ? '#5e35b1'
+                                      : listedUser.role === 'instructor' ? '#2e7d32'
+                                      : '#1565c0',
+                                  }}>
+                                    {listedUser.role || '—'}
+                                  </span>
+                                </td>
+                                {userSubTab === 'deleted' && (
+                                  <td style={{ padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-color)', color: 'var(--secondary)', fontSize: '0.85rem' }}>
+                                    {listedUser.deletedAt
+                                      ? new Date(listedUser.deletedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+                                      : '—'}
+                                  </td>
+                                )}
+                                {userSubTab === 'unverified' && (
+                                  <td style={{ padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-color)' }}>
+                                    <span style={{
+                                      display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                                      padding: '0.2rem 0.6rem', borderRadius: '9999px',
+                                      fontSize: '0.78rem', fontWeight: 600,
+                                      background: '#fff3cd', color: '#856404',
+                                    }}>
+                                      <ShieldAlert size={12} /> Non vérifié
+                                    </span>
+                                  </td>
+                                )}
+                                <td style={{ padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-color)', textAlign: 'right' }}>
+                                  {userSubTab === 'unverified' && (
+                                    <button
+                                      onClick={() => handleVerifyUser(listedUser.id, listedUser.role)}
+                                      disabled={userActionLoading === listedUser.id}
+                                      style={{
+                                        display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+                                        padding: '0.4rem 0.9rem', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 600,
+                                        background: userActionLoading === listedUser.id ? '#e8f5e9' : '#155724',
+                                        color: '#fff', cursor: userActionLoading === listedUser.id ? 'wait' : 'pointer',
+                                        border: 'none', transition: 'background 0.2s',
+                                      }}
+                                    >
+                                      <ShieldCheck size={14} />
+                                      {userActionLoading === listedUser.id ? '...' : 'Vérifier'}
+                                    </button>
+                                  )}
+                                  {userSubTab === 'deleted' && (
+                                    <button
+                                      onClick={() => handleRestoreUser(listedUser.id)}
+                                      disabled={userActionLoading === listedUser.id}
+                                      style={{
+                                        display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+                                        padding: '0.4rem 0.9rem', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 600,
+                                        background: userActionLoading === listedUser.id ? '#e3f2fd' : '#1565c0',
+                                        color: '#fff', cursor: userActionLoading === listedUser.id ? 'wait' : 'pointer',
+                                        border: 'none', transition: 'background 0.2s',
+                                      }}
+                                    >
+                                      <RotateCcw size={14} />
+                                      {userActionLoading === listedUser.id ? '...' : 'Restaurer'}
+                                    </button>
+                                  )}
+                                  {userSubTab === 'active' && (
+                                    <span style={{ fontSize: '0.82rem', color: 'var(--secondary)' }}>
+                                      {listedUser.id}
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Pagination */}
+                      {totalUserPages > 1 && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+                          <span style={{ fontSize: '0.85rem', color: 'var(--secondary)' }}>
+                            {(userPage - 1) * USERS_PER_PAGE + 1}–{Math.min(userPage * USERS_PER_PAGE, filteredUsers.length)} sur {filteredUsers.length}
+                          </span>
+                          <div style={{ display: 'flex', gap: '0.35rem' }}>
+                            <button
+                              onClick={() => setUserPage(p => Math.max(1, p - 1))}
+                              disabled={userPage === 1}
+                              style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                width: '36px', height: '36px', borderRadius: '8px',
+                                border: '1px solid var(--border-color)', background: '#fff',
+                                cursor: userPage === 1 ? 'not-allowed' : 'pointer',
+                                opacity: userPage === 1 ? 0.4 : 1,
+                              }}
+                            >
+                              <ChevronLeft size={16} />
+                            </button>
+                            {Array.from({ length: totalUserPages }, (_, i) => i + 1)
+                              .filter(p => p === 1 || p === totalUserPages || Math.abs(p - userPage) <= 1)
+                              .reduce((acc, p, idx, arr) => {
+                                if (idx > 0 && p - arr[idx - 1] > 1) acc.push('...');
+                                acc.push(p);
+                                return acc;
+                              }, [])
+                              .map((p, idx) => p === '...'
+                                ? <span key={`dots-${idx}`} style={{ display: 'flex', alignItems: 'center', padding: '0 0.3rem', color: 'var(--secondary)' }}>…</span>
+                                : (
+                                  <button
+                                    key={p}
+                                    onClick={() => setUserPage(p)}
+                                    style={{
+                                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                      minWidth: '36px', height: '36px', borderRadius: '8px', padding: '0 0.4rem',
+                                      border: '1px solid',
+                                      borderColor: userPage === p ? 'var(--primary)' : 'var(--border-color)',
+                                      background: userPage === p ? 'var(--primary)' : '#fff',
+                                      color: userPage === p ? '#fff' : 'var(--text-color)',
+                                      fontWeight: userPage === p ? 700 : 500,
+                                      fontSize: '0.85rem', cursor: 'pointer',
+                                    }}
+                                  >
+                                    {p}
+                                  </button>
+                                )
+                              )}
+                            <button
+                              onClick={() => setUserPage(p => Math.min(totalUserPages, p + 1))}
+                              disabled={userPage === totalUserPages}
+                              style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                width: '36px', height: '36px', borderRadius: '8px',
+                                border: '1px solid var(--border-color)', background: '#fff',
+                                cursor: userPage === totalUserPages ? 'not-allowed' : 'pointer',
+                                opacity: userPage === totalUserPages ? 0.4 : 1,
+                              }}
+                            >
+                              <ChevronRight size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               )}
@@ -1220,10 +1640,12 @@ export default function AdminDashboard() {
 
               {activeTab === 'settings' && (
                 <div>
-                  <h2 style={{ marginBottom: '1.5rem', fontSize: '1.5rem' }}>Platform Settings</h2>
-                  <p style={{ color: 'var(--secondary)' }}>Coming soon: Settings will appear here</p>
+                  <h2 style={{ marginBottom: '1.5rem', fontSize: '1.5rem' }}>Paramètres de la plateforme</h2>
+                  <p style={{ color: 'var(--secondary)' }}>Bientôt disponible : gestion des paramètres globaux de la plateforme.</p>
                 </div>
               )}
+
+              {activeTab === 'stats' && <AdminStatsTab />}
             </div>
           )}
         </main>
