@@ -91,7 +91,9 @@ export function useCourseQuizzes(courseId) {
     setError(null);
     try {
       const response = await api.get(`/courses/${courseId}/quizzes`);
-      setQuizzes(response.data?.data?.quizzes || []);
+      const body = response.data;
+      const quizList = body?.data?.quizzes || body?.data || body?.quizzes || [];
+      setQuizzes(Array.isArray(quizList) ? quizList : []);
     } catch (err) {
       console.error('Failed to fetch quizzes:', err);
       setQuizzes([]);
@@ -114,7 +116,7 @@ export function useCreateQuiz() {
     setError(null);
     try {
       const response = await api.post(`/lessons/${lessonId}/quizzes`, { title });
-      return response.data?.data?.quiz;
+      return response.data?.data?.quiz || response.data?.data || response.data?.quiz;
     } catch (err) {
       console.error('Failed to create quiz:', err);
       const message = err.response?.data?.error?.message || err.response?.data?.message || 'Impossible de créer le quiz.';
@@ -137,7 +139,7 @@ export function useGenerateAiQuiz() {
     setError(null);
     try {
       const response = await api.post(`/lessons/${lessonId}/quizzes/generate-ai`, { title, prompt, questionCount });
-      return response.data?.data?.quiz;
+      return response.data?.data?.quiz || response.data?.data || response.data?.quiz;
     } catch (err) {
       console.error('Failed to generate quiz:', err);
       const message = err.response?.data?.error?.message || err.response?.data?.message || "Impossible de générer le quiz.";
@@ -160,7 +162,7 @@ export function useAddQuizQuestion() {
     setError(null);
     try {
       const response = await api.post(`/quizzes/${quizId}/questions`, { statement, options, correctAnswer });
-      return response.data?.data?.question;
+      return response.data?.data?.question || response.data?.data || response.data?.question;
     } catch (err) {
       console.error('Failed to add question:', err);
       const message = err.response?.data?.error?.message || err.response?.data?.message || "Impossible d'ajouter la question.";
@@ -185,10 +187,17 @@ export function useQuiz(quizId) {
     setError(null);
     try {
       const response = await api.get(`/quizzes/${quizId}`);
-      setQuiz(response.data?.data?.quiz || null);
+      const body = response.data;
+      const quizData = body?.data?.quiz || body?.data || body?.quiz || null;
+      console.log('useQuiz response:', body);
+      setQuiz(quizData);
     } catch (err) {
       console.error('Failed to fetch quiz:', err);
-      setError('Impossible de charger le quiz.');
+      setError(
+        err.response?.data?.error?.message ||
+        err.response?.data?.message ||
+        'Impossible de charger le quiz.'
+      );
       setQuiz(null);
     } finally {
       setLoading(false);

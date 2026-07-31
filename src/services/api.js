@@ -14,6 +14,11 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // Cache-busting: force a unique URL on every GET so the browser can never
+    // replay a cached response (and the server can never match an ETag/304).
+    if (config.method === 'get') {
+      config.params = { ...(config.params || {}), _t: Date.now() };
+    }
     return config;
   },
   error => Promise.reject(error)

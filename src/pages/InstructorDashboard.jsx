@@ -705,7 +705,7 @@ function QuizzesTab({ courses }) {
   const { createQuiz, loading: createLoading, error: createError } = useCreateQuiz();
   const { generateQuiz, loading: genLoading, error: genError } = useGenerateAiQuiz();
   const { addQuestion, loading: addQLoading, error: addQError } = useAddQuizQuestion();
-  const { quiz: viewingQuiz, loading: viewingLoading } = useQuiz(viewingQuizId);
+  const { quiz: viewingQuiz, loading: viewingLoading, error: viewingError } = useQuiz(viewingQuizId);
 
   const selectedCourse = courses.find(c => c.id === selectedCourseId);
 
@@ -805,6 +805,12 @@ function QuizzesTab({ courses }) {
             </button>
           </div>
           {viewingLoading && <LoadingSpinner />}
+          {!viewingLoading && viewingError && (
+            <p style={{ color: 'var(--error-color)', fontSize: '0.9rem' }}>{viewingError}</p>
+          )}
+          {!viewingLoading && !viewingError && !viewingQuiz && (
+            <p style={{ color: 'var(--secondary)', fontSize: '0.9rem' }}>Aucune donnée reçue pour ce quiz.</p>
+          )}
           {!viewingLoading && viewingQuiz && (
             <div>
               <p style={{ fontSize: '0.85rem', color: 'var(--secondary)', marginBottom: '1rem' }}>
