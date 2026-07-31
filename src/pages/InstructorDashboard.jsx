@@ -5,8 +5,9 @@ import {
   BookOpen, Plus, Video, Users, User, LogOut,
   Calendar, Clock, Link, ExternalLink, Copy, Check,
   CheckCircle, ChevronRight, Zap, Mail, Search,
+  HelpCircle, Brain,
 } from 'lucide-react';
-import { useInstructorCourses, useCreateCourse } from '../hooks/useInstructorCourses';
+import { useInstructorCourses, useCreateCourse, useCourseCurriculum, useCourseQuizzes, useCreateQuiz, useGenerateAiQuiz, useAddQuizQuestion, useQuiz } from '../hooks/useInstructorCourses';
 import { useMeetings } from '../hooks/useMeetings';
 import { useCourseStudents } from '../hooks/useCourseStudents';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -682,6 +683,351 @@ function StudentsTab({ courses }) {
   );
 }
 
+/* ─── Quizzes tab ───────────────────────────── */
+function QuizzesTab({ courses }) {
+  const [selectedCourseId, setSelectedCourseId] = useState(courses[0]?.id || '');
+  const [selectedLessonId, setSelectedLessonId] = useState('');
+  const [quizTitle, setQuizTitle] = useState('');
+  const [viewingQuizId, setViewingQuizId] = useState(null);
+
+  const [aiLessonId, setAiLessonId] = useState('');
+  const [aiTitle, setAiTitle] = useState('');
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiCount, setAiCount] = useState(5);
+
+  const [newQuestionQuizId, setNewQuestionQuizId] = useState('');
+  const [questionStatement, setQuestionStatement] = useState('');
+  const [questionOptions, setQuestionOptions] = useState(['', '', '', '']);
+  const [questionCorrect, setQuestionCorrect] = useState('');
+
+  const { curriculum, loading: currLoading } = useCourseCurriculum(selectedCourseId);
+  const { quizzes, loading: quizzesLoading, refreshQuizzes } = useCourseQuizzes(selectedCourseId);
+  const { createQuiz, loading: createLoading, error: createError } = useCreateQuiz();
+  const { generateQuiz, loading: genLoading, error: genError } = useGenerateAiQuiz();
+  const { addQuestion, loading: addQLoading, error: addQError } = useAddQuizQuestion();
+  const { quiz: viewingQuiz, loading: viewingLoading } = useQuiz(viewingQuizId);
+
+  const selectedCourse = courses.find(c => c.id === selectedCourseId);
+
+  const allLessons = curriculum.flatMap(sec =>
+    (sec.lessons || []).map(les => ({ id: les.id, label: `${sec.title} — ${les.title}` }))
+  );
+
+  const handleCreateQuiz = async (e) => {
+    e.preventDefault();
+    if (!selectedLessonId || !quizTitle.trim()) return;
+    try {
+      await createQuiz(selectedLessonId, quizTitle.trim());
+      setQuizTitle('');
+      setSelectedLessonId('');
+      await refreshQuizzes();
+    } catch (_) {}
+  };
+
+  const handleAiGenerate = async (e) => {
+    e.preventDefault();
+    if (!aiLessonId || !aiTitle.trim() || !aiPrompt.trim()) return;
+    try {
+      await generateQuiz(aiLessonId, { title: aiTitle.trim(), prompt: aiPrompt.trim(), questionCount: aiCount });
+      setAiTitle('');
+      setAiPrompt('');
+      setAiCount(5);
+      setAiLessonId('');
+      await refreshQuizzes();
+    } catch (_) {}
+  };
+
+  const handleAddQuestion = async (e) => {
+    e.preventDefault();
+    if (!newQuestionQuizId || !questionStatement.trim() || questionOptions.some(o => !o.trim()) || !questionCorrect.trim()) return;
+    try {
+      await addQuestion(newQuestionQuizId, {
+        statement: questionStatement.trim(),
+        options: questionOptions.map(o => o.trim()),
+        correctAnswer: questionCorrect.trim(),
+      });
+      setQuestionStatement('');
+      setQuestionOptions(['', '', '', '']);
+      setQuestionCorrect('');
+    } catch (_) {}
+  };
+
+  const handleOptionChange = (idx, val) => {
+    setQuestionOptions(prev => {
+      const next = [...prev];
+      next[idx] = val;
+      return next;
+    });
+  };
+
+  return (
+    <div>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <h2 style={{ fontSize: '1.5rem', marginBottom: '0.2rem' }}>Quiz</h2>
+        <p style={{ color: 'var(--secondary)', fontSize: '0.9rem' }}>
+          Créez et gérez des quiz pour vos cours.
+        </p>
+      </div>
+
+      {/* Course selector */}
+      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+        {courses.map(c => (
+          <button
+            key={c.id}
+            type="button"
+            onClick={() => { setSelectedCourseId(c.id); setSelectedLessonId(''); setAiLessonId(''); setNewQuestionQuizId(''); setViewingQuizId(null); }}
+            style={{
+              padding: '0.35rem 1rem', borderRadius: '9999px', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
+              border: `1.5px solid ${selectedCourseId === c.id ? 'var(--primary)' : 'var(--border-color)'}`,
+              background: selectedCourseId === c.id ? 'rgba(193,101,47,0.08)' : 'transparent',
+              color: selectedCourseId === c.id ? 'var(--primary)' : 'var(--secondary)',
+              transition: 'all 0.15s',
+            }}
+          >
+            {c.title.length > 28 ? c.title.slice(0, 28) + '…' : c.title}
+          </button>
+        ))}
+      </div>
+
+      {/* View quiz detail */}
+      {viewingQuizId && (
+        <div style={{ marginBottom: '2rem', padding: '1.5rem', border: '1px solid var(--primary)', borderRadius: '12px', background: 'rgba(193,101,47,0.02)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h3 style={{ fontSize: '1.1rem', color: 'var(--primary)' }}>
+              {viewingQuiz ? viewingQuiz.title : 'Chargement...'}
+            </h3>
+            <button
+              type="button"
+              onClick={() => setViewingQuizId(null)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--secondary)', fontWeight: 600, fontSize: '0.85rem' }}
+            >
+              Fermer
+            </button>
+          </div>
+          {viewingLoading && <LoadingSpinner />}
+          {!viewingLoading && viewingQuiz && (
+            <div>
+              <p style={{ fontSize: '0.85rem', color: 'var(--secondary)', marginBottom: '1rem' }}>
+                Statut : <span style={{ fontWeight: 600, color: viewingQuiz.validationStatus === 'approved' ? 'var(--success-color)' : viewingQuiz.validationStatus === 'rejected' ? 'var(--error-color)' : '#b26a00' }}>
+                  {viewingQuiz.validationStatus}
+                </span>
+                {' · '}{(viewingQuiz.questions || []).length} question{(viewingQuiz.questions || []).length !== 1 ? 's' : ''}
+              </p>
+              {(viewingQuiz.questions || []).length === 0 && (
+                <p style={{ color: 'var(--secondary)', fontStyle: 'italic', fontSize: '0.9rem' }}>Aucune question pour l'instant.</p>
+              )}
+              {(viewingQuiz.questions || []).map((q, idx) => (
+                <div key={q.id || idx} style={{ padding: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px', marginBottom: '0.75rem', background: '#fff' }}>
+                  <p style={{ fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.92rem' }}>{idx + 1}. {q.statement}</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
+                    {(q.options || []).map((opt, oi) => (
+                      <div key={oi} style={{ padding: '0.4rem 0.6rem', borderRadius: '6px', fontSize: '0.85rem', background: opt === q.correctAnswer ? 'rgba(52,168,83,0.1)' : 'var(--bg-color)', border: `1px solid ${opt === q.correctAnswer ? 'var(--success-color)' : 'var(--border-color)'}`, color: opt === q.correctAnswer ? 'var(--success-color)' : 'var(--text-color)' }}>
+                        {opt} {opt === q.correctAnswer && '✓'}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+        {/* Create quiz manually */}
+        <div style={{ padding: '1.5rem', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+            <HelpCircle size={18} color="var(--primary)" />
+            <h3 style={{ fontSize: '1rem', color: 'var(--text-color)' }}>Créer un quiz</h3>
+          </div>
+          {createError && <p style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginBottom: '0.75rem' }}>{createError}</p>}
+          <form onSubmit={handleCreateQuiz}>
+            <div className="form-group" style={{ margin: 0, marginBottom: '0.75rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.3rem', fontWeight: 600, fontSize: '0.85rem' }}>Leçon *</label>
+              <select
+                className="form-control"
+                value={selectedLessonId}
+                onChange={e => setSelectedLessonId(e.target.value)}
+                required
+                disabled={currLoading}
+              >
+                <option value="">{currLoading ? 'Chargement...' : '-- Sélectionner une leçon --'}</option>
+                {allLessons.map(les => (
+                  <option key={les.id} value={les.id}>{les.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group" style={{ margin: 0, marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.3rem', fontWeight: 600, fontSize: '0.85rem' }}>Titre du quiz *</label>
+              <input
+                type="text"
+                className="form-control"
+                value={quizTitle}
+                onChange={e => setQuizTitle(e.target.value)}
+                placeholder="ex: Quiz React Hooks"
+                required
+              />
+            </div>
+            <button type="submit" className="btn-primary" disabled={createLoading || !selectedLessonId || !quizTitle.trim()} style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem' }}>
+              {createLoading ? 'Création...' : 'Créer le quiz'}
+            </button>
+          </form>
+        </div>
+
+        {/* AI generate */}
+        <div style={{ padding: '1.5rem', border: '1px solid rgba(124,58,237,0.2)', borderRadius: '12px', background: 'rgba(124,58,237,0.02)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+            <Brain size={18} color="#7C3AED" />
+            <h3 style={{ fontSize: '1rem', color: '#7C3AED' }}>Générer avec l'IA</h3>
+          </div>
+          {genError && <p style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginBottom: '0.75rem' }}>{genError}</p>}
+          <form onSubmit={handleAiGenerate}>
+            <div className="form-group" style={{ margin: 0, marginBottom: '0.75rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.3rem', fontWeight: 600, fontSize: '0.85rem' }}>Leçon *</label>
+              <select
+                className="form-control"
+                value={aiLessonId}
+                onChange={e => setAiLessonId(e.target.value)}
+                required
+                disabled={currLoading}
+              >
+                <option value="">{currLoading ? 'Chargement...' : '-- Sélectionner une leçon --'}</option>
+                {allLessons.map(les => (
+                  <option key={les.id} value={les.id}>{les.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group" style={{ margin: 0, marginBottom: '0.75rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.3rem', fontWeight: 600, fontSize: '0.85rem' }}>Titre du quiz *</label>
+              <input
+                type="text"
+                className="form-control"
+                value={aiTitle}
+                onChange={e => setAiTitle(e.target.value)}
+                placeholder="ex: Quiz JavaScript avancé"
+                required
+              />
+            </div>
+            <div className="form-group" style={{ margin: 0, marginBottom: '0.75rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.3rem', fontWeight: 600, fontSize: '0.85rem' }}>Prompt / consignes *</label>
+              <textarea
+                className="form-control"
+                rows={3}
+                value={aiPrompt}
+                onChange={e => setAiPrompt(e.target.value)}
+                placeholder="Décrivez le contenu du quiz..."
+                required
+                style={{ resize: 'vertical' }}
+              />
+            </div>
+            <div className="form-group" style={{ margin: 0, marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.3rem', fontWeight: 600, fontSize: '0.85rem' }}>Nombre de questions</label>
+              <input
+                type="number"
+                className="form-control"
+                min={1}
+                max={20}
+                value={aiCount}
+                onChange={e => setAiCount(parseInt(e.target.value) || 5)}
+              />
+            </div>
+            <button type="submit" disabled={genLoading || !aiLessonId || !aiTitle.trim() || !aiPrompt.trim()} style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: '#7C3AED', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', opacity: genLoading || !aiLessonId || !aiTitle.trim() || !aiPrompt.trim() ? 0.6 : 1 }}>
+              {genLoading ? 'Génération...' : 'Générer avec l\'IA'}
+            </button>
+          </form>
+        </div>
+      </div>
+
+      {/* Add question */}
+      <div style={{ padding: '1.5rem', border: '1px solid var(--border-color)', borderRadius: '12px', marginBottom: '2rem' }}>
+        <h3 style={{ fontSize: '1rem', marginBottom: '1rem' }}>Ajouter une question</h3>
+        {addQError && <p style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginBottom: '0.75rem' }}>{addQError}</p>}
+        <form onSubmit={handleAddQuestion}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '0.75rem' }}>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label style={{ display: 'block', marginBottom: '0.3rem', fontWeight: 600, fontSize: '0.85rem' }}>Quiz *</label>
+              <select className="form-control" value={newQuestionQuizId} onChange={e => setNewQuestionQuizId(e.target.value)} required>
+                <option value="">-- Sélectionner un quiz --</option>
+                {quizzes.map(q => (
+                  <option key={q.id} value={q.id}>{q.title} ({q.questionCount || 0} questions)</option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label style={{ display: 'block', marginBottom: '0.3rem', fontWeight: 600, fontSize: '0.85rem' }}>Question *</label>
+              <input type="text" className="form-control" value={questionStatement} onChange={e => setQuestionStatement(e.target.value)} placeholder="Quelle est la bonne réponse ?" required />
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+            {questionOptions.map((opt, idx) => (
+              <div key={idx} className="form-group" style={{ margin: 0 }}>
+                <label style={{ display: 'block', marginBottom: '0.2rem', fontWeight: 500, fontSize: '0.8rem', color: 'var(--secondary)' }}>Option {idx + 1} *</label>
+                <input type="text" className="form-control" value={opt} onChange={e => handleOptionChange(idx, e.target.value)} placeholder={`Option ${idx + 1}`} required />
+              </div>
+            ))}
+          </div>
+          <div className="form-group" style={{ margin: 0, marginBottom: '1rem', maxWidth: '400px' }}>
+            <label style={{ display: 'block', marginBottom: '0.3rem', fontWeight: 600, fontSize: '0.85rem' }}>Bonne réponse *</label>
+            <select className="form-control" value={questionCorrect} onChange={e => setQuestionCorrect(e.target.value)} required>
+              <option value="">-- Choisir la bonne réponse --</option>
+              {questionOptions.filter(o => o.trim()).map((opt, idx) => (
+                <option key={idx} value={opt.trim()}>{opt.trim()}</option>
+              ))}
+            </select>
+          </div>
+          <button type="submit" disabled={addQLoading || !newQuestionQuizId || !questionStatement.trim() || questionOptions.some(o => !o.trim()) || !questionCorrect.trim()} style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>
+            {addQLoading ? 'Ajout...' : 'Ajouter la question'}
+          </button>
+        </form>
+      </div>
+
+      {/* Existing quizzes list */}
+      <div>
+        <h3 style={{ fontSize: '1rem', marginBottom: '1rem' }}>
+          Quiz existants {selectedCourse ? `— ${selectedCourse.title}` : ''}
+        </h3>
+        {quizzesLoading && <LoadingSpinner />}
+        {!quizzesLoading && quizzes.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '2rem', border: '2px dashed var(--border-color)', borderRadius: '12px' }}>
+            <HelpCircle size={28} style={{ color: 'var(--secondary)', opacity: 0.4, marginBottom: '0.5rem' }} />
+            <p style={{ color: 'var(--secondary)', fontSize: '0.9rem' }}>Aucun quiz pour ce cours.</p>
+          </div>
+        )}
+        {!quizzesLoading && quizzes.length > 0 && (
+          <div style={{ display: 'grid', gap: '0.75rem' }}>
+            {quizzes.map(quiz => (
+              <div key={quiz.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.25rem', border: '1px solid var(--border-color)', borderRadius: '10px', background: '#fff' }}>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.2rem' }}>{quiz.title}</p>
+                  <p style={{ fontSize: '0.82rem', color: 'var(--secondary)' }}>
+                    {quiz.lessonTitle || 'Leçon'} {quiz.sectionTitle ? `· ${quiz.sectionTitle}` : ''} · {quiz.questionCount || 0} question{(quiz.questionCount || 0) !== 1 ? 's' : ''}
+                    {' · '}
+                    <span style={{ color: quiz.validationStatus === 'approved' ? 'var(--success-color)' : quiz.validationStatus === 'rejected' ? 'var(--error-color)' : '#b26a00', fontWeight: 600 }}>
+                      {quiz.validationStatus}
+                    </span>
+                  </p>
+                  {quiz.lastAttempt && (
+                    <p style={{ fontSize: '0.8rem', color: 'var(--secondary)', marginTop: '0.2rem' }}>
+                      Dernière tentative : {quiz.lastAttempt.score}%
+                    </p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setViewingQuizId(quiz.id)}
+                  style={{ padding: '0.4rem 0.9rem', fontSize: '0.82rem', fontWeight: 600, border: '1px solid var(--primary)', borderRadius: '8px', background: 'transparent', color: 'var(--primary)', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                >
+                  Voir
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Main dashboard ──────────────────────── */
 export default function InstructorDashboard() {
   const [activeTab, setActiveTab] = useState('courses');
@@ -709,6 +1055,7 @@ export default function InstructorDashboard() {
   const TABS = [
     { key: 'courses',  icon: <BookOpen size={18} />,  label: 'Mes cours' },
     { key: 'create',   icon: <Plus size={18} />,       label: 'Créer un cours' },
+    { key: 'quizzes',  icon: <HelpCircle size={18} />, label: 'Quiz' },
     { key: 'meetings', icon: <Video size={18} />,      label: 'Sessions Live' },
     { key: 'students', icon: <Users size={18} />,      label: 'Étudiants' },
     { key: 'profile',  icon: <User size={18} />,       label: 'Mon profil' },
@@ -834,6 +1181,11 @@ export default function InstructorDashboard() {
               {/* Students */}
               {activeTab === 'students' && (
                 <StudentsTab courses={courses} />
+              )}
+
+              {/* Quizzes */}
+              {activeTab === 'quizzes' && (
+                <QuizzesTab courses={courses} />
               )}
             </div>
           )}
