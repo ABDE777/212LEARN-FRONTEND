@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { Trophy, Flame, Target, BookOpen, Clock, TrendingUp, Award, ChevronRight, LogOut, User } from 'lucide-react';
+import { Trophy, Flame, Target, BookOpen, Clock, TrendingUp, Award, ChevronRight, LogOut, User, Lock } from 'lucide-react';
 import { useStudentAchievements } from '../hooks/useStudentDashboard';
 import Card from '../components/Card';
 import Button from '../components/Button';
@@ -8,6 +8,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 import ProfileEditForm from '../components/ProfileEditForm';
+import ChangePasswordForm from '../components/ChangePasswordForm';
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
@@ -105,6 +106,13 @@ export default function StudentDashboard() {
               <span>Mon Profil</span>
             </button>
             <button
+              onClick={() => setActiveTab('security')}
+              className={`sidebar-menu-btn ${activeTab === 'security' ? 'active' : ''}`}
+            >
+              <Lock size={18} />
+              <span>Sécurité</span>
+            </button>
+            <button
               onClick={handleLogout}
               className="sidebar-menu-btn"
               style={{ marginTop: 'auto', color: 'var(--error-color)' }}
@@ -119,6 +127,8 @@ export default function StudentDashboard() {
         <main className="dashboard-main-content">
           {activeTab === 'profile' ? (
             <ProfileEditForm />
+          ) : activeTab === 'security' ? (
+            <ChangePasswordForm />
           ) : (
             <div>
               {/* Welcome Section */}

@@ -5,7 +5,7 @@ import {
   BookOpen, Plus, Video, Users, User, LogOut,
   Calendar, Clock, Link, ExternalLink, Copy, Check,
   CheckCircle, ChevronRight, Zap, Mail, Search,
-  HelpCircle, Brain,
+  HelpCircle, Brain, Lock,
 } from 'lucide-react';
 import { useInstructorCourses, useCreateCourse, useCourseCurriculum, useCourseQuizzes, useCreateQuiz, useGenerateAiQuiz, useAddQuizQuestion, useQuiz } from '../hooks/useInstructorCourses';
 import { useMeetings } from '../hooks/useMeetings';
@@ -13,6 +13,7 @@ import { useCourseStudents } from '../hooks/useCourseStudents';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useAuth } from '../context/AuthContext';
 import ProfileEditForm from '../components/ProfileEditForm';
+import ChangePasswordForm from '../components/ChangePasswordForm';
 
 /* ─── helpers ─────────────────────────────── */
 const PLATFORMS = [
@@ -1065,6 +1066,7 @@ export default function InstructorDashboard() {
     { key: 'meetings', icon: <Video size={18} />,      label: 'Sessions Live' },
     { key: 'students', icon: <Users size={18} />,      label: 'Étudiants' },
     { key: 'profile',  icon: <User size={18} />,       label: 'Mon profil' },
+    { key: 'security', icon: <Lock size={18} />,       label: 'Sécurité' },
   ];
 
   return (
@@ -1111,6 +1113,8 @@ export default function InstructorDashboard() {
         <main className="dashboard-main-content">
           {activeTab === 'profile' ? (
             <ProfileEditForm />
+          ) : activeTab === 'security' ? (
+            <ChangePasswordForm />
           ) : (
             <div style={{ background: '#fff', padding: '2rem', borderRadius: '16px', boxShadow: 'var(--shadow-sm)' }}>
 

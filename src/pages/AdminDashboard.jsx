@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import Navbar from '../components/Navbar';
-import { Users, BookOpen, Folder, Settings, User, LogOut, FileText, Pencil, Trash2, BarChart3, TrendingUp, DollarSign, ShieldCheck, ShieldAlert, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
+import { Users, BookOpen, Folder, Settings, User, LogOut, FileText, Pencil, Trash2, BarChart3, TrendingUp, DollarSign, ShieldCheck, ShieldAlert, ChevronLeft, ChevronRight, RotateCcw, Lock } from 'lucide-react';
 import {
   useAdminUsers,
   useAdminCourses,
@@ -15,6 +15,7 @@ import { useAdminStats } from '../hooks/useAdminStats';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useAuth } from '../context/AuthContext';
 import ProfileEditForm from '../components/ProfileEditForm';
+import ChangePasswordForm from '../components/ChangePasswordForm';
 
 function AdminStatsTab() {
   const { stats, loading, error } = useAdminStats();
@@ -978,6 +979,13 @@ export default function AdminDashboard() {
               <span>Mon Profil</span>
             </button>
             <button
+              onClick={() => setActiveTab('security')}
+              className={`sidebar-menu-btn ${activeTab === 'security' ? 'active' : ''}`}
+            >
+              <Lock size={18} />
+              <span>Sécurité</span>
+            </button>
+            <button
               onClick={() => {
                 logout();
                 window.location.href = '/login';
@@ -994,6 +1002,8 @@ export default function AdminDashboard() {
         <main className="dashboard-main-content">
           {activeTab === 'profile' ? (
             <ProfileEditForm />
+          ) : activeTab === 'security' ? (
+            <ChangePasswordForm />
           ) : (
             <div style={{ background: '#fff', padding: '2rem', borderRadius: '16px', boxShadow: 'var(--shadow-sm)' }}>
               {activeTab === 'users' && (
