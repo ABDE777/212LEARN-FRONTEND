@@ -5,6 +5,7 @@ import { AuthProvider } from './context/AuthContext';
 
 // Layouts
 import ProtectedLayout from './layouts/ProtectedLayout';
+import StudentLayout from './layouts/StudentLayout';
 import InstructorLayout from './layouts/InstructorLayout';
 import AdminLayout from './layouts/AdminLayout';
 
@@ -60,6 +61,10 @@ function App() {
           {/* Protected Routes */}
           <Route element={<ProtectedLayout />}>
             <Route path="/dashboard" element={<Profile />} />
+          </Route>
+
+          {/* Student Routes */}
+          <Route element={<StudentLayout />}>
             <Route path="/student/dashboard" element={<StudentDashboard />} />
             <Route path="/learn/:courseId/lesson/:lessonId" element={<ClassroomPlayer />} />
             <Route path="/learn/:courseId/quiz/:quizId" element={<QuizPlayer />} />

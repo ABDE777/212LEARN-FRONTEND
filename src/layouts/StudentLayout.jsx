@@ -2,17 +2,17 @@ import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-function InstructorLayout() {
+function StudentLayout() {
   const { user, loading, isAuthenticated } = useAuth();
 
   if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
         minHeight: '100vh',
-        background: 'var(--bg-color)'
+        background: 'var(--bg-color)',
       }}>
         Loading...
       </div>
@@ -25,13 +25,15 @@ function InstructorLayout() {
 
   const role = (user?.role || '').toUpperCase();
 
-  if (role !== 'INSTRUCTOR') {
-    if (role === 'ADMIN') return <Navigate to="/admin/dashboard" replace />;
-    if (role === 'STUDENT') return <Navigate to="/student/dashboard" replace />;
-    return <Navigate to="/" replace />;
+  if (role === 'INSTRUCTOR') {
+    return <Navigate to="/instructor/dashboard" replace />;
+  }
+
+  if (role === 'ADMIN') {
+    return <Navigate to="/admin/dashboard" replace />;
   }
 
   return <Outlet />;
 }
 
-export default InstructorLayout;
+export default StudentLayout;

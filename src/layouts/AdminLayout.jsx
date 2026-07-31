@@ -25,6 +25,8 @@ function AdminLayout() {
 
   const role = (user?.role || '').toUpperCase();
   if (user && role !== 'ADMIN') {
+    if (role === 'INSTRUCTOR') return <Navigate to="/instructor/dashboard" replace />;
+    if (role === 'STUDENT') return <Navigate to="/student/dashboard" replace />;
     return <Navigate to="/" replace />;
   }
 
