@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import Navbar from '../components/Navbar';
-import { Users, BookOpen, Folder, Settings, User, LogOut, FileText, Pencil, Trash2, BarChart3, TrendingUp, DollarSign, ShieldCheck, ShieldAlert, ChevronLeft, ChevronRight, RotateCcw, Lock } from 'lucide-react';
+import { Users, BookOpen, Folder, Settings, User, LogOut, FileText, Pencil, Trash2, BarChart3, TrendingUp, DollarSign, ShieldCheck, ShieldAlert, ChevronLeft, ChevronRight, RotateCcw, Lock, Plus, Mail, X, Loader } from 'lucide-react';
 import {
   useAdminUsers,
   useAdminCourses,
@@ -9,6 +9,7 @@ import {
   useAdminUpdateCourse,
   useAdminDeleteCourse,
   usePublishCourse,
+  usePendingKyc,
 } from '../hooks/useAdminData';
 import { useCategories } from '../hooks/useCategories';
 import { useAdminStats } from '../hooks/useAdminStats';
@@ -626,7 +627,25 @@ export default function AdminDashboard() {
   const [userActionLoading, setUserActionLoading] = useState(null);
   const [userActionMsg, setUserActionMsg] = useState(null);
 
-  const { users, loading: usersLoading, error: usersError, refreshUsers, verifyInstructor, verifyStudent, restoreUser } = useAdminUsers();
+  const {
+    users,
+    loading: usersLoading,
+    error: usersError,
+    refreshUsers,
+    verifyInstructor,
+    verifyStudent,
+    restoreUser,
+    createUser,
+    updateUser,
+    deleteUser,
+    resetPassword,
+  } = useAdminUsers();
+  const {
+    users: pendingKycUsers,
+    loading: pendingKycLoading,
+    error: pendingKycError,
+    refreshPendingKyc,
+  } = usePendingKyc();
   const { courses, loading: coursesLoading, error: coursesError, refreshCourses } = useAdminCourses();
   const { instructors, loading: instructorsLoading, error: instructorsError } = useAdminInstructors();
   const {
@@ -651,7 +670,11 @@ export default function AdminDashboard() {
 
   const baseSubTabUsers = userSubTab === 'deleted' ? deletedUsers
     : userSubTab === 'unverified' ? unverifiedUsers
+    : userSubTab === 'kyc' ? pendingKycUsers
     : activeUsers;
+
+  const listLoading = userSubTab === 'kyc' ? pendingKycLoading : usersLoading;
+  const listError = userSubTab === 'kyc' ? pendingKycError : usersError;
 
   const filteredUsers = useMemo(() => {
     const normalizedSearch = userSearch.trim().toLowerCase();
@@ -707,17 +730,31 @@ export default function AdminDashboard() {
   const [createCourseSuccess, setCreateCourseSuccess] = useState(false);
   const [courseActionSuccess, setCourseActionSuccess] = useState('');
 
-  const handleVerifyUser = async (userId, role) => {
+  const [showUserForm, setShowUserForm] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [userFormData, setUserFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    role: 'student',
+    bio: '',
+  });
+  const [userFormLoading, setUserFormLoading] = useState(false);
+  const [userFormError, setUserFormError] = useState(null);
+
+  const handleVerifyUser = async (userId, role, isVerified = true) => {
     setUserActionLoading(userId);
     setUserActionMsg(null);
     try {
       if (role === 'instructor') {
-        await verifyInstructor(userId);
+        await verifyInstructor(userId, isVerified);
       } else {
-        await verifyStudent(userId);
+        await verifyStudent(userId, isVerified);
       }
       await refreshUsers();
-      setUserActionMsg({ type: 'success', text: 'Utilisateur vérifié avec succès.' });
+      await refreshPendingKyc();
+      setUserActionMsg({ type: 'success', text: isVerified ? 'Utilisateur vérifié avec succès.' : 'Vérification retirée.' });
     } catch (err) {
       const status = err.response?.status;
       const msg = err.response?.data?.error?.message || err.response?.data?.message;
@@ -725,6 +762,113 @@ export default function AdminDashboard() {
         setUserActionMsg({ type: 'error', text: 'Endpoint de vérification non disponible. Vérifiez que le backend implémente les routes PATCH /admin/users/:id/verify et PATCH /admin/users/:id/verify-student.' });
       } else {
         setUserActionMsg({ type: 'error', text: msg || 'Impossible de vérifier cet utilisateur.' });
+      }
+    } finally {
+      setUserActionLoading(null);
+    }
+  };
+
+  const handleCreateUserClick = () => {
+    setEditingUser(null);
+    setUserFormData({ firstName: '', lastName: '', email: '', password: '', role: 'student', bio: '' });
+    setUserFormError(null);
+    setShowUserForm(true);
+  };
+
+  const handleEditUserClick = (listedUser) => {
+    setEditingUser(listedUser);
+    setUserFormData({
+      firstName: listedUser.firstName || '',
+      lastName: listedUser.lastName || '',
+      email: listedUser.email || '',
+      password: '',
+      role: listedUser.role || 'student',
+      bio: listedUser.bio || '',
+    });
+    setUserFormError(null);
+    setShowUserForm(true);
+  };
+
+  const handleUserFormSubmit = async (e) => {
+    e.preventDefault();
+    setUserFormLoading(true);
+    setUserFormError(null);
+    try {
+      const payload = {
+        firstName: userFormData.firstName.trim(),
+        lastName: userFormData.lastName.trim(),
+        email: userFormData.email.trim(),
+        role: userFormData.role,
+        bio: userFormData.bio.trim(),
+      };
+
+      if (editingUser) {
+        if (userFormData.password.trim()) payload.password = userFormData.password.trim();
+        await updateUser(editingUser.id, payload);
+        setUserActionMsg({ type: 'success', text: 'Utilisateur mis à jour avec succès.' });
+      } else {
+        payload.password = userFormData.password.trim();
+        await createUser(payload);
+        setUserActionMsg({ type: 'success', text: 'Utilisateur créé avec succès.' });
+      }
+      await refreshUsers();
+      await refreshPendingKyc();
+      setShowUserForm(false);
+    } catch (err) {
+      const status = err.response?.status;
+      const msg = err.response?.data?.error?.message || err.response?.data?.message;
+      if (status === 404) {
+        setUserFormError(editingUser
+          ? 'Endpoint de mise à jour non disponible. Implémentez PATCH /admin/users/:userId côté backend.'
+          : 'Endpoint de création non disponible. Implémentez POST /admin/users côté backend.');
+      } else {
+        setUserFormError(msg || 'Erreur lors de l\'enregistrement de l\'utilisateur.');
+      }
+    } finally {
+      setUserFormLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId, userName) => {
+    const confirmed = window.confirm(`Supprimer l'utilisateur "${userName}" ?`);
+    if (!confirmed) return;
+
+    setUserActionLoading(userId);
+    setUserActionMsg(null);
+    try {
+      await deleteUser(userId);
+      await refreshUsers();
+      await refreshPendingKyc();
+      setUserActionMsg({ type: 'success', text: 'Utilisateur supprimé avec succès.' });
+    } catch (err) {
+      const status = err.response?.status;
+      const msg = err.response?.data?.error?.message || err.response?.data?.message;
+      if (status === 404) {
+        setUserActionMsg({ type: 'error', text: 'Endpoint de suppression non disponible. Implémentez DELETE /admin/users/:userId côté backend.' });
+      } else {
+        setUserActionMsg({ type: 'error', text: msg || 'Impossible de supprimer cet utilisateur.' });
+      }
+    } finally {
+      setUserActionLoading(null);
+    }
+  };
+
+  const handleResetPassword = async (userId, userName) => {
+    const confirmed = window.confirm(`Envoyer un email de réinitialisation de mot de passe à "${userName}" ?`);
+    if (!confirmed) return;
+
+    setUserActionLoading(userId);
+    setUserActionMsg(null);
+    try {
+      await resetPassword(userId);
+      setUserActionMsg({ type: 'success', text: 'Email de réinitialisation envoyé avec succès.' });
+    } catch (err) {
+      const status = err.response?.status;
+      const msg = err.response?.data?.error?.message || err.response?.data?.message;
+      if (status === 404) {
+        setUserActionMsg({ type: 'error', text: 'Endpoint de réinitialisation non disponible. Implémentez PATCH /admin/users/:userId/reset-password côté backend.' });
+      } else {
+        setUserActionMsg({ type: 'error', text: msg || 'Impossible d\'envoyer l\'email de réinitialisation.' });
       }
     } finally {
       setUserActionLoading(null);
@@ -1008,16 +1152,29 @@ export default function AdminDashboard() {
             <div style={{ background: '#fff', padding: '2rem', borderRadius: '16px', boxShadow: 'var(--shadow-sm)' }}>
               {activeTab === 'users' && (
                 <div>
-                  <h2 style={{ marginBottom: '0.4rem', fontSize: '1.5rem' }}>User Management</h2>
-                  <p style={{ color: 'var(--secondary)', marginBottom: '1.5rem' }}>
-                    Gérez les utilisateurs actifs, non vérifiés et supprimés.
-                  </p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', gap: '1rem', flexWrap: 'wrap' }}>
+                    <div>
+                      <h2 style={{ marginBottom: '0.4rem', fontSize: '1.5rem' }}>User Management</h2>
+                      <p style={{ color: 'var(--secondary)' }}>
+                        Gérez les utilisateurs actifs, non vérifiés, en attente de KYC et supprimés.
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleCreateUserClick}
+                      className="btn-primary"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', fontSize: '0.9rem', cursor: 'pointer' }}
+                    >
+                      <Plus size={16} />
+                      Créer un utilisateur
+                    </button>
+                  </div>
 
                   {/* Sub-tabs */}
                   <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
                     {[
                       { key: 'active', label: 'Actifs', icon: <Users size={15} />, count: activeUsers.length },
                       { key: 'unverified', label: 'Non vérifiés', icon: <ShieldAlert size={15} />, count: unverifiedUsers.length },
+                      { key: 'kyc', label: 'KYC en attente', icon: <ShieldCheck size={15} />, count: pendingKycUsers.length },
                       { key: 'deleted', label: 'Supprimés', icon: <Trash2 size={15} />, count: deletedUsers.length },
                     ].map(tab => (
                       <button
@@ -1084,10 +1241,10 @@ export default function AdminDashboard() {
                     </select>
                   </div>
 
-                  {usersLoading && <LoadingSpinner />}
-                  {usersError && <p style={{ color: 'var(--error-color)' }}>{usersError}</p>}
+                  {listLoading && <LoadingSpinner />}
+                  {listError && <p style={{ color: 'var(--error-color)' }}>{listError}</p>}
 
-                  {!usersLoading && !usersError && filteredUsers.length === 0 && (
+                  {!listLoading && !listError && filteredUsers.length === 0 && (
                     <div style={{ textAlign: 'center', padding: '3rem', border: '2px dashed var(--border-color)', borderRadius: '12px' }}>
                       <Users size={36} style={{ marginBottom: '1rem', opacity: 0.3, color: 'var(--secondary)' }} />
                       <p style={{ color: 'var(--secondary)', fontSize: '0.95rem' }}>
@@ -1095,12 +1252,14 @@ export default function AdminDashboard() {
                           ? 'Aucun utilisateur supprimé.'
                           : userSubTab === 'unverified'
                           ? 'Tous les utilisateurs sont vérifiés.'
+                          : userSubTab === 'kyc'
+                          ? 'Aucune demande KYC en attente.'
                           : 'Aucun utilisateur ne correspond au filtre.'}
                       </p>
                     </div>
                   )}
 
-                  {!usersLoading && !usersError && filteredUsers.length > 0 && (
+                  {!listLoading && !listError && filteredUsers.length > 0 && (
                     <>
                       <div style={{ overflowX: 'auto', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff' }}>
@@ -1112,9 +1271,9 @@ export default function AdminDashboard() {
                               {userSubTab === 'deleted' && (
                                 <th style={{ textAlign: 'left', padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-color)', fontSize: '0.85rem' }}>Supprimé le</th>
                               )}
-                              {userSubTab === 'unverified' && (
+                              {userSubTab === 'unverified' || userSubTab === 'kyc' ? (
                                 <th style={{ textAlign: 'left', padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-color)', fontSize: '0.85rem' }}>Statut</th>
-                              )}
+                              ) : null}
                               <th style={{ textAlign: 'right', padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-color)', fontSize: '0.85rem' }}>Actions</th>
                             </tr>
                           </thead>
@@ -1164,7 +1323,7 @@ export default function AdminDashboard() {
                                       : '—'}
                                   </td>
                                 )}
-                                {userSubTab === 'unverified' && (
+                                {userSubTab === 'unverified' || userSubTab === 'kyc' ? (
                                   <td style={{ padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-color)' }}>
                                     <span style={{
                                       display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
@@ -1175,45 +1334,99 @@ export default function AdminDashboard() {
                                       <ShieldAlert size={12} /> Non vérifié
                                     </span>
                                   </td>
-                                )}
+                                ) : null}
                                 <td style={{ padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-color)', textAlign: 'right' }}>
-                                  {userSubTab === 'unverified' && (
-                                    <button
-                                      onClick={() => handleVerifyUser(listedUser.id, listedUser.role)}
-                                      disabled={userActionLoading === listedUser.id}
-                                      style={{
-                                        display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
-                                        padding: '0.4rem 0.9rem', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 600,
-                                        background: userActionLoading === listedUser.id ? '#e8f5e9' : '#155724',
-                                        color: '#fff', cursor: userActionLoading === listedUser.id ? 'wait' : 'pointer',
-                                        border: 'none', transition: 'background 0.2s',
-                                      }}
-                                    >
-                                      <ShieldCheck size={14} />
-                                      {userActionLoading === listedUser.id ? '...' : 'Vérifier'}
-                                    </button>
-                                  )}
-                                  {userSubTab === 'deleted' && (
-                                    <button
-                                      onClick={() => handleRestoreUser(listedUser.id)}
-                                      disabled={userActionLoading === listedUser.id}
-                                      style={{
-                                        display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
-                                        padding: '0.4rem 0.9rem', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 600,
-                                        background: userActionLoading === listedUser.id ? '#e3f2fd' : '#1565c0',
-                                        color: '#fff', cursor: userActionLoading === listedUser.id ? 'wait' : 'pointer',
-                                        border: 'none', transition: 'background 0.2s',
-                                      }}
-                                    >
-                                      <RotateCcw size={14} />
-                                      {userActionLoading === listedUser.id ? '...' : 'Restaurer'}
-                                    </button>
-                                  )}
-                                  {userSubTab === 'active' && (
-                                    <span style={{ fontSize: '0.82rem', color: 'var(--secondary)' }}>
-                                      {listedUser.id}
-                                    </span>
-                                  )}
+                                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                                    {(userSubTab === 'unverified' || userSubTab === 'kyc') && (
+                                      <button
+                                        onClick={() => handleVerifyUser(listedUser.id, listedUser.role, true)}
+                                        disabled={userActionLoading === listedUser.id}
+                                        style={{
+                                          display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+                                          padding: '0.4rem 0.9rem', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 600,
+                                          background: userActionLoading === listedUser.id ? '#e8f5e9' : '#155724',
+                                          color: '#fff', cursor: userActionLoading === listedUser.id ? 'wait' : 'pointer',
+                                          border: 'none', transition: 'background 0.2s',
+                                        }}
+                                      >
+                                        <ShieldCheck size={14} />
+                                        {userActionLoading === listedUser.id ? '...' : 'Vérifier'}
+                                      </button>
+                                    )}
+                                    {userSubTab === 'deleted' && (
+                                      <button
+                                        onClick={() => handleRestoreUser(listedUser.id)}
+                                        disabled={userActionLoading === listedUser.id}
+                                        style={{
+                                          display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+                                          padding: '0.4rem 0.9rem', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 600,
+                                          background: userActionLoading === listedUser.id ? '#e3f2fd' : '#1565c0',
+                                          color: '#fff', cursor: userActionLoading === listedUser.id ? 'wait' : 'pointer',
+                                          border: 'none', transition: 'background 0.2s',
+                                        }}
+                                      >
+                                        <RotateCcw size={14} />
+                                        {userActionLoading === listedUser.id ? '...' : 'Restaurer'}
+                                      </button>
+                                    )}
+                                    {userSubTab === 'active' && (
+                                      <>
+                                        {(listedUser.role === 'instructor' || listedUser.role === 'student') && (
+                                          <button
+                                            onClick={() => handleVerifyUser(listedUser.id, listedUser.role, !listedUser.isVerified)}
+                                            disabled={userActionLoading === listedUser.id}
+                                            style={{
+                                              display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                                              padding: '0.4rem 0.8rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600,
+                                              border: '1px solid',
+                                              borderColor: listedUser.isVerified ? '#f5c6cb' : '#c3e6cb',
+                                              background: listedUser.isVerified ? '#f8d7da' : '#d4edda',
+                                              color: listedUser.isVerified ? '#721c24' : '#155724',
+                                              cursor: userActionLoading === listedUser.id ? 'wait' : 'pointer',
+                                            }}
+                                          >
+                                            {listedUser.isVerified ? <ShieldAlert size={14} /> : <ShieldCheck size={14} />}
+                                            {listedUser.isVerified ? 'Déverifier' : 'Vérifier'}
+                                          </button>
+                                        )}
+                                        <button
+                                          onClick={() => handleEditUserClick(listedUser)}
+                                          style={{
+                                            display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                                            padding: '0.4rem 0.8rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600,
+                                            border: '1px solid var(--border-color)', background: '#fff', color: 'var(--text-color)',
+                                            cursor: 'pointer',
+                                          }}
+                                        >
+                                          <Pencil size={13} /> Modifier
+                                        </button>
+                                        <button
+                                          onClick={() => handleResetPassword(listedUser.id, [listedUser.firstName, listedUser.lastName].filter(Boolean).join(' ') || listedUser.email)}
+                                          disabled={userActionLoading === listedUser.id}
+                                          style={{
+                                            display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                                            padding: '0.4rem 0.8rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600,
+                                            border: '1px solid var(--border-color)', background: '#fff', color: 'var(--primary)',
+                                            cursor: userActionLoading === listedUser.id ? 'wait' : 'pointer',
+                                          }}
+                                        >
+                                          <Mail size={13} /> Réinit. mdp
+                                        </button>
+                                        <button
+                                          onClick={() => handleDeleteUser(listedUser.id, [listedUser.firstName, listedUser.lastName].filter(Boolean).join(' ') || listedUser.email)}
+                                          disabled={userActionLoading === listedUser.id}
+                                          style={{
+                                            display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                                            padding: '0.4rem 0.8rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600,
+                                            border: '1px solid var(--border-color)', background: '#fff', color: 'var(--error-color)',
+                                            cursor: userActionLoading === listedUser.id ? 'wait' : 'pointer',
+                                          }}
+                                        >
+                                          <Trash2 size={13} /> Supprimer
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
                                 </td>
                               </tr>
                             ))}
@@ -1286,6 +1499,107 @@ export default function AdminDashboard() {
                         </div>
                       )}
                     </>
+                  )}
+
+                  {showUserForm && (
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }} onClick={() => setShowUserForm(false)}>
+                      <div style={{ background: '#fff', borderRadius: '16px', padding: '2rem', maxWidth: '520px', width: '100%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }} onClick={(e) => e.stopPropagation()}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                          <h3 style={{ margin: 0, color: 'var(--text-color)' }}>
+                            {editingUser ? 'Modifier l\'utilisateur' : 'Créer un utilisateur'}
+                          </h3>
+                          <button onClick={() => setShowUserForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--secondary)', lineHeight: 1 }}>
+                            <X size={20} />
+                          </button>
+                        </div>
+
+                        {userFormError && (
+                          <div style={{ color: '#721c24', background: '#f8d7da', border: '1px solid #f5c6cb', padding: '0.75rem 1rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.9rem' }}>
+                            {userFormError}
+                          </div>
+                        )}
+
+                        <form onSubmit={handleUserFormSubmit}>
+                          <div className="form-group" style={{ marginBottom: '1rem' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600 }}>Prénom *</label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              required
+                              placeholder="Ex: Yassine"
+                              value={userFormData.firstName}
+                              onChange={(e) => setUserFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                            />
+                          </div>
+                          <div className="form-group" style={{ marginBottom: '1rem' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600 }}>Nom *</label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              required
+                              placeholder="Ex: El Amrani"
+                              value={userFormData.lastName}
+                              onChange={(e) => setUserFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                            />
+                          </div>
+                          <div className="form-group" style={{ marginBottom: '1rem' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600 }}>Email *</label>
+                            <input
+                              type="email"
+                              className="form-control"
+                              required
+                              placeholder="exemple@email.com"
+                              value={userFormData.email}
+                              onChange={(e) => setUserFormData(prev => ({ ...prev, email: e.target.value }))}
+                            />
+                          </div>
+                          <div className="form-group" style={{ marginBottom: '1rem' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600 }}>Rôle *</label>
+                            <select
+                              className="form-control"
+                              value={userFormData.role}
+                              onChange={(e) => setUserFormData(prev => ({ ...prev, role: e.target.value }))}
+                            >
+                              <option value="student">Student</option>
+                              <option value="instructor">Instructor</option>
+                              <option value="admin">Admin</option>
+                            </select>
+                          </div>
+                          <div className="form-group" style={{ marginBottom: '1rem' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600 }}>
+                              Mot de passe {editingUser ? '(laisser vide pour ne pas changer)' : '*'}
+                            </label>
+                            <input
+                              type="password"
+                              className="form-control"
+                              required={!editingUser}
+                              placeholder={editingUser ? '••••••••' : 'Minimum 8 caractères'}
+                              value={userFormData.password}
+                              onChange={(e) => setUserFormData(prev => ({ ...prev, password: e.target.value }))}
+                            />
+                          </div>
+                          <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 600 }}>Bio</label>
+                            <textarea
+                              className="form-control"
+                              rows={3}
+                              placeholder="Courte présentation de l'utilisateur"
+                              value={userFormData.bio}
+                              onChange={(e) => setUserFormData(prev => ({ ...prev, bio: e.target.value }))}
+                            />
+                          </div>
+                          <button
+                            type="submit"
+                            className="btn-primary"
+                            style={{ width: '100%', padding: '0.6rem 1rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: userFormLoading ? 'wait' : 'pointer' }}
+                            disabled={userFormLoading}
+                          >
+                            {userFormLoading && <Loader size={16} className="spin" />}
+                            {userFormLoading ? 'Enregistrement...' : (editingUser ? 'Enregistrer les modifications' : 'Créer l\'utilisateur')}
+                          </button>
+                        </form>
+                      </div>
+                    </div>
                   )}
                 </div>
               )}

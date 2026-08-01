@@ -51,13 +51,13 @@ export function useAdminUsers() {
     fetchUsers();
   }, [fetchUsers]);
 
-  const verifyInstructor = async (userId, notes = 'Compte vérifié après vérification manuelle') => {
-    const response = await api.patch(`/admin/users/${userId}/verify`, { isVerified: true, notes });
+  const verifyInstructor = async (userId, isVerified = true, notes = 'Compte vérifié après vérification manuelle') => {
+    const response = await api.patch(`/admin/users/${userId}/verify`, { isVerified, notes });
     return response.data;
   };
 
-  const verifyStudent = async (userId, notes = 'Compte vérifié après vérification manuelle') => {
-    const response = await api.patch(`/admin/users/${userId}/verify-student`, { isVerified: true, notes });
+  const verifyStudent = async (userId, isVerified = true, notes = 'Compte vérifié après vérification manuelle') => {
+    const response = await api.patch(`/admin/users/${userId}/verify-student`, { isVerified, notes });
     return response.data;
   };
 
@@ -66,7 +66,66 @@ export function useAdminUsers() {
     return response.data;
   };
 
-  return { users, loading, error, refreshUsers: fetchUsers, verifyInstructor, verifyStudent, restoreUser };
+  const createUser = async (userData) => {
+    const response = await api.post('/admin/users', userData);
+    return response.data;
+  };
+
+  const updateUser = async (userId, userData) => {
+    const response = await api.patch(`/admin/users/${userId}`, userData);
+    return response.data;
+  };
+
+  const deleteUser = async (userId) => {
+    const response = await api.delete(`/admin/users/${userId}`);
+    return response.data;
+  };
+
+  const resetPassword = async (userId) => {
+    const response = await api.patch(`/admin/users/${userId}/reset-password`);
+    return response.data;
+  };
+
+  return {
+    users,
+    loading,
+    error,
+    refreshUsers: fetchUsers,
+    verifyInstructor,
+    verifyStudent,
+    restoreUser,
+    createUser,
+    updateUser,
+    deleteUser,
+    resetPassword,
+  };
+}
+
+export function usePendingKyc() {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchPending = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await api.get('/admin/users/pending-kyc');
+      setUsers(response.data?.data?.users || response.data?.data || []);
+    } catch (err) {
+      console.error('Failed to fetch pending KYC:', err);
+      setError('Impossible de charger les demandes KYC.');
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPending();
+  }, [fetchPending]);
+
+  return { users, loading, error, refreshPendingKyc: fetchPending };
 }
 
 export function useAdminInstructors() {
