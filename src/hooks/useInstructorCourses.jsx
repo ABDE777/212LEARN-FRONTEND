@@ -208,3 +208,95 @@ export function useQuiz(quizId) {
 
   return { quiz, loading, error, refreshQuiz: fetchQuiz };
 }
+
+export function useUpdateQuiz() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const updateQuiz = async (quizId, data) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await api.patch(`/quizzes/${quizId}`, data);
+      return response.data?.data?.quiz || response.data?.data || response.data;
+    } catch (err) {
+      console.error('Failed to update quiz:', err);
+      const message = err.response?.data?.error?.message || err.response?.data?.message || 'Impossible de mettre à jour le quiz.';
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { updateQuiz, loading, error };
+}
+
+export function useDeleteQuiz() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const deleteQuiz = async (quizId) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await api.delete(`/quizzes/${quizId}`);
+      return response.data;
+    } catch (err) {
+      console.error('Failed to delete quiz:', err);
+      const message = err.response?.data?.error?.message || err.response?.data?.message || 'Impossible de supprimer le quiz.';
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { deleteQuiz, loading, error };
+}
+
+export function useUpdateQuestion() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const updateQuestion = async (questionId, data) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await api.patch(`/questions/${questionId}`, data);
+      return response.data?.data?.question || response.data?.data || response.data;
+    } catch (err) {
+      console.error('Failed to update question:', err);
+      const message = err.response?.data?.error?.message || err.response?.data?.message || 'Impossible de mettre à jour la question.';
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { updateQuestion, loading, error };
+}
+
+export function useDeleteQuestion() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const deleteQuestion = async (questionId) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await api.delete(`/questions/${questionId}`);
+      return response.data;
+    } catch (err) {
+      console.error('Failed to delete question:', err);
+      const message = err.response?.data?.error?.message || err.response?.data?.message || 'Impossible de supprimer la question.';
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { deleteQuestion, loading, error };
+}

@@ -5,9 +5,9 @@ import {
   BookOpen, Plus, Video, Users, User, LogOut,
   Calendar, Clock, Link, ExternalLink, Copy, Check,
   CheckCircle, ChevronRight, Zap, Mail, Search,
-  HelpCircle, Brain, Lock,
+  HelpCircle, Brain, Lock, Pencil, Trash2, X, Save,
 } from 'lucide-react';
-import { useInstructorCourses, useCreateCourse, useCourseCurriculum, useCourseQuizzes, useCreateQuiz, useGenerateAiQuiz, useAddQuizQuestion, useQuiz } from '../hooks/useInstructorCourses';
+import { useInstructorCourses, useCreateCourse, useCourseCurriculum, useCourseQuizzes, useCreateQuiz, useGenerateAiQuiz, useAddQuizQuestion, useQuiz, useUpdateQuiz, useDeleteQuiz, useUpdateQuestion, useDeleteQuestion } from '../hooks/useInstructorCourses';
 import { useMeetings } from '../hooks/useMeetings';
 import { useCourseStudents } from '../hooks/useCourseStudents';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -701,12 +701,26 @@ function QuizzesTab({ courses }) {
   const [questionOptions, setQuestionOptions] = useState(['', '', '', '']);
   const [questionCorrect, setQuestionCorrect] = useState('');
 
+  const [editingQuizId, setEditingQuizId] = useState(null);
+  const [quizEditTitle, setQuizEditTitle] = useState('');
+
+  const [editingQuestionId, setEditingQuestionId] = useState(null);
+  const [editQStatement, setEditQStatement] = useState('');
+  const [editQOptions, setEditQOptions] = useState(['', '', '', '']);
+  const [editQCorrect, setEditQCorrect] = useState('');
+
+  const [quizMsg, setQuizMsg] = useState(null);
+
   const { curriculum, loading: currLoading } = useCourseCurriculum(selectedCourseId);
   const { quizzes, loading: quizzesLoading, refreshQuizzes } = useCourseQuizzes(selectedCourseId);
   const { createQuiz, loading: createLoading, error: createError } = useCreateQuiz();
   const { generateQuiz, loading: genLoading, error: genError } = useGenerateAiQuiz();
   const { addQuestion, loading: addQLoading, error: addQError } = useAddQuizQuestion();
-  const { quiz: viewingQuiz, loading: viewingLoading, error: viewingError } = useQuiz(viewingQuizId);
+  const { quiz: viewingQuiz, loading: viewingLoading, error: viewingError, refreshQuiz } = useQuiz(viewingQuizId);
+  const { updateQuiz, error: updateQuizError } = useUpdateQuiz();
+  const { deleteQuiz, loading: deleteQuizLoading } = useDeleteQuiz();
+  const { updateQuestion, error: updateQuestionError } = useUpdateQuestion();
+  const { deleteQuestion, loading: deleteQuestionLoading } = useDeleteQuestion();
 
   const selectedCourse = courses.find(c => c.id === selectedCourseId);
 
@@ -721,6 +735,7 @@ function QuizzesTab({ courses }) {
       await createQuiz(selectedLessonId, quizTitle.trim());
       setQuizTitle('');
       setSelectedLessonId('');
+      setQuizMsg({ type: 'success', text: 'Quiz créé avec succès.' });
       await refreshQuizzes();
     } catch (_) {}
   };
@@ -734,6 +749,7 @@ function QuizzesTab({ courses }) {
       setAiPrompt('');
       setAiCount(5);
       setAiLessonId('');
+      setQuizMsg({ type: 'success', text: 'Quiz généré avec succès.' });
       await refreshQuizzes();
     } catch (_) {}
   };
@@ -750,6 +766,7 @@ function QuizzesTab({ courses }) {
       setQuestionStatement('');
       setQuestionOptions(['', '', '', '']);
       setQuestionCorrect('');
+      setQuizMsg({ type: 'success', text: 'Question ajoutée avec succès.' });
     } catch (_) {}
   };
 
@@ -761,14 +778,110 @@ function QuizzesTab({ courses }) {
     });
   };
 
+  const handleQuizStatusChange = async (quizId, status) => {
+    try {
+      await updateQuiz(quizId, { validationStatus: status });
+      setQuizMsg({ type: 'success', text: `Statut du quiz défini sur "${status}".` });
+      await refreshQuizzes();
+      if (viewingQuizId === quizId) await refreshQuiz();
+    } catch (_) {}
+  };
+
+  const startEditQuiz = (quiz) => {
+    setEditingQuizId(quiz.id);
+    setQuizEditTitle(quiz.title || '');
+  };
+
+  const handleSaveQuizTitle = async (e) => {
+    e.preventDefault();
+    if (!editingQuizId || !quizEditTitle.trim()) return;
+    try {
+      await updateQuiz(editingQuizId, { title: quizEditTitle.trim() });
+      setEditingQuizId(null);
+      setQuizMsg({ type: 'success', text: 'Titre du quiz mis à jour.' });
+      await refreshQuizzes();
+      if (viewingQuizId === editingQuizId) await refreshQuiz();
+    } catch (_) {}
+  };
+
+  const handleDeleteQuiz = async (quiz) => {
+    const confirmed = window.confirm(`Supprimer le quiz "${quiz.title}" et toutes ses questions ?`);
+    if (!confirmed) return;
+    try {
+      await deleteQuiz(quiz.id);
+      if (viewingQuizId === quiz.id) setViewingQuizId(null);
+      setQuizMsg({ type: 'success', text: 'Quiz supprimé avec succès.' });
+      await refreshQuizzes();
+    } catch (_) {}
+  };
+
+  const startEditQuestion = (q) => {
+    const opts = q.options || [];
+    setEditingQuestionId(q.id);
+    setEditQStatement(q.statement || '');
+    setEditQOptions(opts.length === 4 ? [...opts] : [...opts, ...Array(4 - opts.length).fill('')].slice(0, 4));
+    setEditQCorrect(q.correctAnswer || '');
+  };
+
+  const handleEditOptionChange = (idx, val) => {
+    setEditQOptions(prev => {
+      const next = [...prev];
+      next[idx] = val;
+      return next;
+    });
+  };
+
+  const handleSaveQuestion = async (e) => {
+    e.preventDefault();
+    if (!editingQuestionId || !editQStatement.trim() || editQOptions.some(o => !o.trim()) || !editQCorrect.trim()) return;
+    try {
+      await updateQuestion(editingQuestionId, {
+        statement: editQStatement.trim(),
+        options: editQOptions.map(o => o.trim()),
+        correctAnswer: editQCorrect.trim(),
+      });
+      setEditingQuestionId(null);
+      setQuizMsg({ type: 'success', text: 'Question mise à jour avec succès.' });
+      await refreshQuiz();
+    } catch (_) {}
+  };
+
+  const handleDeleteQuestion = async (question) => {
+    const confirmed = window.confirm('Supprimer cette question ?');
+    if (!confirmed) return;
+    try {
+      await deleteQuestion(question.id);
+      setQuizMsg({ type: 'success', text: 'Question supprimée avec succès.' });
+      await refreshQuiz();
+    } catch (_) {}
+  };
+
   return (
     <div>
       <div style={{ marginBottom: '1.5rem' }}>
         <h2 style={{ fontSize: '1.5rem', marginBottom: '0.2rem' }}>Quiz</h2>
         <p style={{ color: 'var(--secondary)', fontSize: '0.9rem' }}>
-          Créez et gérez des quiz pour vos cours.
+          Créez, modifiez et gérez des quiz pour vos cours.
         </p>
       </div>
+
+      {quizMsg && (
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '0.75rem 1rem', borderRadius: '8px', marginBottom: '1rem',
+          background: quizMsg.type === 'success' ? '#d4edda' : '#f8d7da',
+          border: `1px solid ${quizMsg.type === 'success' ? '#c3e6cb' : '#f5c6cb'}`,
+          color: quizMsg.type === 'success' ? '#155724' : '#721c24',
+        }}>
+          <span>{quizMsg.text}</span>
+          <button onClick={() => setQuizMsg(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', fontWeight: 700 }}>×</button>
+        </div>
+      )}
+      {(updateQuizError || updateQuestionError) && (
+        <div style={{ color: '#721c24', background: '#f8d7da', border: '1px solid #f5c6cb', padding: '0.75rem 1rem', borderRadius: '8px', marginBottom: '1rem' }}>
+          {updateQuizError || updateQuestionError}
+        </div>
+      )}
 
       {/* Course selector */}
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
@@ -776,7 +889,7 @@ function QuizzesTab({ courses }) {
           <button
             key={c.id}
             type="button"
-            onClick={() => { setSelectedCourseId(c.id); setSelectedLessonId(''); setAiLessonId(''); setNewQuestionQuizId(''); setViewingQuizId(null); }}
+            onClick={() => { setSelectedCourseId(c.id); setSelectedLessonId(''); setAiLessonId(''); setNewQuestionQuizId(''); setViewingQuizId(null); setEditingQuizId(null); setEditingQuestionId(null); setQuizMsg(null); }}
             style={{
               padding: '0.35rem 1rem', borderRadius: '9999px', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
               border: `1.5px solid ${selectedCourseId === c.id ? 'var(--primary)' : 'var(--border-color)'}`,
@@ -793,17 +906,46 @@ function QuizzesTab({ courses }) {
       {/* View quiz detail */}
       {viewingQuizId && (
         <div style={{ marginBottom: '2rem', padding: '1.5rem', border: '1px solid var(--primary)', borderRadius: '12px', background: 'rgba(193,101,47,0.02)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', gap: '0.75rem', flexWrap: 'wrap' }}>
             <h3 style={{ fontSize: '1.1rem', color: 'var(--primary)' }}>
               {viewingQuiz ? viewingQuiz.title : 'Chargement...'}
             </h3>
-            <button
-              type="button"
-              onClick={() => setViewingQuizId(null)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--secondary)', fontWeight: 600, fontSize: '0.85rem' }}
-            >
-              Fermer
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+              {viewingQuiz && (
+                <select
+                  className="form-control"
+                  value={viewingQuiz.validationStatus || 'draft'}
+                  onChange={e => handleQuizStatusChange(viewingQuiz.id, e.target.value)}
+                  style={{ width: 'auto', padding: '0.35rem 0.6rem', fontSize: '0.82rem' }}
+                >
+                  <option value="draft">draft</option>
+                  <option value="pending">pending</option>
+                  <option value="approved">approved</option>
+                  <option value="rejected">rejected</option>
+                </select>
+              )}
+              {viewingQuiz && (
+                <button
+                  type="button"
+                  onClick={() => handleDeleteQuiz(viewingQuiz)}
+                  disabled={deleteQuizLoading}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                    padding: '0.35rem 0.8rem', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 600,
+                    border: '1px solid #f5c6cb', background: '#f8d7da', color: '#721c24', cursor: deleteQuizLoading ? 'wait' : 'pointer',
+                  }}
+                >
+                  <Trash2 size={13} /> Supprimer
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setViewingQuizId(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--secondary)', fontWeight: 600, fontSize: '0.85rem' }}
+              >
+                Fermer
+              </button>
+            </div>
           </div>
           {viewingLoading && <LoadingSpinner />}
           {!viewingLoading && viewingError && (
@@ -824,16 +966,65 @@ function QuizzesTab({ courses }) {
                 <p style={{ color: 'var(--secondary)', fontStyle: 'italic', fontSize: '0.9rem' }}>Aucune question pour l'instant.</p>
               )}
               {(viewingQuiz.questions || []).map((q, idx) => (
-                <div key={q.id || idx} style={{ padding: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px', marginBottom: '0.75rem', background: '#fff' }}>
-                  <p style={{ fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.92rem' }}>{idx + 1}. {q.statement}</p>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
-                    {(q.options || []).map((opt, oi) => (
-                      <div key={oi} style={{ padding: '0.4rem 0.6rem', borderRadius: '6px', fontSize: '0.85rem', background: opt === q.correctAnswer ? 'rgba(52,168,83,0.1)' : 'var(--bg-color)', border: `1px solid ${opt === q.correctAnswer ? 'var(--success-color)' : 'var(--border-color)'}`, color: opt === q.correctAnswer ? 'var(--success-color)' : 'var(--text-color)' }}>
-                        {opt} {opt === q.correctAnswer && '✓'}
+                editingQuestionId === q.id ? (
+                  <div key={q.id || idx} style={{ padding: '1rem', border: '1.5px solid var(--primary)', borderRadius: '8px', marginBottom: '0.75rem', background: '#fff' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                      <p style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--primary)' }}>Modifier la question</p>
+                      <button type="button" onClick={() => setEditingQuestionId(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--secondary)', fontWeight: 600, fontSize: '0.82rem' }}>Annuler</button>
+                    </div>
+                    <form onSubmit={handleSaveQuestion}>
+                      <div className="form-group" style={{ margin: 0, marginBottom: '0.75rem' }}>
+                        <label style={{ display: 'block', marginBottom: '0.3rem', fontWeight: 600, fontSize: '0.85rem' }}>Question *</label>
+                        <input type="text" className="form-control" value={editQStatement} onChange={e => setEditQStatement(e.target.value)} required />
                       </div>
-                    ))}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                        {editQOptions.map((opt, oi) => (
+                          <div key={oi} className="form-group" style={{ margin: 0 }}>
+                            <label style={{ display: 'block', marginBottom: '0.2rem', fontWeight: 500, fontSize: '0.8rem', color: 'var(--secondary)' }}>Option {oi + 1} *</label>
+                            <input type="text" className="form-control" value={opt} onChange={e => handleEditOptionChange(oi, e.target.value)} required />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="form-group" style={{ margin: 0, marginBottom: '1rem', maxWidth: '400px' }}>
+                        <label style={{ display: 'block', marginBottom: '0.3rem', fontWeight: 600, fontSize: '0.85rem' }}>Bonne réponse *</label>
+                        <select className="form-control" value={editQCorrect} onChange={e => setEditQCorrect(e.target.value)} required>
+                          <option value="">-- Choisir la bonne réponse --</option>
+                          {editQOptions.filter(o => o.trim()).map((opt, oi) => (
+                            <option key={oi} value={opt.trim()}>{opt.trim()}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={!editQStatement.trim() || editQOptions.some(o => !o.trim()) || !editQCorrect.trim()}
+                        style={{ padding: '0.5rem 1.1rem', fontSize: '0.85rem', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
+                      >
+                        Enregistrer
+                      </button>
+                    </form>
                   </div>
-                </div>
+                ) : (
+                  <div key={q.id || idx} style={{ padding: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px', marginBottom: '0.75rem', background: '#fff' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                      <p style={{ fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.92rem' }}>{idx + 1}. {q.statement}</p>
+                      <div style={{ display: 'flex', gap: '0.35rem', flexShrink: 0 }}>
+                        <button type="button" onClick={() => startEditQuestion(q)} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.3rem 0.7rem', borderRadius: '6px', fontSize: '0.78rem', fontWeight: 600, border: '1px solid var(--border-color)', background: '#fff', color: 'var(--text-color)', cursor: 'pointer' }}>
+                          <Pencil size={12} /> Modifier
+                        </button>
+                        <button type="button" onClick={() => handleDeleteQuestion(q)} disabled={deleteQuestionLoading} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.3rem 0.7rem', borderRadius: '6px', fontSize: '0.78rem', fontWeight: 600, border: '1px solid #f5c6cb', background: '#fff', color: 'var(--error-color)', cursor: deleteQuestionLoading ? 'wait' : 'pointer' }}>
+                          <Trash2 size={12} /> Supprimer
+                        </button>
+                      </div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
+                      {(q.options || []).map((opt, oi) => (
+                        <div key={oi} style={{ padding: '0.4rem 0.6rem', borderRadius: '6px', fontSize: '0.85rem', background: opt === q.correctAnswer ? 'rgba(52,168,83,0.1)' : 'var(--bg-color)', border: `1px solid ${opt === q.correctAnswer ? 'var(--success-color)' : 'var(--border-color)'}`, color: opt === q.correctAnswer ? 'var(--success-color)' : 'var(--text-color)' }}>
+                          {opt} {opt === q.correctAnswer && '✓'}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
               ))}
             </div>
           )}
@@ -1003,9 +1194,28 @@ function QuizzesTab({ courses }) {
         {!quizzesLoading && quizzes.length > 0 && (
           <div style={{ display: 'grid', gap: '0.75rem' }}>
             {quizzes.map(quiz => (
-              <div key={quiz.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.25rem', border: '1px solid var(--border-color)', borderRadius: '10px', background: '#fff' }}>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.2rem' }}>{quiz.title}</p>
+              <div key={quiz.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.25rem', border: '1px solid var(--border-color)', borderRadius: '10px', background: '#fff', gap: '1rem', flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: '220px' }}>
+                  {editingQuizId === quiz.id ? (
+                    <form onSubmit={handleSaveQuizTitle} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={quizEditTitle}
+                        onChange={e => setQuizEditTitle(e.target.value)}
+                        autoFocus
+                        style={{ padding: '0.35rem 0.6rem', fontSize: '0.88rem' }}
+                      />
+                      <button type="submit" disabled={!quizEditTitle.trim()} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.35rem 0.8rem', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, background: 'var(--primary)', color: '#fff', border: 'none', cursor: 'pointer' }}>
+                        <Save size={13} /> OK
+                      </button>
+                      <button type="button" onClick={() => setEditingQuizId(null)} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.35rem 0.7rem', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600, background: 'transparent', color: 'var(--secondary)', border: '1px solid var(--border-color)', cursor: 'pointer' }}>
+                        <X size={13} /> Annuler
+                      </button>
+                    </form>
+                  ) : (
+                    <p style={{ fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.2rem' }}>{quiz.title}</p>
+                  )}
                   <p style={{ fontSize: '0.82rem', color: 'var(--secondary)' }}>
                     {quiz.lessonTitle || 'Leçon'} {quiz.sectionTitle ? `· ${quiz.sectionTitle}` : ''} · {quiz.questionCount || 0} question{(quiz.questionCount || 0) !== 1 ? 's' : ''}
                     {' · '}
@@ -1019,13 +1229,42 @@ function QuizzesTab({ courses }) {
                     </p>
                   )}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setViewingQuizId(quiz.id)}
-                  style={{ padding: '0.4rem 0.9rem', fontSize: '0.82rem', fontWeight: 600, border: '1px solid var(--primary)', borderRadius: '8px', background: 'transparent', color: 'var(--primary)', cursor: 'pointer', whiteSpace: 'nowrap' }}
-                >
-                  Voir
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
+                  <select
+                    className="form-control"
+                    value={quiz.validationStatus || 'draft'}
+                    onChange={e => handleQuizStatusChange(quiz.id, e.target.value)}
+                    style={{ width: 'auto', padding: '0.35rem 0.5rem', fontSize: '0.8rem' }}
+                    title="Changer le statut"
+                  >
+                    <option value="draft">draft</option>
+                    <option value="pending">pending</option>
+                    <option value="approved">approved</option>
+                    <option value="rejected">rejected</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => editingQuizId === quiz.id ? setEditingQuizId(null) : startEditQuiz(quiz)}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.4rem 0.8rem', fontSize: '0.82rem', fontWeight: 600, border: '1px solid var(--border-color)', borderRadius: '8px', background: '#fff', color: 'var(--text-color)', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                  >
+                    <Pencil size={13} /> Modifier
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewingQuizId(quiz.id)}
+                    style={{ padding: '0.4rem 0.9rem', fontSize: '0.82rem', fontWeight: 600, border: '1px solid var(--primary)', borderRadius: '8px', background: 'transparent', color: 'var(--primary)', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                  >
+                    Voir
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteQuiz(quiz)}
+                    disabled={deleteQuizLoading}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.4rem 0.8rem', fontSize: '0.82rem', fontWeight: 600, border: '1px solid #f5c6cb', borderRadius: '8px', background: '#fff', color: 'var(--error-color)', cursor: deleteQuizLoading ? 'wait' : 'pointer', whiteSpace: 'nowrap' }}
+                  >
+                    <Trash2 size={13} /> Supprimer
+                  </button>
+                </div>
               </div>
             ))}
           </div>
