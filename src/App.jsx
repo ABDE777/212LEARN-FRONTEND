@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 // Context
 import { AuthProvider } from './context/AuthContext';
@@ -94,6 +95,7 @@ function App() {
         <FooterWrapper />
       </Router>
       <Analytics />
+      <SpeedInsights />
     </AuthProvider>
   );
 }
