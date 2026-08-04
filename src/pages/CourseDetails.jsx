@@ -1,6 +1,8 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Clock, Users, Star, BookOpen, PlayCircle, CheckCircle } from 'lucide-react';
+import { Clock, Users, Star, BookOpen, PlayCircle, CheckCircle, Heart, ShoppingCart } from 'lucide-react';
 import { useCourse, useCourseCurriculum } from '../hooks/useCourses';
+import { useCart } from '../hooks/useCart';
+import { useWishlist } from '../hooks/useWishlist';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -11,6 +13,8 @@ export default function CourseDetails() {
   const navigate = useNavigate();
   const { course, loading: courseLoading, error: courseError } = useCourse(id);
   const { curriculum, loading: curriculumLoading } = useCourseCurriculum(id);
+  const { addToCart, loading: cartLoading } = useCart();
+  const { addToWishlist, loading: wishlistLoading } = useWishlist();
 
   if (courseLoading || curriculumLoading) {
     return <LoadingSpinner />;
@@ -226,6 +230,29 @@ export default function CourseDetails() {
                 >
                   {course.isEnrolled ? 'Continuer le cours' : "S'inscrire maintenant"}
                 </Button>
+
+                {!course.isEnrolled && (
+                  <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                    <Button
+                      variant="outline"
+                      style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}
+                      onClick={() => addToCart(course.id)}
+                      disabled={cartLoading}
+                    >
+                      <ShoppingCart size={18} />
+                      Panier
+                    </Button>
+                    <Button
+                      variant="outline"
+                      style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}
+                      onClick={() => addToWishlist(course.id)}
+                      disabled={wishlistLoading}
+                    >
+                      <Heart size={18} />
+                      Souhaits
+                    </Button>
+                  </div>
+                )}
                 
                 <p style={{ textAlign: 'center', fontSize: '0.9rem', color: 'var(--secondary)', marginBottom: '1.5rem' }}>
                   Garantie satisfait ou remboursé 30 jours

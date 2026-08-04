@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { Trophy, Flame, Target, BookOpen, Clock, TrendingUp, Award, ChevronRight, LogOut, User, Lock } from 'lucide-react';
+import { Trophy, Flame, Target, BookOpen, Clock, TrendingUp, Award, ChevronRight, LogOut, User, Lock, ShoppingCart, Heart } from 'lucide-react';
 import { useStudentAchievements } from '../hooks/useStudentDashboard';
 import Card from '../components/Card';
 import Button from '../components/Button';
@@ -97,6 +97,20 @@ export default function StudentDashboard() {
             >
               <Trophy size={18} />
               <span>Tableau de bord</span>
+            </button>
+            <button
+              onClick={() => navigate('/cart')}
+              className="sidebar-menu-btn"
+            >
+              <ShoppingCart size={18} />
+              <span>Mon Panier</span>
+            </button>
+            <button
+              onClick={() => navigate('/wishlist')}
+              className="sidebar-menu-btn"
+            >
+              <Heart size={18} />
+              <span>Mes Souhaits</span>
             </button>
             <button
               onClick={() => setActiveTab('profile')}

@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, ShoppingCart, Heart } from 'lucide-react';
 import { useCourses } from '../hooks/useCourses';
 import { useCategories } from '../hooks/useCategories';
+import { useCart } from '../hooks/useCart';
+import { useWishlist } from '../hooks/useWishlist';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -18,6 +20,8 @@ export default function Catalog() {
 
   const { courses, loading: coursesLoading, error: coursesError } = useCourses(filters);
   const { categories, loading: categoriesLoading } = useCategories();
+  const { addToCart, loading: cartLoading } = useCart();
+  const { addToWishlist, loading: wishlistLoading } = useWishlist();
 
   // Flatten nested categories into a single array
   const flattenCategories = (cats) => {
@@ -233,7 +237,8 @@ export default function Catalog() {
                     justifyContent: 'space-between', 
                     alignItems: 'center',
                     paddingTop: '1rem',
-                    borderTop: '1px solid var(--border-color)'
+                    borderTop: '1px solid var(--border-color)',
+                    marginBottom: '1rem'
                   }}>
                     <div>
                       <span style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--primary)' }}>
@@ -248,6 +253,32 @@ export default function Catalog() {
                         </span>
                       )}
                     </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <Button 
+                      variant="primary" 
+                      style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        addToCart(course.id);
+                      }}
+                      disabled={cartLoading}
+                    >
+                      <ShoppingCart size={16} />
+                      Panier
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        addToWishlist(course.id);
+                      }}
+                      disabled={wishlistLoading}
+                    >
+                      <Heart size={16} />
+                      Souhaits
+                    </Button>
                   </div>
                 </Card>
               </Link>

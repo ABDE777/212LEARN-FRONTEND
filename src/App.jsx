@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { Analytics } from '@vercel/analytics/react';
 
 // Context
 import { AuthProvider } from './context/AuthContext';
@@ -20,6 +21,8 @@ import Catalog from './pages/Catalog';
 import About from './pages/About';
 import CourseDetails from './pages/CourseDetails';
 import Checkout from './pages/Checkout';
+import Cart from './pages/Cart';
+import Wishlist from './pages/Wishlist';
 import ClassroomPlayer from './pages/ClassroomPlayer';
 import QuizPlayer from './pages/QuizPlayer';
 import AssignmentSubmit from './pages/AssignmentSubmit';
@@ -65,6 +68,8 @@ function App() {
           {/* Protected Routes */}
           <Route element={<ProtectedLayout />}>
             <Route path="/dashboard" element={<Profile />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/wishlist" element={<Wishlist />} />
           </Route>
 
           {/* Student Routes */}
@@ -88,6 +93,7 @@ function App() {
         </Routes>
         <FooterWrapper />
       </Router>
+      <Analytics />
     </AuthProvider>
   );
 }
