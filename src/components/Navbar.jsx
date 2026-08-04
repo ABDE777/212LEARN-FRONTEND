@@ -1,13 +1,79 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { User, LogOut, ChevronDown } from 'lucide-react';
+import { User, LogOut, ChevronDown, ShoppingCart, Heart } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../hooks/useCart';
+import { useWishlist } from '../hooks/useWishlist';
+
+function NavIconBtn({ to, icon, count }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <Link
+      to={to}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        position: 'relative',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '40px',
+        height: '40px',
+        borderRadius: '50%',
+        background: hovered ? 'var(--bg-color)' : 'transparent',
+        border: '1px solid',
+        borderColor: hovered ? 'var(--border-color)' : 'transparent',
+        color: hovered ? 'var(--primary)' : 'var(--secondary)',
+        textDecoration: 'none',
+        transition: 'all 0.2s ease',
+        flexShrink: 0,
+      }}
+    >
+      {icon}
+      {count > 0 && (
+        <span style={{
+          position: 'absolute',
+          top: '-4px',
+          right: '-4px',
+          minWidth: '18px',
+          height: '18px',
+          padding: '0 4px',
+          borderRadius: '999px',
+          background: 'var(--primary)',
+          color: '#fff',
+          fontSize: '0.68rem',
+          fontWeight: 700,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          lineHeight: 1,
+          boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
+        }}>
+          {count > 99 ? '99+' : count}
+        </span>
+      )}
+    </Link>
+  );
+}
 
 function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
   const location = useLocation();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  const { cart, fetchCart } = useCart();
+  const { wishlist, fetchWishlist } = useWishlist();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchCart();
+      fetchWishlist();
+    }
+  }, [isAuthenticated, fetchCart, fetchWishlist]);
+
+  const cartCount = cart?.items?.length || 0;
+  const wishlistCount = wishlist?.items?.length ?? (Array.isArray(wishlist) ? wishlist.length : 0);
 
   const getDashboardPath = (role) => {
     const normalizedRole = role?.toUpperCase();
@@ -53,7 +119,25 @@ function Navbar() {
         <Link to="/courses" className={`nav-center-link ${location.pathname === '/courses' ? 'active' : ''}`}>Cours</Link>
         <Link to="/categories" className={`nav-center-link ${location.pathname === '/categories' ? 'active' : ''}`}>Catégories</Link>
       </div>
-      {isAuthenticated ? (
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        {isAuthenticated && (
+          <>
+            <NavIconBtn
+              to="/wishlist"
+              icon={<Heart size={18} />}
+              count={wishlistCount}
+            />
+            <NavIconBtn
+              to="/cart"
+              icon={<ShoppingCart size={18} />}
+              count={cartCount}
+            />
+            <div style={{ width: '1px', height: '24px', background: 'var(--border-color)', margin: '0 0.25rem' }} />
+          </>
+        )}
+
+        {isAuthenticated ? (
           <div ref={dropdownRef} style={{ position: 'relative' }}>
             <button
               onClick={() => setDropdownOpen((prev) => !prev)}
@@ -215,6 +299,7 @@ function Navbar() {
             </Link>
           </React.Fragment>
         )}
+      </div>
 
       <style>{`
         .nav-link:hover {
