@@ -170,7 +170,11 @@ export default function Cart() {
               <Button 
                 variant="primary" 
                 style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}
-                onClick={() => navigate('/checkout')} // Adjust based on your payment flow integration
+                onClick={() => {
+                  // Navigate to checkout for the first item in the cart
+                  const firstCourseId = cartItems[0]?.courseId;
+                  if (firstCourseId) navigate(`/courses/${firstCourseId}/checkout`);
+                }}
                 disabled={loading}
               >
                 Passer la commande <ArrowRight size={18} />

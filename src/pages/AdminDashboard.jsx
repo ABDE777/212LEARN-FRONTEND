@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import Navbar from '../components/Navbar';
-import { Users, BookOpen, Folder, Settings, User, LogOut, FileText, Pencil, Trash2, BarChart3, TrendingUp, DollarSign, ShieldCheck, ShieldAlert, ChevronLeft, ChevronRight, RotateCcw, Lock, Plus, Mail, X, Loader } from 'lucide-react';
+import { Users, BookOpen, Folder, Settings, User, LogOut, FileText, Pencil, Trash2, BarChart3, TrendingUp, DollarSign, ShieldCheck, ShieldAlert, ChevronLeft, ChevronRight, RotateCcw, Lock, Plus, Mail, X, Loader, Wallet, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { useWafacash } from '../hooks/useWafacash';
 import {
   useAdminUsers,
   useAdminCourses,
@@ -617,7 +618,155 @@ function AdminCategoryCard({ category, parentOptions, onSave, saveLoading, saveE
   );
 }
 
+function WafacashTab() {
+  const { getPendingPayments, verifyPayment, loading, error } = useWafacash();
+  const [payments, setPayments] = useState([]);
+  const [verifyLoading, setVerifyLoading] = useState(null);
+  const [notes, setNotes] = useState({});
+  const [actionMsg, setActionMsg] = useState(null);
+
+  const loadPayments = useCallback(async () => {
+    try {
+      const data = await getPendingPayments();
+      setPayments(data?.payments || data || []);
+    } catch (err) {
+      console.error('Failed to load pending payments', err);
+    }
+  }, [getPendingPayments]);
+
+  useEffect(() => {
+    loadPayments();
+  }, [loadPayments]);
+
+  const handleVerify = async (paymentId, action) => {
+    setVerifyLoading(paymentId + action);
+    setActionMsg(null);
+    try {
+      await verifyPayment(paymentId, action, notes[paymentId] || '');
+      setActionMsg({ type: 'success', text: action === 'approve' ? 'Paiement approuvé ! L\'étudiant a maintenant accès au cours.' : 'Paiement rejeté.' });
+      await loadPayments();
+    } catch (err) {
+      setActionMsg({ type: 'error', text: err.response?.data?.error?.message || 'Impossible de traiter cette action.' });
+    } finally {
+      setVerifyLoading(null);
+    }
+  };
+
+  const statusBadge = (status) => {
+    const styles = {
+      WAITING_VERIFICATION: { bg: '#fff8e1', color: '#b26a00', icon: <Clock size={14} />, label: 'En attente' },
+      PENDING: { bg: '#e8f4fd', color: '#2D8CFF', icon: <Clock size={14} />, label: 'Pending' },
+      PAID: { bg: '#e8f5e9', color: '#27ae60', icon: <CheckCircle size={14} />, label: 'Payé' },
+      REJECTED: { bg: '#ffebee', color: '#c62828', icon: <XCircle size={14} />, label: 'Rejeté' },
+    };
+    const s = styles[status] || { bg: '#f5f5f5', color: '#666', icon: null, label: status };
+    return (
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 10px', borderRadius: '999px', fontSize: '0.78rem', fontWeight: 600, background: s.bg, color: s.color }}>
+        {s.icon}{s.label}
+      </span>
+    );
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+        <h2 style={{ fontSize: '1.5rem' }}>Paiements Wafacash en attente</h2>
+        <button onClick={loadPayments} disabled={loading} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'var(--bg-color)', cursor: 'pointer', fontWeight: 500 }}>
+          <RotateCcw size={16} /> Actualiser
+        </button>
+      </div>
+      <p style={{ color: 'var(--secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+        Vérifiez les preuves de paiement soumises par les étudiants et approuvez ou rejetez-les.
+      </p>
+
+      {actionMsg && (
+        <div style={{ padding: '1rem', borderRadius: '8px', marginBottom: '1rem', background: actionMsg.type === 'success' ? '#e8f5e9' : '#ffebee', color: actionMsg.type === 'success' ? '#2e7d32' : '#c62828', border: `1px solid ${actionMsg.type === 'success' ? '#c8e6c9' : '#ffcdd2'}` }}>
+          {actionMsg.text}
+        </div>
+      )}
+
+      {error && <p style={{ color: 'var(--error-color)', marginBottom: '1rem' }}>{error}</p>}
+
+      {loading && payments.length === 0 ? (
+        <LoadingSpinner />
+      ) : payments.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '4rem 2rem', background: '#fff', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+          <CheckCircle size={48} color="var(--success-color)" style={{ marginBottom: '1rem' }} />
+          <h3 style={{ color: 'var(--text-color)', marginBottom: '0.5rem' }}>Aucun paiement en attente</h3>
+          <p style={{ color: 'var(--secondary)' }}>Tous les paiements ont été traités.</p>
+        </div>
+      ) : (
+        <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: '#f8f9fa' }}>
+                {['Étudiant', 'Cours', 'Référence', 'Montant', 'MTCN', 'Statut', 'Reçu', 'Notes', 'Actions'].map(h => (
+                  <th key={h} style={{ textAlign: 'left', padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-color)', fontSize: '0.82rem', color: 'var(--secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {payments.map((p) => (
+                <tr key={p.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                  <td style={{ padding: '0.85rem 1rem', color: 'var(--text-color)', fontWeight: 500 }}>
+                    {p.student?.firstName} {p.student?.lastName}
+                    <div style={{ fontSize: '0.78rem', color: 'var(--secondary)' }}>{p.student?.email}</div>
+                  </td>
+                  <td style={{ padding: '0.85rem 1rem', color: 'var(--secondary)', fontSize: '0.9rem', maxWidth: '160px' }}>
+                    <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.course?.title || '—'}</div>
+                  </td>
+                  <td style={{ padding: '0.85rem 1rem', fontFamily: 'monospace', fontSize: '0.88rem', color: 'var(--text-color)', fontWeight: 600 }}>{p.paymentReference}</td>
+                  <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: 'var(--primary)', whiteSpace: 'nowrap' }}>{p.amount} MAD</td>
+                  <td style={{ padding: '0.85rem 1rem', fontFamily: 'monospace', fontSize: '0.88rem', color: 'var(--secondary)' }}>{p.mtcn || '—'}</td>
+                  <td style={{ padding: '0.85rem 1rem' }}>{statusBadge(p.status)}</td>
+                  <td style={{ padding: '0.85rem 1rem' }}>
+                    {p.receiptUrl ? (
+                      <a href={p.receiptUrl} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', background: '#e8f4fd', color: '#2D8CFF', borderRadius: '6px', textDecoration: 'none', fontSize: '0.82rem', fontWeight: 500 }}>
+                        Voir reçu
+                      </a>
+                    ) : '—'}
+                  </td>
+                  <td style={{ padding: '0.85rem 1rem' }}>
+                    <input
+                      type="text"
+                      placeholder="Notes optionnelles..."
+                      value={notes[p.id] || ''}
+                      onChange={(e) => setNotes(prev => ({ ...prev, [p.id]: e.target.value }))}
+                      style={{ width: '100%', minWidth: '130px', padding: '6px 10px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '0.82rem', background: 'var(--bg-color)', color: 'var(--text-color)' }}
+                    />
+                  </td>
+                  <td style={{ padding: '0.85rem 1rem' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button
+                        onClick={() => handleVerify(p.id, 'approve')}
+                        disabled={!!verifyLoading}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '6px 12px', background: '#e8f5e9', color: '#2e7d32', border: '1px solid #c8e6c9', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.82rem', whiteSpace: 'nowrap' }}
+                      >
+                        {verifyLoading === p.id + 'approve' ? <Loader size={14} className="spin" /> : <CheckCircle size={14} />}
+                        Approuver
+                      </button>
+                      <button
+                        onClick={() => handleVerify(p.id, 'reject')}
+                        disabled={!!verifyLoading}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '6px 12px', background: '#ffebee', color: '#c62828', border: '1px solid #ffcdd2', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.82rem', whiteSpace: 'nowrap' }}
+                      >
+                        {verifyLoading === p.id + 'reject' ? <Loader size={14} className="spin" /> : <XCircle size={14} />}
+                        Rejeter
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
+
   const USERS_PER_PAGE = 10;
   const [activeTab, setActiveTab] = useState('users');
   const [userSubTab, setUserSubTab] = useState('active');
@@ -1107,6 +1256,13 @@ export default function AdminDashboard() {
             >
               <BarChart3 size={18} />
               <span>Statistiques</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('wafacash')}
+              className={`sidebar-menu-btn ${activeTab === 'wafacash' ? 'active' : ''}`}
+            >
+              <Wallet size={18} />
+              <span>Paiements</span>
             </button>
             <button
               onClick={() => setActiveTab('settings')}
@@ -1970,6 +2126,8 @@ export default function AdminDashboard() {
               )}
 
               {activeTab === 'stats' && <AdminStatsTab />}
+
+              {activeTab === 'wafacash' && <WafacashTab />}
             </div>
           )}
         </main>
