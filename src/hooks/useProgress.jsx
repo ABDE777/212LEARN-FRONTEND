@@ -26,14 +26,23 @@ export function useQuizAttempts() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const submitQuizAttempt = async (quizId, answers) => {
+  const submitQuizAttempt = async (quizId, payload) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.post(`/quizzes/${quizId}/attempts`, { answers });
-      return response.data;
+      const response = await api.post(`/quizzes/${quizId}/attempts`, payload);
+      return response.data?.data || response.data;
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to submit quiz');
+      const status = err.response?.status;
+      const message =
+        err.response?.data?.error?.message ||
+        err.response?.data?.message ||
+        'Impossible de soumettre le quiz.';
+      if (status === 403) {
+        setError('Ce quiz n\'est pas disponible pour les étudiants.');
+      } else {
+        setError(message);
+      }
       throw err;
     } finally {
       setLoading(false);

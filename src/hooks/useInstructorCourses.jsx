@@ -65,7 +65,8 @@ export function useCourseCurriculum(courseId) {
     setError(null);
     try {
       const response = await api.get(`/courses/${courseId}/curriculum`);
-      setCurriculum(response.data?.data?.curriculum || []);
+      const body = response.data;
+      setCurriculum(body?.data?.sections || body?.sections || body?.data?.curriculum || body?.data?.curriculum || []);
     } catch (err) {
       console.error('Failed to fetch curriculum:', err);
       setError('Impossible de charger le programme.');

@@ -1,8 +1,9 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, PlayCircle, FileText, CheckCircle, Lock, Menu, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, PlayCircle, FileText, CheckCircle, Lock, Menu, X, HelpCircle } from 'lucide-react';
 import { useCourseCurriculum } from '../hooks/useCourses';
 import { useLessonProgress } from '../hooks/useProgress';
+import { useCourseQuizzes } from '../hooks/useInstructorCourses';
 import Card from '../components/Card';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useAuth } from '../context/AuthContext';
@@ -13,10 +14,13 @@ export default function ClassroomPlayer() {
   const { user } = useAuth();
   const { curriculum, loading, error } = useCourseCurriculum(courseId);
   const { updateProgress, loading: progressLoading } = useLessonProgress();
+  const { quizzes, loading: quizzesLoading } = useCourseQuizzes(courseId);
   
   const [currentLesson, setCurrentLesson] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [completedLessons, setCompletedLessons] = useState(new Set());
+
+  const approvedQuizzes = (quizzes || []).filter(q => q.validationStatus === 'approved');
 
   useEffect(() => {
     if (curriculum && lessonId) {
@@ -227,6 +231,38 @@ export default function ClassroomPlayer() {
                 </div>
               </div>
             ))}
+
+            {/* Quizzes section */}
+            <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)' }}>
+              <h3 style={{ margin: '0 0 0.75rem', color: 'var(--secondary)' }}>Quiz</h3>
+              {quizzesLoading && <p style={{ fontSize: '0.85rem', color: 'var(--secondary)' }}>Chargement...</p>}
+              {!quizzesLoading && approvedQuizzes.length === 0 && (
+                <p style={{ fontSize: '0.85rem', color: 'var(--secondary)' }}>
+                  Aucun quiz publié pour ce cours.
+                </p>
+              )}
+              {approvedQuizzes.map(quiz => (
+                <div
+                  key={quiz.id}
+                  onClick={() => navigate(`/learn/${courseId}/quiz/${quiz.id}`)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '0.75rem',
+                    padding: '0.75rem 1rem', borderRadius: '8px', cursor: 'pointer',
+                    background: 'var(--bg-color)', marginBottom: '0.5rem',
+                  }}
+                >
+                  <HelpCircle size={16} color="var(--primary)" />
+                  <span style={{ fontSize: '0.9rem', color: 'var(--text-color)', flex: 1 }}>
+                    {quiz.title}
+                  </span>
+                  {quiz.lastAttempt && (
+                    <span style={{ fontSize: '0.8rem', color: quiz.lastAttempt.score >= 60 ? 'var(--success-color)' : 'var(--error-color)', fontWeight: 600 }}>
+                      {quiz.lastAttempt.score}%
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 

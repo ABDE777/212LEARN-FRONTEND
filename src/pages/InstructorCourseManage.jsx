@@ -131,38 +131,26 @@ function ResourcePanel({ lesson, addResource, deleteResource }) {
     setUploadProgress(0);
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      // Use XMLHttpRequest so we can track upload progress
-      await new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        const token = window.__AUTH_TOKEN__ || localStorage.getItem('token');
-
-        xhr.upload.onprogress = (ev) => {
-          if (ev.lengthComputable) {
-            setUploadProgress(Math.round((ev.loaded / ev.total) * 100));
-          }
-        };
-
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) resolve(xhr.response);
-          else reject(new Error(JSON.parse(xhr.response)?.error?.message || `Upload failed (${xhr.status})`));
-        };
-        xhr.onerror = () => reject(new Error('Network error during upload'));
-
-        const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://backend-212learn.vercel.app/api/v1';
-        xhr.open('POST', `${baseURL}/lessons/${lesson.id}/resources`);
-        if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-        xhr.send(formData);
+      // Correct flow (avoids Vercel 413 for large files):
+      // 1) sign on backend (JSON) → 2) upload browser→Cloudinary → 3) save URL (JSON)
+      const { uploadLessonResource } = await import('../utils/uploadResource.js');
+      await uploadLessonResource({
+        lessonId: lesson.id,
+        file,
+        onProgress: setUploadProgress,
       });
 
       // Refresh curriculum to get updated resources
-      await addResource(lesson.id, formData);
+      await addResource(lesson.id, null);
       setSuccess(`"${file.name}" uploadé avec succès.`);
       setMode(null);
     } catch (err) {
-      setError(err.message || 'Échec de l\'upload. Réessayez.');
+      setError(
+        err.response?.data?.error?.message ||
+        err.response?.data?.message ||
+        err.message ||
+        'Échec de l\'upload. Réessayez.'
+      );
     } finally {
       setUploading(false);
       setUploadProgress(0);

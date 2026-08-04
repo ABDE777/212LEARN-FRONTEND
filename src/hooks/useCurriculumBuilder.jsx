@@ -86,7 +86,7 @@ export function useCurriculumBuilder(courseId) {
   };
 
   const addResource = async (lessonId, fileData) => {
-    // fileData === null means the upload was already done via XHR (with progress tracking);
+    // fileData === null means the upload was already completed (Cloudinary flow);
     // we only need to refresh the curriculum to show the new resource.
     if (fileData === null) {
       await fetchCurriculum();

@@ -725,7 +725,10 @@ function QuizzesTab({ courses }) {
   const selectedCourse = courses.find(c => c.id === selectedCourseId);
 
   const allLessons = curriculum.flatMap(sec =>
-    (sec.lessons || []).map(les => ({ id: les.id, label: `${sec.title} — ${les.title}` }))
+    (sec.lessons || []).map(les => ({
+      id: les.id || les._id,
+      label: `${sec.title || sec.name} — ${les.title || les.name || 'Leçon'}`,
+    }))
   );
 
   const handleCreateQuiz = async (e) => {
