@@ -8,22 +8,23 @@ import Card from '../components/Card';
 import Button from '../components/Button';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useAuth } from '../context/AuthContext';
+import { useCartContext } from '../context/CartContext';
 import Navbar from '../components/Navbar';
+import SEOHead from '../components/SEOHead';
 
 export default function Checkout() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  
+  const { clearCart } = useCartContext();
+
   const { course, loading: courseLoading, error: courseError } = useCourse(id);
   const { createCheckoutSession, loading: stripeLoading, error: stripeError } = useCheckout();
   const { requestPayment, submitProof, loading: wafaLoading, error: wafaError } = useWafacash();
-  
-  const [paymentMethod, setPaymentMethod] = useState('card'); // 'card' or 'wafacash'
-  
-  // Wafacash state
-  const [wafaStep, setWafaStep] = useState(1); // 1: Request, 2: Submit Proof, 3: Success
-  const [paymentData, setPaymentData] = useState(null); // holds reference and amount
+
+  const [paymentMethod, setPaymentMethod] = useState('card');
+  const [wafaStep, setWafaStep] = useState(1);
+  const [paymentData, setPaymentData] = useState(null);
   const [mtcn, setMtcn] = useState('');
   const [receiptFile, setReceiptFile] = useState(null);
   const [localError, setLocalError] = useState('');
@@ -36,11 +37,13 @@ export default function Checkout() {
 
   const handleStripeCheckout = async () => {
     if (!course || course.price === 0) {
+      await clearCart();
       navigate(`/learn/${id}/lesson/intro`);
       return;
     }
     try {
       const { checkoutUrl } = await createCheckoutSession(id);
+      await clearCart();
       if (checkoutUrl) window.location.href = checkoutUrl;
     } catch (error) {
       console.error('Checkout failed:', error);
@@ -65,11 +68,12 @@ export default function Checkout() {
       return;
     }
     if (!receiptFile) {
-      setLocalError('Veuillez uploader le reçu.');
+      setLocalError('Veuillez uploader la photo du reçu.');
       return;
     }
     try {
-      await submitProof(paymentData.paymentReference, mtcn, receiptFile);
+      await submitProof(paymentData.paymentReference || paymentData.paymentId, mtcn, receiptFile);
+      await clearCart();
       setWafaStep(3);
     } catch (error) {
       console.error('Wafacash submit failed:', error);

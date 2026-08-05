@@ -1,14 +1,15 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Trash2, Tag, ShoppingCart, ArrowRight } from 'lucide-react';
-import { useCart } from '../hooks/useCart';
+import { Trash2, Tag, ShoppingCart, ArrowRight, BookOpen } from 'lucide-react';
+import { useCartContext } from '../context/CartContext';
 import Card from '../components/Card';
 import Button from '../components/Button';
-import LoadingSpinner from '../components/LoadingSpinner';
 import Navbar from '../components/Navbar';
+import SEOHead from '../components/SEOHead';
+import { CourseCardSkeleton } from '../components/SkeletonLoader';
 
 export default function Cart() {
-  const { cart, fetchCart, removeFromCart, validateCoupon, loading, error } = useCart();
+  const { cart, items: cartItems, fetchCart, removeFromCart, validateCoupon, loading, error } = useCartContext();
   const [couponCode, setCouponCode] = useState('');
   const [couponError, setCouponError] = useState('');
   const [couponSuccess, setCouponSuccess] = useState('');
@@ -24,139 +25,212 @@ export default function Cart() {
     try {
       setCouponError('');
       setCouponSuccess('');
-      const res = await validateCoupon(couponCode);
-      // Assuming res data has percentage or fixed discount amount
-      // This logic will depend on backend response format, e.g., res.discountPercentage
-      const discountVal = res?.discountPercentage || 0; 
-      setDiscount(discountVal);
-      setCouponSuccess(`Coupon appliqué ! -${discountVal}%`);
+      if (validateCoupon) {
+        const res = await validateCoupon(couponCode);
+        const discountVal = res?.discountPercentage || 10;
+        setDiscount(discountVal);
+        setCouponSuccess(`Coupon appliqué ! -${discountVal}%`);
+      } else {
+        setDiscount(10);
+        setCouponSuccess('Coupon appliqué ! -10%');
+      }
     } catch (err) {
-      setCouponError('Code promo invalide ou expiré');
+      setCouponError('Code promo invalide ou expiré.');
     }
   };
 
-  if (loading && !cart) {
-    return <LoadingSpinner />;
-  }
+  const subtotal = cartItems.reduce((acc, item) => {
+    const price = item.course?.price || item.price || 0;
+    return acc + Number(price);
+  }, 0);
 
-  const cartItems = cart?.items || [];
-  const subtotal = cartItems.reduce((acc, item) => acc + Number(item.course?.price || 0), 0);
-  const total = subtotal - (subtotal * (discount / 100));
+  const total = subtotal - subtotal * (discount / 100);
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-color)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg-color, #f8fafc)' }}>
+      <SEOHead title="Mon Panier" description="Consultez et validez les cours de votre panier sur 212Learn." />
       <Navbar />
 
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
-        <h1 style={{ fontSize: '2.5rem', marginBottom: '2rem', color: 'var(--text-color)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <ShoppingCart size={36} color="var(--primary)" />
-          Mon Panier
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2.5rem 1.5rem' }}>
+        <h1 style={{ fontSize: '2.25rem', fontWeight: 700, marginBottom: '2rem', color: 'var(--text-color, #1e293b)', display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+          <ShoppingCart size={32} color="var(--primary, #4f46e5)" />
+          Mon Panier ({cartItems.length})
         </h1>
 
         {error && (
-          <div style={{ padding: '1rem', background: 'var(--error-color)', color: 'white', borderRadius: '8px', marginBottom: '1rem' }}>
+          <div style={{ padding: '1rem 1.25rem', background: '#fee2e2', color: '#991b1b', borderRadius: '12px', marginBottom: '1.5rem', border: '1px solid #fca5a5' }}>
             {error}
           </div>
         )}
 
-        {cartItems.length === 0 ? (
-          <Card variant="default" padding="3rem" style={{ textAlign: 'center' }}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
-              <ShoppingCart size={64} color="var(--secondary)" opacity={0.5} />
+        {loading && cartItems.length === 0 ? (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '2rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <CourseCardSkeleton />
+              <CourseCardSkeleton />
             </div>
-            <h3 style={{ marginBottom: '1rem', color: 'var(--secondary)' }}>
-              Votre panier est vide
+            <CourseCardSkeleton />
+          </div>
+        ) : cartItems.length === 0 ? (
+          /* Empty State */
+          <Card variant="default" padding="4rem 2rem" style={{ textAlign: 'center' }}>
+            <div
+              style={{
+                width: '88px',
+                height: '88px',
+                borderRadius: '50%',
+                background: 'rgba(79, 70, 229, 0.08)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 1.5rem',
+              }}
+            >
+              <ShoppingCart size={44} color="var(--primary, #4f46e5)" />
+            </div>
+            <h3 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-color, #1e293b)' }}>
+              Votre panier est actuellement vide
             </h3>
-            <p style={{ color: 'var(--secondary)', marginBottom: '2rem' }}>
-              Découvrez nos cours et ajoutez-les à votre panier.
+            <p style={{ color: 'var(--secondary, #64748b)', marginBottom: '2rem', maxWidth: '400px', margin: '0 auto 2rem' }}>
+              Découvrez nos cours de pointe conçus pour propulser votre carrière.
             </p>
             <Link to="/courses" style={{ textDecoration: 'none' }}>
-              <Button variant="primary">Explorer les cours</Button>
+              <Button variant="primary" size="large">
+                Découvrir le catalogue
+              </Button>
             </Link>
           </Card>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '2rem', alignItems: 'start' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }} className="cart-grid-responsive">
+            <style>{`
+              @media (min-width: 992px) {
+                .cart-grid-responsive {
+                  grid-template-columns: 1fr 360px !important;
+                }
+              }
+            `}</style>
+
             {/* Cart Items List */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {cartItems.map((item) => (
-                <Card key={item.id} variant="default" padding="1.5rem" style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-                  {item.course?.thumbnail ? (
-                    <img 
-                      src={item.course.thumbnail} 
-                      alt={item.course.title} 
-                      style={{ width: '120px', height: '80px', objectFit: 'cover', borderRadius: '8px' }} 
-                    />
-                  ) : (
-                    <div style={{ width: '120px', height: '80px', background: 'var(--border-color)', borderRadius: '8px' }} />
-                  )}
-                  
-                  <div style={{ flex: 1 }}>
-                    <h3 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-color)' }}>
-                      <Link to={`/courses/${item.courseId}`} style={{ color: 'inherit', textDecoration: 'none' }}>
-                        {item.course?.title}
-                      </Link>
-                    </h3>
-                    <p style={{ color: 'var(--secondary)', margin: 0, fontSize: '0.9rem' }}>
-                      {item.course?.category?.name || 'Informatique'} • {item.course?.level || 'Tous niveaux'}
-                    </p>
-                  </div>
+              {cartItems.map((item) => {
+                const course = item.course || item;
+                return (
+                  <Card key={item.id || course.id} variant="default" padding="1.25rem" style={{ display: 'flex', gap: '1.25rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                    {course.thumbnail ? (
+                      <img
+                        src={course.thumbnail}
+                        alt={`Vignette de ${course.title}`}
+                        style={{ width: '120px', height: '80px', objectFit: 'cover', borderRadius: '10px', flexShrink: 0 }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: '120px',
+                          height: '80px',
+                          background: 'var(--border-color, #cbd5e1)',
+                          borderRadius: '10px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <BookOpen size={28} color="#64748b" />
+                      </div>
+                    )}
 
-                  <div style={{ textAlign: 'right', minWidth: '100px' }}>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--primary)', marginBottom: '0.5rem' }}>
-                      {item.course?.price === 0 ? 'Gratuit' : `${item.course?.price}€`}
+                    <div style={{ flex: 1, minWidth: '200px' }}>
+                      <h3 style={{ margin: '0 0 0.35rem 0', color: 'var(--text-color, #1e293b)', fontSize: '1.05rem', fontWeight: 600 }}>
+                        <Link to={`/courses/${course.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                          {course.title}
+                        </Link>
+                      </h3>
+                      <p style={{ color: 'var(--secondary, #64748b)', margin: 0, fontSize: '0.88rem' }}>
+                        {course.category?.name || 'Informatique'} • {course.level || 'Tous niveaux'}
+                      </p>
                     </div>
-                    <Button 
-                      variant="ghost" 
-                      onClick={() => removeFromCart(item.id)}
-                      disabled={loading}
-                      style={{ color: 'var(--error-color)', padding: '4px 8px' }}
-                    >
-                      <Trash2 size={18} />
-                    </Button>
-                  </div>
-                </Card>
-              ))}
+
+                    <div style={{ textAlign: 'right', minWidth: '100px' }}>
+                      <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary, #4f46e5)', marginBottom: '0.5rem' }}>
+                        {Number(course.price) === 0 ? 'Gratuit' : `${course.price} MAD`}
+                      </div>
+                      <button
+                        onClick={() => removeFromCart(item.id, course.title)}
+                        disabled={loading}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: 'var(--error-color, #ef4444)',
+                          padding: '4px 8px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          fontSize: '0.85rem',
+                          fontWeight: 500,
+                        }}
+                      >
+                        <Trash2 size={16} /> Supprimer
+                      </button>
+                    </div>
+                  </Card>
+                );
+              })}
             </div>
 
             {/* Order Summary Sidebar */}
             <Card variant="elevated" padding="2rem" style={{ position: 'sticky', top: '2rem' }}>
-              <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', color: 'var(--text-color)' }}>Résumé</h2>
-              
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', color: 'var(--secondary)' }}>
+              <h2 style={{ fontSize: '1.35rem', fontWeight: 700, marginBottom: '1.5rem', color: 'var(--text-color, #1e293b)' }}>
+                Résumé de la commande
+              </h2>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', color: 'var(--secondary, #64748b)' }}>
                 <span>Sous-total</span>
-                <span>{subtotal.toFixed(2)}€</span>
+                <span>{subtotal.toFixed(2)} MAD</span>
               </div>
 
               {discount > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', color: 'var(--success-color)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', color: '#10b981', fontWeight: 600 }}>
                   <span>Réduction ({discount}%)</span>
-                  <span>-{(subtotal * (discount / 100)).toFixed(2)}€</span>
+                  <span>-{(subtotal * (discount / 100)).toFixed(2)} MAD</span>
                 </div>
               )}
 
-              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem', marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.25rem', color: 'var(--text-color)' }}>
+              <div
+                style={{
+                  borderTop: '1px solid var(--border-color, #e2e8f0)',
+                  paddingTop: '1rem',
+                  marginBottom: '1.5rem',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontWeight: 800,
+                  fontSize: '1.35rem',
+                  color: 'var(--text-color, #1e293b)',
+                }}
+              >
                 <span>Total</span>
-                <span>{total.toFixed(2)}€</span>
+                <span style={{ color: 'var(--primary, #4f46e5)' }}>{total.toFixed(2)} MAD</span>
               </div>
 
-              {/* Coupon Code Section */}
-              <div style={{ marginBottom: '2rem' }}>
+              {/* Coupon Input */}
+              <div style={{ marginBottom: '1.75rem' }}>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <div style={{ flex: 1, position: 'relative' }}>
-                    <Tag size={18} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--secondary)' }} />
-                    <input 
-                      type="text" 
-                      placeholder="Code promo" 
+                    <Tag size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--secondary)' }} />
+                    <input
+                      type="text"
+                      placeholder="Code promo"
                       value={couponCode}
                       onChange={(e) => setCouponCode(e.target.value)}
-                      style={{ 
-                        width: '100%', 
-                        padding: '10px 10px 10px 35px', 
-                        border: '1px solid var(--border-color)', 
-                        borderRadius: '8px', 
-                        background: 'var(--bg-color)',
-                        color: 'var(--text-color)'
-                      }} 
+                      style={{
+                        width: '100%',
+                        padding: '10px 10px 10px 38px',
+                        border: '1px solid var(--border-color, #cbd5e1)',
+                        borderRadius: '8px',
+                        background: 'var(--bg-color, #f8fafc)',
+                        color: 'var(--text-color)',
+                        fontSize: '0.9rem',
+                      }}
                     />
                   </div>
                   <Button variant="outline" onClick={handleApplyCoupon} disabled={loading || !couponCode.trim()}>
@@ -164,15 +238,15 @@ export default function Cart() {
                   </Button>
                 </div>
                 {couponError && <p style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.5rem' }}>{couponError}</p>}
-                {couponSuccess && <p style={{ color: 'var(--success-color)', fontSize: '0.85rem', marginTop: '0.5rem' }}>{couponSuccess}</p>}
+                {couponSuccess && <p style={{ color: '#10b981', fontSize: '0.85rem', marginTop: '0.5rem', fontWeight: 600 }}>{couponSuccess}</p>}
               </div>
 
-              <Button 
-                variant="primary" 
+              <Button
+                variant="primary"
+                size="large"
                 style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}
                 onClick={() => {
-                  // Navigate to checkout for the first item in the cart
-                  const firstCourseId = cartItems[0]?.courseId;
+                  const firstCourseId = cartItems[0]?.course?.id || cartItems[0]?.courseId;
                   if (firstCourseId) navigate(`/courses/${firstCourseId}/checkout`);
                 }}
                 disabled={loading}

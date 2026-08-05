@@ -4,6 +4,9 @@ import { SpeedInsights } from '@vercel/speed-insights/react';
 
 // Context
 import { AuthProvider } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
+import { CartProvider } from './context/CartContext';
+import { WishlistProvider } from './context/WishlistContext';
 
 // Layouts
 import ProtectedLayout from './layouts/ProtectedLayout';
@@ -34,6 +37,7 @@ import InstructorCourseManage from './pages/InstructorCourseManage';
 
 // Components
 import Footer from './components/Footer';
+import CartDrawer from './components/CartDrawer';
 
 const HIDDEN_FOOTER_PATHS = [
   '/student/dashboard',
@@ -53,52 +57,60 @@ function FooterWrapper() {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password/:token" element={<ResetPassword />} />
-          <Route path="/courses" element={<Catalog />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/courses/:id" element={<CourseDetails />} />
-          <Route path="/courses/:id/checkout" element={<Checkout />} />
+      <ToastProvider>
+        <CartProvider>
+          <WishlistProvider>
+            <Router>
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<Home />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password/:token" element={<ResetPassword />} />
+                <Route path="/courses" element={<Catalog />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/courses/:id" element={<CourseDetails />} />
+                <Route path="/courses/:id/checkout" element={<Checkout />} />
 
-          {/* Protected Routes */}
-          <Route element={<ProtectedLayout />}>
-            <Route path="/dashboard" element={<Profile />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/wishlist" element={<Wishlist />} />
-          </Route>
+                {/* Protected Routes */}
+                <Route element={<ProtectedLayout />}>
+                  <Route path="/dashboard" element={<Profile />} />
+                  <Route path="/cart" element={<Cart />} />
+                  <Route path="/wishlist" element={<Wishlist />} />
+                </Route>
 
-          {/* Student Routes */}
-          <Route element={<StudentLayout />}>
-            <Route path="/student/dashboard" element={<StudentDashboard />} />
-            <Route path="/learn/:courseId/lesson/:lessonId" element={<ClassroomPlayer />} />
-            <Route path="/learn/:courseId/quiz/:quizId" element={<QuizPlayer />} />
-            <Route path="/learn/:courseId/assignment/:assignmentId" element={<AssignmentSubmit />} />
-          </Route>
+                {/* Student Routes */}
+                <Route element={<StudentLayout />}>
+                  <Route path="/student/dashboard" element={<StudentDashboard />} />
+                  <Route path="/learn/:courseId/lesson/:lessonId" element={<ClassroomPlayer />} />
+                  <Route path="/learn/:courseId/quiz/:quizId" element={<QuizPlayer />} />
+                  <Route path="/learn/:courseId/assignment/:assignmentId" element={<AssignmentSubmit />} />
+                </Route>
 
-          {/* Instructor Routes */}
-          <Route element={<InstructorLayout />}>
-            <Route path="/instructor/dashboard" element={<InstructorDashboard />} />
-            <Route path="/instructor/courses/:id/manage" element={<InstructorCourseManage />} />
-          </Route>
+                {/* Instructor Routes */}
+                <Route element={<InstructorLayout />}>
+                  <Route path="/instructor/dashboard" element={<InstructorDashboard />} />
+                  <Route path="/instructor/courses/:id/manage" element={<InstructorCourseManage />} />
+                </Route>
 
-          {/* Admin Routes */}
-          <Route element={<AdminLayout />}>
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          </Route>
-        </Routes>
-        <FooterWrapper />
-      </Router>
-      <Analytics />
-      <SpeedInsights />
+                {/* Admin Routes */}
+                <Route element={<AdminLayout />}>
+                  <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                </Route>
+              </Routes>
+              <CartDrawer />
+              <FooterWrapper />
+            </Router>
+            <Analytics />
+            <SpeedInsights />
+          </WishlistProvider>
+        </CartProvider>
+      </ToastProvider>
     </AuthProvider>
   );
 }
 
 export default App;
+
 

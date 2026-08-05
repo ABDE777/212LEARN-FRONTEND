@@ -1,0 +1,14 @@
+# 212LEARN - Plateforme E-Learning Marocaine
+
+212Learn est une plateforme d'apprentissage en ligne marocaine offrant des cours interactifs en programmation, design et technologies.
+
+## Architectures et Fonctionnalités Principales
+- Catalogue de cours filtrable par catégorie et niveau.
+- Espace Étudiant avec suivi de progression, badges, certificats et quiz interactifs.
+- Espace Formateur pour la gestion des cours, leçons et visioconférences.
+- Espace Administrateur pour la modération et la vérification des paiements Wafacash.
+- Système de panier interactif et liste de souhaits en temps réel.
+
+## Stack Technique
+- Frontend: React 19, React Router v7, Vite, Lucide Icons, Vanilla CSS.
+- API Backend: REST API v1 (`/api/v1`).

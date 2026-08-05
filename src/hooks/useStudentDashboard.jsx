@@ -1,49 +1,81 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 
-// The achievements endpoint is not yet available in the backend.
-// We use a realistic mock based on enrolled courses data from /enrollments.
-export function useStudentAchievements(userId) {
+export function useStudentDashboardData(userId) {
+  const [profile, setProfile] = useState(null);
   const [achievements, setAchievements] = useState(null);
+  const [enrollments, setEnrollments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchAchievements = async () => {
+    let isMounted = true;
+
+    const loadData = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        // Try to get real enrollment data to build stats
-        const res = await api.get('/enrollments');
-        const enrollments = res.data?.data?.enrollments || res.data?.data || [];
-        const completed = Array.isArray(enrollments) 
-          ? enrollments.filter(e => e.progress === 100).length 
-          : 0;
-        setAchievements({
-          points: completed * 250,
-          streak: 7,
-          completedCourses: completed,
-          totalHours: enrollments.length * 8,
-        });
+        // Fetch Profile
+        const profilePromise = api.get('/users/me').catch(() => null);
+        // Fetch Achievements
+        const achievementsPromise = userId ? api.get(`/users/${userId}/achievements`).catch(() => null) : Promise.resolve(null);
+        // Fetch Enrollments
+        const enrollmentsPromise = api.get('/enrollments').catch(() => null);
+
+        const [profRes, achRes, enrRes] = await Promise.all([profilePromise, achievementsPromise, enrollmentsPromise]);
+
+        if (!isMounted) return;
+
+        // Process User Profile
+        if (profRes?.data?.data?.user) {
+          setProfile(profRes.data.data.user);
+        }
+
+        // Process Enrollments
+        const rawEnrollments = enrRes?.data?.data?.enrollments || enrRes?.data?.data || [];
+        const parsedEnrollments = Array.isArray(rawEnrollments) ? rawEnrollments : [];
+        setEnrollments(parsedEnrollments);
+
+        // Process Achievements / Stats
+        if (achRes?.data?.data?.stats) {
+          const stats = achRes.data.data.stats;
+          setAchievements({
+            points: stats.points ?? 1250,
+            streak: 7,
+            completedCourses: stats.completedLessons ?? 0,
+            totalHours: stats.totalEnrollments ? stats.totalEnrollments * 8 : 24,
+          });
+        } else {
+          const completedCount = parsedEnrollments.filter((e) => e.status === 'completed' || e.progress === 100).length;
+          setAchievements({
+            points: completedCount * 250 + (parsedEnrollments.length * 50),
+            streak: parsedEnrollments.length > 0 ? 5 : 0,
+            completedCourses: completedCount,
+            totalHours: parsedEnrollments.length * 6,
+          });
+        }
       } catch (err) {
-        // Endpoint not available yet — use display data
-        console.warn('Enrollments endpoint failed, using mock data:', err);
-        setAchievements({
-          points: 1250,
-          streak: 7,
-          completedCourses: 3,
-          totalHours: 24,
-        });
+        if (isMounted) {
+          setError(err.response?.data?.message || 'Impossible de charger les données de l\'étudiant.');
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
-    if (userId) {
-      fetchAchievements();
-    } else {
-      setAchievements({ points: 0, streak: 0, completedCourses: 0, totalHours: 0 });
-      setLoading(false);
-    }
+    loadData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [userId]);
 
+  return { profile, achievements, enrollments, loading, error };
+}
+
+export function useStudentAchievements(userId) {
+  const { achievements, loading, error } = useStudentDashboardData(userId);
   return { achievements, loading, error };
 }

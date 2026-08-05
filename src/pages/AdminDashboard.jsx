@@ -624,11 +624,13 @@ function WafacashTab() {
   const [verifyLoading, setVerifyLoading] = useState(null);
   const [notes, setNotes] = useState({});
   const [actionMsg, setActionMsg] = useState(null);
+  const [selectedReceipt, setSelectedReceipt] = useState(null);
 
   const loadPayments = useCallback(async () => {
     try {
-      const data = await getPendingPayments();
-      setPayments(data?.payments || data || []);
+      const resData = await getPendingPayments();
+      const rawPayments = resData?.payments || resData?.data?.payments || resData || [];
+      setPayments(Array.isArray(rawPayments) ? rawPayments : []);
     } catch (err) {
       console.error('Failed to load pending payments', err);
     }
@@ -643,10 +645,16 @@ function WafacashTab() {
     setActionMsg(null);
     try {
       await verifyPayment(paymentId, action, notes[paymentId] || '');
-      setActionMsg({ type: 'success', text: action === 'approve' ? 'Paiement approuvé ! L\'étudiant a maintenant accès au cours.' : 'Paiement rejeté.' });
+      setActionMsg({
+        type: 'success',
+        text: action === 'approve' ? 'Paiement approuvé ! L\'accès au cours est activé.' : 'Paiement rejeté.',
+      });
       await loadPayments();
     } catch (err) {
-      setActionMsg({ type: 'error', text: err.response?.data?.error?.message || 'Impossible de traiter cette action.' });
+      setActionMsg({
+        type: 'error',
+        text: err.response?.data?.error?.message || err.response?.data?.message || 'Impossible de traiter cette action.',
+      });
     } finally {
       setVerifyLoading(null);
     }
@@ -668,99 +676,270 @@ function WafacashTab() {
   };
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-        <h2 style={{ fontSize: '1.5rem' }}>Paiements Wafacash en attente</h2>
-        <button onClick={loadPayments} disabled={loading} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'var(--bg-color)', cursor: 'pointer', fontWeight: 500 }}>
+    <div style={{ width: '100%' }}>
+      {/* Photo Modal */}
+      {selectedReceipt && (
+        <div
+          onClick={() => setSelectedReceipt(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '1.5rem',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'relative',
+              background: '#fff',
+              borderRadius: '16px',
+              maxWidth: '700px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+            }}
+          >
+            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-color)', fontWeight: 700 }}>Preuve de paiement (Reçu Wafacash)</h3>
+              <button
+                onClick={() => setSelectedReceipt(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--secondary)' }}
+              >
+                <XCircle size={24} />
+              </button>
+            </div>
+            <div style={{ padding: '1.5rem', overflowY: 'auto', textAlign: 'center', background: '#f8fafc' }}>
+              <img
+                src={selectedReceipt}
+                alt="Reçu Wafacash"
+                style={{ maxWidth: '100%', maxHeight: '65vh', objectFit: 'contain', borderRadius: '10px', boxShadow: '0 4px 16px rgba(0,0,0,0.12)' }}
+              />
+            </div>
+            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+              <a
+                href={selectedReceipt}
+                target="_blank"
+                rel="noreferrer"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '9px 18px', background: 'var(--primary)', color: '#fff', borderRadius: '8px', textDecoration: 'none', fontWeight: 600, fontSize: '0.9rem' }}
+              >
+                Ouvrir en grand ↗
+              </a>
+              <button
+                onClick={() => setSelectedReceipt(null)}
+                style={{ padding: '9px 18px', border: '1px solid var(--border-color)', borderRadius: '8px', background: '#fff', cursor: 'pointer', fontWeight: 600, color: 'var(--secondary)' }}
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h2 style={{ fontSize: '1.65rem', fontWeight: 700, color: 'var(--text-color)', margin: '0 0 0.25rem 0' }}>Paiements Wafacash en attente</h2>
+          <p style={{ color: 'var(--secondary)', margin: 0, fontSize: '0.92rem' }}>
+            Vérifiez les preuves de paiement soumises par les étudiants et approuvez ou rejetez-les.
+          </p>
+        </div>
+        <button
+          onClick={loadPayments}
+          disabled={loading}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '9px 18px',
+            border: '1px solid var(--border-color)',
+            borderRadius: '10px',
+            background: 'var(--surface-color)',
+            cursor: 'pointer',
+            fontWeight: 600,
+            fontSize: '0.9rem',
+            color: 'var(--text-color)',
+            boxShadow: 'var(--shadow-sm)',
+            transition: 'all 0.2s',
+          }}
+        >
           <RotateCcw size={16} /> Actualiser
         </button>
       </div>
-      <p style={{ color: 'var(--secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-        Vérifiez les preuves de paiement soumises par les étudiants et approuvez ou rejetez-les.
-      </p>
 
       {actionMsg && (
-        <div style={{ padding: '1rem', borderRadius: '8px', marginBottom: '1rem', background: actionMsg.type === 'success' ? '#e8f5e9' : '#ffebee', color: actionMsg.type === 'success' ? '#2e7d32' : '#c62828', border: `1px solid ${actionMsg.type === 'success' ? '#c8e6c9' : '#ffcdd2'}` }}>
+        <div style={{ padding: '1rem 1.25rem', borderRadius: '10px', marginBottom: '1.25rem', background: actionMsg.type === 'success' ? '#e8f5e9' : '#ffebee', color: actionMsg.type === 'success' ? '#2e7d32' : '#c62828', border: `1px solid ${actionMsg.type === 'success' ? '#c8e6c9' : '#ffcdd2'}`, fontWeight: 500 }}>
           {actionMsg.text}
         </div>
       )}
 
-      {error && <p style={{ color: 'var(--error-color)', marginBottom: '1rem' }}>{error}</p>}
+      {error && <p style={{ color: 'var(--error-color)', marginBottom: '1rem', fontWeight: 500 }}>{error}</p>}
 
       {loading && payments.length === 0 ? (
         <LoadingSpinner />
       ) : payments.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '4rem 2rem', background: '#fff', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-          <CheckCircle size={48} color="var(--success-color)" style={{ marginBottom: '1rem' }} />
-          <h3 style={{ color: 'var(--text-color)', marginBottom: '0.5rem' }}>Aucun paiement en attente</h3>
-          <p style={{ color: 'var(--secondary)' }}>Tous les paiements ont été traités.</p>
+        <div style={{ textAlign: 'center', padding: '4.5rem 2rem', background: '#fff', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
+          <CheckCircle size={52} color="var(--success-color)" style={{ marginBottom: '1rem' }} />
+          <h3 style={{ color: 'var(--text-color)', marginBottom: '0.5rem', fontSize: '1.25rem', fontWeight: 700 }}>Aucun paiement en attente</h3>
+          <p style={{ color: 'var(--secondary)' }}>Toutes les demandes Wafacash ont été traitées.</p>
         </div>
       ) : (
-        <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: '#f8f9fa' }}>
-                {['Étudiant', 'Cours', 'Référence', 'Montant', 'MTCN', 'Statut', 'Reçu', 'Notes', 'Actions'].map(h => (
-                  <th key={h} style={{ textAlign: 'left', padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-color)', fontSize: '0.82rem', color: 'var(--secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {payments.map((p) => (
-                <tr key={p.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                  <td style={{ padding: '0.85rem 1rem', color: 'var(--text-color)', fontWeight: 500 }}>
-                    {p.student?.firstName} {p.student?.lastName}
-                    <div style={{ fontSize: '0.78rem', color: 'var(--secondary)' }}>{p.student?.email}</div>
-                  </td>
-                  <td style={{ padding: '0.85rem 1rem', color: 'var(--secondary)', fontSize: '0.9rem', maxWidth: '160px' }}>
-                    <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.course?.title || '—'}</div>
-                  </td>
-                  <td style={{ padding: '0.85rem 1rem', fontFamily: 'monospace', fontSize: '0.88rem', color: 'var(--text-color)', fontWeight: 600 }}>{p.paymentReference}</td>
-                  <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: 'var(--primary)', whiteSpace: 'nowrap' }}>{p.amount} MAD</td>
-                  <td style={{ padding: '0.85rem 1rem', fontFamily: 'monospace', fontSize: '0.88rem', color: 'var(--secondary)' }}>{p.mtcn || '—'}</td>
-                  <td style={{ padding: '0.85rem 1rem' }}>{statusBadge(p.status)}</td>
-                  <td style={{ padding: '0.85rem 1rem' }}>
-                    {p.receiptUrl ? (
-                      <a href={p.receiptUrl} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', background: '#e8f4fd', color: '#2D8CFF', borderRadius: '6px', textDecoration: 'none', fontSize: '0.82rem', fontWeight: 500 }}>
-                        Voir reçu
-                      </a>
-                    ) : '—'}
-                  </td>
-                  <td style={{ padding: '0.85rem 1rem' }}>
-                    <input
-                      type="text"
-                      placeholder="Notes optionnelles..."
-                      value={notes[p.id] || ''}
-                      onChange={(e) => setNotes(prev => ({ ...prev, [p.id]: e.target.value }))}
-                      style={{ width: '100%', minWidth: '130px', padding: '6px 10px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '0.82rem', background: 'var(--bg-color)', color: 'var(--text-color)' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.85rem 1rem' }}>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button
-                        onClick={() => handleVerify(p.id, 'approve')}
-                        disabled={!!verifyLoading}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '6px 12px', background: '#e8f5e9', color: '#2e7d32', border: '1px solid #c8e6c9', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.82rem', whiteSpace: 'nowrap' }}
-                      >
-                        {verifyLoading === p.id + 'approve' ? <Loader size={14} className="spin" /> : <CheckCircle size={14} />}
-                        Approuver
-                      </button>
-                      <button
-                        onClick={() => handleVerify(p.id, 'reject')}
-                        disabled={!!verifyLoading}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '6px 12px', background: '#ffebee', color: '#c62828', border: '1px solid #ffcdd2', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.82rem', whiteSpace: 'nowrap' }}
-                      >
-                        {verifyLoading === p.id + 'reject' ? <Loader size={14} className="spin" /> : <XCircle size={14} />}
-                        Rejeter
-                      </button>
-                    </div>
-                  </td>
+        <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '16px', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+              <colgroup>
+                <col style={{ width: '17%' }} /> {/* Étudiant */}
+                <col style={{ width: '14%' }} /> {/* Cours */}
+                <col style={{ width: '12%' }} /> {/* Référence */}
+                <col style={{ width: '9%' }}  /> {/* Montant */}
+                <col style={{ width: '11%' }} /> {/* MTCN */}
+                <col style={{ width: '9%' }}  /> {/* Statut */}
+                <col style={{ width: '9%' }}  /> {/* Reçu */}
+                <col style={{ width: '13%' }} /> {/* Notes */}
+                <col style={{ width: '16%' }} /> {/* Actions */}
+              </colgroup>
+              <thead>
+                <tr style={{ background: 'var(--bg-color, #f8fafc)', borderBottom: '1px solid var(--border-color)' }}>
+                  {['Étudiant', 'Cours', 'Référence', 'Montant', 'MTCN', 'Statut', 'Reçu', 'Notes', 'Actions'].map((h) => (
+                    <th key={h} style={{ textAlign: 'left', padding: '1rem 1.25rem', fontSize: '0.85rem', color: 'var(--secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {payments.map((p) => {
+                  const student = p.enrollment?.user || p.user || p.student;
+                  const course = p.enrollment?.course || p.course;
+                  const refCode = p.transactionReference || p.paymentReference || p.reference || '—';
+                  const currencyStr = p.currency || 'MAD';
+
+                  return (
+                    <tr key={p.id} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background 0.15s' }}>
+                      <td style={{ padding: '1rem 1.25rem', color: 'var(--text-color)', fontWeight: 600, fontSize: '0.92rem' }}>
+                        {student ? `${student.firstName || ''} ${student.lastName || ''}`.trim() || 'Étudiant' : 'Étudiant'}
+                        <div style={{ fontSize: '0.8rem', color: 'var(--secondary)', fontWeight: 400, marginTop: '2px' }}>{student?.email || '—'}</div>
+                      </td>
+                      <td style={{ padding: '1rem 1.25rem', color: 'var(--text-color)', fontSize: '0.92rem' }}>
+                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>
+                          {course?.title || '—'}
+                        </div>
+                      </td>
+                      <td style={{ padding: '1rem 1.25rem', fontFamily: 'monospace', fontSize: '0.9rem', color: 'var(--text-color)', fontWeight: 700 }}>
+                        {refCode}
+                      </td>
+                      <td style={{ padding: '1rem 1.25rem', fontWeight: 800, color: 'var(--primary, #4f46e5)', fontSize: '0.95rem', whiteSpace: 'nowrap' }}>
+                        {p.amount} {currencyStr}
+                      </td>
+                      <td style={{ padding: '1rem 1.25rem', fontFamily: 'monospace', fontSize: '0.9rem', color: 'var(--secondary)', fontWeight: 600 }}>
+                        {p.mtcn || '—'}
+                      </td>
+                      <td style={{ padding: '1rem 1.25rem' }}>{statusBadge(p.status)}</td>
+                      <td style={{ padding: '1rem 1.25rem' }}>
+                        {p.receiptUrl ? (
+                          <button
+                            onClick={() => setSelectedReceipt(p.receiptUrl)}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '6px 14px',
+                              background: 'rgba(45, 140, 255, 0.1)',
+                              color: '#2D8CFF',
+                              border: '1px solid rgba(45, 140, 255, 0.25)',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              fontSize: '0.85rem',
+                              fontWeight: 600,
+                              whiteSpace: 'nowrap',
+                              transition: 'all 0.15s',
+                            }}
+                          >
+                            👁️ Voir reçu
+                          </button>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                      <td style={{ padding: '1rem 1.25rem' }}>
+                        <input
+                          type="text"
+                          placeholder="Notes optionnelles..."
+                          value={notes[p.id] || ''}
+                          onChange={(e) => setNotes((prev) => ({ ...prev, [p.id]: e.target.value }))}
+                          style={{
+                            width: '100%',
+                            minWidth: '180px',
+                            padding: '8px 12px',
+                            border: '1px solid var(--border-color, #cbd5e1)',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            background: 'var(--bg-color, #f8fafc)',
+                            color: 'var(--text-color)',
+                            outline: 'none',
+                          }}
+                        />
+                      </td>
+                      <td style={{ padding: '1rem 1.25rem' }}>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button
+                            onClick={() => handleVerify(p.id, 'approve')}
+                            disabled={!!verifyLoading}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '5px',
+                              padding: '7px 14px',
+                              background: '#e8f5e9',
+                              color: '#2e7d32',
+                              border: '1px solid #c8e6c9',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              fontWeight: 700,
+                              fontSize: '0.85rem',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {verifyLoading === p.id + 'approve' ? <Loader size={14} className="spin" /> : <CheckCircle size={15} />}
+                            Approuver
+                          </button>
+                          <button
+                            onClick={() => handleVerify(p.id, 'reject')}
+                            disabled={!!verifyLoading}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '5px',
+                              padding: '7px 14px',
+                              background: '#ffebee',
+                              color: '#c62828',
+                              border: '1px solid #ffcdd2',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              fontWeight: 700,
+                              fontSize: '0.85rem',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {verifyLoading === p.id + 'reject' ? <Loader size={14} className="spin" /> : <XCircle size={15} />}
+                            Rejeter
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
         </div>
       )}
+
     </div>
   );
 }

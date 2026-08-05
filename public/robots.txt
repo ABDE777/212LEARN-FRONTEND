@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /private/
+Disallow: /*?*demo=true
+
+Sitemap: https://www.212learn.com/sitemap.xml
