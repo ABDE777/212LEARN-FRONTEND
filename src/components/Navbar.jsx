@@ -7,6 +7,7 @@ import { useWishlistContext } from '../context/WishlistContext';
 
 function NavIconButton({ to, onClick, icon, count, label }) {
   const [hovered, setHovered] = useState(false);
+  const [pressed, setPressed] = useState(false);
   const content = (
     <>
       {icon}
@@ -20,7 +21,7 @@ function NavIconButton({ to, onClick, icon, count, label }) {
             height: '18px',
             padding: '0 4px',
             borderRadius: '999px',
-            background: 'var(--primary, #4f46e5)',
+            background: 'var(--primary)',
             color: '#fff',
             fontSize: '0.68rem',
             fontWeight: 700,
@@ -28,7 +29,7 @@ function NavIconButton({ to, onClick, icon, count, label }) {
             alignItems: 'center',
             justifyContent: 'center',
             lineHeight: 1,
-            boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
+            boxShadow: '2px 2px 5px rgba(193, 101, 47, 0.4)',
           }}
         >
           {count > 99 ? '99+' : count}
@@ -42,17 +43,21 @@ function NavIconButton({ to, onClick, icon, count, label }) {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '40px',
-    height: '40px',
+    width: '42px',
+    height: '42px',
     borderRadius: '50%',
-    background: hovered ? 'var(--bg-color, #f8fafc)' : 'transparent',
-    border: '1px solid',
-    borderColor: hovered ? 'var(--border-color, #e2e8f0)' : 'transparent',
-    color: hovered ? 'var(--primary, #4f46e5)' : 'var(--secondary, #64748b)',
+    background: 'var(--bg-color)',
+    border: '1px solid rgba(255, 255, 255, 0.6)',
+    color: hovered ? 'var(--primary)' : 'var(--secondary)',
     textDecoration: 'none',
-    transition: 'all 0.2s ease',
+    transition: 'all 0.25s ease',
     flexShrink: 0,
     cursor: 'pointer',
+    boxShadow: pressed
+      ? 'var(--neu-shadow-inset-sm)'
+      : hovered
+      ? 'var(--neu-shadow-raised)'
+      : 'var(--neu-shadow-raised-sm)',
   };
 
   if (onClick) {
@@ -61,7 +66,9 @@ function NavIconButton({ to, onClick, icon, count, label }) {
         type="button"
         onClick={onClick}
         onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
+        onMouseLeave={() => { setHovered(false); setPressed(false); }}
+        onMouseDown={() => setPressed(true)}
+        onMouseUp={() => setPressed(false)}
         style={{ ...style, outline: 'none', padding: 0 }}
         aria-label={label}
         title={label}
@@ -75,7 +82,9 @@ function NavIconButton({ to, onClick, icon, count, label }) {
     <Link
       to={to}
       onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseLeave={() => { setHovered(false); setPressed(false); }}
+      onMouseDown={() => setPressed(true)}
+      onMouseUp={() => setPressed(false)}
       style={style}
       aria-label={label}
       title={label}
@@ -125,20 +134,21 @@ function Navbar() {
       style={{
         display: 'flex',
         justifyContent: 'space-between',
-        padding: '1rem 2rem',
+        padding: '1rem 2.5rem',
         alignItems: 'center',
-        background: 'var(--surface-color, #ffffff)',
-        borderBottom: '1px solid var(--border-color, #e2e8f0)',
+        background: 'var(--bg-color)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.6)',
+        boxShadow: 'var(--neu-shadow-raised-sm)',
         position: 'relative',
         zIndex: 100,
       }}
     >
-      <Link to="/" style={{ textDecoration: 'none', fontSize: '1.5rem', fontWeight: 700, color: 'var(--primary, #4f46e5)' }}>
+      <Link to="/" style={{ textDecoration: 'none', fontSize: '1.6rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.02em' }}>
         212Learn
       </Link>
 
       {/* Desktop Navigation Links */}
-      <div className="nav-desktop-links" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+      <div className="nav-desktop-links" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
         <Link to="/" className={`nav-center-link ${location.pathname === '/' ? 'active' : ''}`}>
           Accueil
         </Link>
@@ -151,7 +161,7 @@ function Navbar() {
       </div>
 
       {/* Right Controls */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
         {isAuthenticated && (
           <>
             <NavIconButton
@@ -166,7 +176,7 @@ function Navbar() {
               count={cartCount}
               label="Mon panier"
             />
-            <div style={{ width: '1px', height: '24px', background: 'var(--border-color, #e2e8f0)', margin: '0 0.25rem' }} />
+            <div style={{ width: '1px', height: '24px', background: 'rgba(43, 38, 34, 0.1)', margin: '0 0.25rem' }} />
           </>
         )}
 
@@ -180,14 +190,14 @@ function Navbar() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.75rem',
-                padding: '0.4rem 0.9rem',
-                background: 'var(--surface-color)',
-                border: '1px solid var(--border-color)',
+                padding: '0.45rem 1rem',
+                background: 'var(--bg-color)',
+                border: '1px solid rgba(255, 255, 255, 0.6)',
                 borderRadius: '9999px',
                 cursor: 'pointer',
-                transition: 'all 0.2s ease',
+                transition: 'all 0.25s ease',
                 outline: 'none',
-                boxShadow: 'var(--shadow-sm)',
+                boxShadow: dropdownOpen ? 'var(--neu-shadow-inset-sm)' : 'var(--neu-shadow-raised-sm)',
               }}
             >
               {avatarUrl ? (
@@ -200,6 +210,7 @@ function Navbar() {
                     borderRadius: '50%',
                     objectFit: 'cover',
                     flexShrink: 0,
+                    boxShadow: 'var(--neu-shadow-raised-sm)',
                   }}
                   onError={(e) => {
                     e.currentTarget.style.display = 'none';
@@ -216,6 +227,7 @@ function Navbar() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexShrink: 0,
+                    boxShadow: 'var(--neu-shadow-raised-sm)',
                   }}
                 >
                   <User size={16} color="#fff" />
@@ -223,7 +235,7 @@ function Navbar() {
               )}
               <span
                 style={{
-                  fontWeight: 500,
+                  fontWeight: 600,
                   color: 'var(--text-color)',
                   whiteSpace: 'nowrap',
                   fontSize: '0.9rem',
@@ -247,14 +259,14 @@ function Navbar() {
               <div
                 style={{
                   position: 'absolute',
-                  top: 'calc(100% + 8px)',
+                  top: 'calc(100% + 12px)',
                   right: 0,
-                  minWidth: '200px',
-                  background: 'var(--surface-color, #fff)',
-                  border: '1px solid var(--border-color, #e2e8f0)',
-                  borderRadius: '12px',
-                  boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)',
-                  padding: '0.5rem',
+                  minWidth: '220px',
+                  background: 'var(--bg-color)',
+                  border: '1px solid rgba(255, 255, 255, 0.7)',
+                  borderRadius: '16px',
+                  boxShadow: 'var(--neu-shadow-raised-lg)',
+                  padding: '0.6rem',
                   zIndex: 1000,
                 }}
               >
@@ -265,48 +277,50 @@ function Navbar() {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.75rem',
-                    padding: '0.6rem 0.75rem',
-                    borderRadius: '8px',
+                    padding: '0.65rem 0.85rem',
+                    borderRadius: '10px',
                     textDecoration: 'none',
                     color: 'var(--text-color)',
-                    fontWeight: 500,
+                    fontWeight: 600,
                     fontSize: '0.9rem',
-                    transition: 'background 0.15s',
+                    transition: 'all 0.2s ease',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'var(--bg-color)';
+                    e.currentTarget.style.boxShadow = 'var(--neu-shadow-raised-sm)';
+                    e.currentTarget.style.color = 'var(--primary)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.boxShadow = 'none';
+                    e.currentTarget.style.color = 'var(--text-color)';
                   }}
                 >
                   <User size={16} />
                   Mon profil / Tableau de bord
                 </Link>
-                <div style={{ height: '1px', background: 'var(--border-color)', margin: '0.35rem 0' }} />
+                <div style={{ height: '1px', background: 'rgba(43, 38, 34, 0.08)', margin: '0.35rem 0' }} />
                 <button
                   onClick={handleLogout}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.75rem',
-                    padding: '0.6rem 0.75rem',
-                    borderRadius: '8px',
+                    padding: '0.65rem 0.85rem',
+                    borderRadius: '10px',
                     border: 'none',
                     background: 'transparent',
                     color: 'var(--error-color, #ef4444)',
-                    fontWeight: 500,
+                    fontWeight: 600,
                     fontSize: '0.9rem',
                     cursor: 'pointer',
                     width: '100%',
                     textAlign: 'left',
-                    transition: 'background 0.15s',
+                    transition: 'all 0.2s ease',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'var(--bg-color)';
+                    e.currentTarget.style.boxShadow = 'var(--neu-shadow-raised-sm)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.boxShadow = 'none';
                   }}
                 >
                   <LogOut size={16} />
@@ -316,15 +330,19 @@ function Navbar() {
             )}
           </div>
         ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
             <Link
               to="/login"
               style={{
                 color: 'var(--secondary)',
                 textDecoration: 'none',
-                fontWeight: 500,
-                padding: '0.5rem 1rem',
-                borderRadius: '8px',
+                fontWeight: 600,
+                padding: '0.55rem 1.1rem',
+                borderRadius: '12px',
+                background: 'var(--bg-color)',
+                border: '1px solid rgba(255, 255, 255, 0.6)',
+                boxShadow: 'var(--neu-shadow-raised-sm)',
+                transition: 'all 0.25s ease',
               }}
               className="nav-link"
             >
@@ -334,7 +352,7 @@ function Navbar() {
               to="/signup"
               className="btn-primary"
               style={{
-                padding: '0.5rem 1.25rem',
+                padding: '0.55rem 1.35rem',
                 textDecoration: 'none',
               }}
             >
@@ -349,15 +367,17 @@ function Navbar() {
           onClick={() => setMobileMenuOpen((prev) => !prev)}
           style={{
             display: 'none',
-            background: 'none',
-            border: 'none',
+            background: 'var(--bg-color)',
+            border: '1px solid rgba(255, 255, 255, 0.6)',
+            boxShadow: 'var(--neu-shadow-raised-sm)',
+            borderRadius: '10px',
             cursor: 'pointer',
-            padding: '6px',
+            padding: '8px',
             color: 'var(--text-color)',
           }}
           aria-label="Menu principal"
         >
-          {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
 
@@ -365,14 +385,18 @@ function Navbar() {
         .nav-center-link {
           color: var(--secondary);
           text-decoration: none;
-          font-weight: 500;
-          padding: 0.4rem 0.8rem;
-          border-radius: 8px;
-          transition: all 0.15s;
+          font-weight: 600;
+          padding: 0.5rem 1rem;
+          border-radius: 12px;
+          transition: all 0.25s ease;
         }
-        .nav-center-link:hover, .nav-center-link.active {
+        .nav-center-link:hover {
           color: var(--primary);
-          background: var(--bg-color);
+          box-shadow: var(--neu-shadow-raised-sm);
+        }
+        .nav-center-link.active {
+          color: var(--primary);
+          box-shadow: var(--neu-shadow-inset-sm);
         }
         @media (max-width: 768px) {
           .nav-desktop-links {

@@ -3,6 +3,7 @@ export default function Select({
   error, 
   options = [], 
   className = '', 
+  style = {},
   ...props 
 }) {
   return (
@@ -11,7 +12,7 @@ export default function Select({
         <label style={{ 
           display: 'block', 
           marginBottom: '0.5rem', 
-          fontWeight: 500, 
+          fontWeight: 600, 
           fontSize: '0.9rem', 
           color: 'var(--secondary)' 
         }}>
@@ -19,18 +20,21 @@ export default function Select({
         </label>
       )}
       <select
-        className="form-control"
+        className={`form-control neu-select ${className}`}
         style={{
           width: '100%',
-          padding: '12px 16px',
-          border: error ? '1px solid var(--error-color)' : '1px solid var(--border-color)',
-          borderRadius: '8px',
+          padding: '14px 18px',
+          border: error ? '1px solid var(--error-color)' : '1px solid rgba(255, 255, 255, 0.5)',
+          borderRadius: '14px',
           fontSize: '1rem',
           fontFamily: 'var(--font-body)',
-          transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
-          background: 'var(--surface-color)',
+          transition: 'all 0.25s ease',
+          background: 'var(--bg-color)',
+          boxShadow: error ? 'inset 3px 3px 6px rgba(220, 53, 69, 0.2), inset -3px -3px 6px rgba(255, 255, 255, 0.8)' : 'var(--neu-shadow-inset)',
           outline: 'none',
-          cursor: 'pointer'
+          cursor: 'pointer',
+          color: 'var(--text-color)',
+          ...style
         }}
         {...props}
       >
@@ -45,7 +49,8 @@ export default function Select({
           color: 'var(--error-color)', 
           fontSize: '0.85rem', 
           marginTop: '0.5rem', 
-          display: 'block' 
+          display: 'block',
+          fontWeight: 500,
         }}>
           {error}
         </span>

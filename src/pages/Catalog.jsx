@@ -9,6 +9,7 @@ import Card from '../components/Card';
 import Button from '../components/Button';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Navbar from '../components/Navbar';
+import { CourseCardSkeleton } from '../components/SkeletonLoader';
 
 export default function Catalog() {
   const [filters, setFilters] = useState({
@@ -20,8 +21,16 @@ export default function Catalog() {
 
   const { courses, loading: coursesLoading, error: coursesError } = useCourses(filters);
   const { categories, loading: categoriesLoading } = useCategories();
-  const { addToCart, loading: cartLoading } = useCart();
-  const { addToWishlist, loading: wishlistLoading } = useWishlist();
+  const { addToCart, loading: cartLoading, items: cartItems } = useCart();
+  const { addToWishlist, loading: wishlistLoading, items: wishlistItems } = useWishlist();
+
+  // Derive sets of course IDs already in cart / wishlist for O(1) lookup
+  const cartCourseIds = new Set(
+    cartItems.map((item) => item.course?.id ?? item.courseId ?? item.id)
+  );
+  const wishlistCourseIds = new Set(
+    wishlistItems.map((item) => item.course?.id ?? item.courseId ?? item.id)
+  );
 
   // Flatten nested categories into a single array
   const flattenCategories = (cats) => {
@@ -44,10 +53,6 @@ export default function Catalog() {
   const clearFilters = () => {
     setFilters({ category: '', level: '', search: '' });
   };
-
-  if (coursesLoading || categoriesLoading) {
-    return <LoadingSpinner />;
-  }
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-color)' }}>
@@ -174,7 +179,17 @@ export default function Catalog() {
         )}
 
         {/* Course Grid */}
-        {courses.length === 0 && !coursesLoading ? (
+        {coursesLoading ? (
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', 
+            gap: '2rem' 
+          }}>
+            {Array.from({ length: 6 }).map((_, idx) => (
+              <CourseCardSkeleton key={idx} />
+            ))}
+          </div>
+        ) : courses.length === 0 ? (
           <Card variant="default" padding="3rem" style={{ textAlign: 'center' }}>
             <h3 style={{ marginBottom: '1rem', color: 'var(--secondary)' }}>
               Aucun cours trouvé
@@ -255,30 +270,64 @@ export default function Catalog() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <Button 
-                      variant="primary" 
-                      style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        addToCart(course.id);
-                      }}
-                      disabled={cartLoading}
-                    >
-                      <ShoppingCart size={16} />
-                      Panier
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        addToWishlist(course.id);
-                      }}
-                      disabled={wishlistLoading}
-                    >
-                      <Heart size={16} />
-                      Souhaits
-                    </Button>
+                    {(() => {
+                      const inCart = cartCourseIds.has(course.id);
+                      const inWishlist = wishlistCourseIds.has(course.id);
+                      return (
+                        <>
+                          <Button 
+                            variant={inCart ? 'ghost' : 'primary'}
+                            style={{
+                              flex: 1,
+                              display: 'flex',
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              gap: '0.5rem',
+                              ...(inCart && {
+                                opacity: 0.65,
+                                cursor: 'not-allowed',
+                                background: 'var(--border-color)',
+                                color: 'var(--secondary)',
+                                border: '1px solid var(--border-color)'
+                              })
+                            }}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (!inCart) addToCart(course.id);
+                            }}
+                            disabled={cartLoading || inCart}
+                          >
+                            <ShoppingCart size={16} />
+                            {inCart ? 'Déjà au panier' : 'Panier'}
+                          </Button>
+                          <Button 
+                            variant={inWishlist ? 'ghost' : 'outline'}
+                            style={{
+                              flex: 1,
+                              display: 'flex',
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              gap: '0.5rem',
+                              ...(inWishlist && {
+                                opacity: 0.65,
+                                cursor: 'not-allowed',
+                                background: 'var(--border-color)',
+                                color: 'var(--secondary)',
+                                border: '1px solid var(--border-color)'
+                              })
+                            }}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (!inWishlist) addToWishlist(course.id);
+                            }}
+                            disabled={wishlistLoading || inWishlist}
+                          >
+                            <Heart size={16} />
+                            {inWishlist ? 'Déjà en souhaits' : 'Souhaits'}
+                          </Button>
+                        </>
+                      );
+                    })()}
                   </div>
                 </Card>
               </Link>

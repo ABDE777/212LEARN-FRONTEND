@@ -1,15 +1,16 @@
 import React from 'react';
 
-export function SkeletonElement({ width = '100%', height = '20px', borderRadius = '8px', style = {} }) {
+export function SkeletonElement({ width = '100%', height = '20px', borderRadius = '12px', style = {} }) {
   return (
     <div
       style={{
         width,
         height,
         borderRadius,
-        background: 'linear-gradient(90deg, var(--border-color, #e2e8f0) 25%, var(--bg-color, #f8fafc) 50%, var(--border-color, #e2e8f0) 75%)',
+        background: 'linear-gradient(90deg, var(--bg-color) 25%, rgba(255, 255, 255, 0.7) 50%, var(--bg-color) 75%)',
         backgroundSize: '200% 100%',
         animation: 'shimmer 1.5s infinite linear',
+        boxShadow: 'var(--neu-shadow-inset-sm)',
         ...style,
       }}
     >
@@ -27,23 +28,24 @@ export function CourseCardSkeleton() {
   return (
     <div
       style={{
-        background: 'var(--surface-color, #fff)',
-        borderRadius: '16px',
-        border: '1px solid var(--border-color, #e2e8f0)',
+        background: 'var(--bg-color)',
+        borderRadius: '20px',
+        border: '1px solid rgba(255, 255, 255, 0.6)',
+        boxShadow: 'var(--neu-shadow-raised)',
         overflow: 'hidden',
-        padding: '1rem',
+        padding: '1.25rem',
         display: 'flex',
         flexDirection: 'column',
         gap: '1rem',
       }}
     >
-      <SkeletonElement height="160px" borderRadius="12px" />
+      <SkeletonElement height="160px" borderRadius="14px" />
       <SkeletonElement width="40%" height="16px" />
       <SkeletonElement width="80%" height="22px" />
       <SkeletonElement width="60%" height="16px" />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '1rem' }}>
         <SkeletonElement width="30%" height="24px" />
-        <SkeletonElement width="35%" height="36px" borderRadius="8px" />
+        <SkeletonElement width="35%" height="36px" borderRadius="10px" />
       </div>
     </div>
   );
@@ -63,16 +65,17 @@ export function DashboardStatsSkeleton() {
         <div
           key={i}
           style={{
-            background: 'var(--surface-color, #fff)',
+            background: 'var(--bg-color)',
             padding: '1.5rem',
-            borderRadius: '16px',
-            border: '1px solid var(--border-color, #e2e8f0)',
+            borderRadius: '20px',
+            border: '1px solid rgba(255, 255, 255, 0.6)',
+            boxShadow: 'var(--neu-shadow-raised)',
             display: 'flex',
             alignItems: 'center',
             gap: '1rem',
           }}
         >
-          <SkeletonElement width="56px" height="56px" borderRadius="12px" />
+          <SkeletonElement width="56px" height="56px" borderRadius="14px" />
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             <SkeletonElement width="60px" height="28px" />
             <SkeletonElement width="100px" height="14px" />
@@ -85,7 +88,7 @@ export function DashboardStatsSkeleton() {
 
 export function TableRowSkeleton({ cols = 6 }) {
   return (
-    <tr style={{ borderBottom: '1px solid var(--border-color, #e2e8f0)' }}>
+    <tr style={{ borderBottom: '1px solid rgba(43, 38, 34, 0.08)' }}>
       {Array.from({ length: cols }).map((_, idx) => (
         <td key={idx} style={{ padding: '1rem' }}>
           <SkeletonElement height="18px" width={idx === 0 ? '70%' : '50%'} />
@@ -97,10 +100,10 @@ export function TableRowSkeleton({ cols = 6 }) {
 
 export function TableSkeleton({ rows = 5, cols = 6 }) {
   return (
-    <div style={{ background: 'var(--surface-color, #fff)', borderRadius: '12px', border: '1px solid var(--border-color, #e2e8f0)', overflow: 'hidden' }}>
+    <div style={{ background: 'var(--bg-color)', borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.6)', boxShadow: 'var(--neu-shadow-raised)', overflow: 'hidden' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
-          <tr style={{ background: 'var(--bg-color, #f8fafc)' }}>
+          <tr style={{ background: 'var(--bg-color)', boxShadow: 'var(--neu-shadow-inset-sm)' }}>
             {Array.from({ length: cols }).map((_, i) => (
               <th key={i} style={{ padding: '1rem', textAlign: 'left' }}>
                 <SkeletonElement height="16px" width="60%" />

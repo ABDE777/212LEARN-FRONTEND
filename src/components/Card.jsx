@@ -7,39 +7,38 @@ export default function Card({
   ...props 
 }) {
   const baseStyle = {
-    borderRadius: '16px',
+    borderRadius: '20px',
     padding,
+    transition: 'all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)',
   };
 
   const variants = {
     default: {
-      background: 'var(--surface-color)',
-      border: '1px solid var(--border-color)',
-      boxShadow: 'var(--shadow-sm)',
+      background: 'var(--bg-color)',
+      border: '1px solid rgba(255, 255, 255, 0.6)',
+      boxShadow: 'var(--neu-shadow-raised)',
     },
     glass: {
-      background: 'var(--glass-bg)',
-      backdropFilter: 'blur(12px)',
-      WebkitBackdropFilter: 'blur(12px)',
-      border: '1px solid var(--glass-border)',
-      boxShadow: 'var(--shadow-glass)',
+      background: 'var(--bg-color)',
+      border: '1px solid rgba(255, 255, 255, 0.7)',
+      boxShadow: 'var(--neu-shadow-raised)',
     },
     elevated: {
-      background: 'var(--surface-color)',
-      border: '1px solid var(--border-color)',
-      boxShadow: 'var(--shadow-md)',
+      background: 'var(--bg-color)',
+      border: '1px solid rgba(255, 255, 255, 0.7)',
+      boxShadow: 'var(--neu-shadow-raised-lg)',
     },
     flat: {
-      background: 'var(--surface-color)',
-      border: 'none',
-      boxShadow: 'none',
+      background: 'var(--bg-color)',
+      border: '1px solid rgba(255, 255, 255, 0.4)',
+      boxShadow: 'var(--neu-shadow-inset)',
     },
   };
 
   return (
     <div
       style={{ ...baseStyle, ...variants[variant], ...style }}
-      className={className}
+      className={`neu-card ${className}`}
       {...props}
     >
       {children}

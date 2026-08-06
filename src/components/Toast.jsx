@@ -6,31 +6,34 @@ export function ToastItem({ toast, onClose }) {
   const isError = toast.type === 'error';
 
   const icon = isSuccess ? (
-    <CheckCircle2 size={20} color="#10B981" />
+    <CheckCircle2 size={20} color="var(--success-color, #28a745)" />
   ) : isError ? (
-    <AlertCircle size={20} color="#EF4444" />
+    <AlertCircle size={20} color="var(--error-color, #dc3545)" />
   ) : (
-    <Info size={20} color="#3B82F6" />
+    <Info size={20} color="var(--primary, #C1652F)" />
   );
 
-  const borderLeftColor = isSuccess ? '#10B981' : isError ? '#EF4444' : '#3B82F6';
+  const borderLeftColor = isSuccess ? 'var(--success-color)' : isError ? 'var(--error-color)' : 'var(--primary)';
 
   return (
     <div
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '0.75rem',
+        gap: '0.85rem',
         minWidth: '280px',
         maxWidth: '420px',
-        padding: '0.85rem 1.1rem',
-        background: 'var(--surface-color, #ffffff)',
-        color: 'var(--text-color, #1e293b)',
-        borderRadius: '12px',
-        borderLeft: `4px solid ${borderLeftColor}`,
-        boxShadow: '0 10px 25px -5px rgba(0,0,0,0.12), 0 8px 10px -6px rgba(0,0,0,0.08)',
-        fontSize: '0.9rem',
-        fontWeight: 500,
+        padding: '0.95rem 1.25rem',
+        background: 'var(--bg-color)',
+        color: 'var(--text-color)',
+        borderRadius: '16px',
+        borderLeft: `5px solid ${borderLeftColor}`,
+        boxShadow: 'var(--neu-shadow-raised)',
+        borderTop: '1px solid rgba(255, 255, 255, 0.6)',
+        borderRight: '1px solid rgba(255, 255, 255, 0.6)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.6)',
+        fontSize: '0.92rem',
+        fontWeight: 600,
         animation: 'slideInRight 0.3s ease-out',
         zIndex: 9999,
         position: 'relative',
@@ -41,16 +44,21 @@ export function ToastItem({ toast, onClose }) {
       <button
         onClick={() => onClose(toast.id)}
         style={{
-          background: 'none',
-          border: 'none',
+          background: 'var(--bg-color)',
+          border: '1px solid rgba(255, 255, 255, 0.5)',
+          borderRadius: '50%',
+          width: '26px',
+          height: '26px',
           cursor: 'pointer',
-          color: 'var(--secondary, #64748b)',
-          padding: '2px',
+          color: 'var(--secondary)',
+          boxShadow: 'var(--neu-shadow-raised-sm)',
           display: 'flex',
           alignItems: 'center',
+          justifyContent: 'center',
+          outline: 'none',
         }}
       >
-        <X size={16} />
+        <X size={14} />
       </button>
     </div>
   );

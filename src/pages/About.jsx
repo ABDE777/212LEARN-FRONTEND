@@ -1,5 +1,8 @@
 import React from 'react';
 import { BookOpen, Users, Award, Compass } from 'lucide-react';
+import LottieRaw from 'lottie-react';
+const Lottie = LottieRaw.default || LottieRaw;
+import aboutAnimation from '../lotties/Education2.json';
 import Navbar from '../components/Navbar';
 
 function About() {
@@ -31,11 +34,27 @@ function About() {
       <Navbar />
       {/* Hero Section */}
       <header className="about-hero">
-        <span className="about-badge">Notre Mission</span>
-        <h1 className="about-title">Apprendre sans limites avec 212Learn</h1>
-        <p className="about-subtitle">
-          Une plateforme éducative moderne, conçue pour connecter les meilleurs instructeurs avec des étudiants passionnés désireux d'acquérir de nouvelles compétences.
-        </p>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '3rem', flexWrap: 'wrap' }}>
+          <div style={{ flex: '1 1 480px', textAlign: 'left' }}>
+            <span className="about-badge">Notre Mission</span>
+            <h1 className="about-title" style={{ textAlign: 'left' }}>Apprendre sans limites avec 212Learn</h1>
+            <p className="about-subtitle" style={{ textAlign: 'left', margin: 0 }}>
+              Une plateforme éducative moderne, conçue pour connecter les meilleurs instructeurs avec des étudiants passionnés désireux d'acquérir de nouvelles compétences.
+            </p>
+          </div>
+          <div style={{ 
+            flex: '1 1 360px', 
+            maxWidth: '460px', 
+            background: 'var(--bg-color)', 
+            padding: '1.5rem', 
+            borderRadius: '28px', 
+            boxShadow: 'var(--neu-shadow-raised)', 
+            border: '1px solid rgba(255, 255, 255, 0.7)',
+            margin: '0 auto'
+          }}>
+            <Lottie animationData={aboutAnimation} loop={true} />
+          </div>
+        </div>
       </header>
 
       {/* Cards Section */}

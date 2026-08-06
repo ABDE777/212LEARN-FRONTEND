@@ -34,6 +34,7 @@ import StudentDashboard from './pages/StudentDashboard';
 import InstructorDashboard from './pages/InstructorDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import InstructorCourseManage from './pages/InstructorCourseManage';
+import NotFound from './pages/NotFound';
 
 // Components
 import Footer from './components/Footer';
@@ -98,6 +99,9 @@ function App() {
                 <Route element={<AdminLayout />}>
                   <Route path="/admin/dashboard" element={<AdminDashboard />} />
                 </Route>
+
+                {/* 404 Catch-all */}
+                <Route path="*" element={<NotFound />} />
               </Routes>
               <CartDrawer />
               <FooterWrapper />

@@ -1,9 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import api from '../services/api';
 
 export function useAdminStats() {
   const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const fetchStats = useCallback(async () => {
@@ -22,6 +22,10 @@ export function useAdminStats() {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
   return { stats, loading, error, refreshStats: fetchStats };
 }

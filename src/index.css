@@ -1,32 +1,44 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap');
 
 :root {
-  /* Brand Colors */
+  /* Brand Colors (UNCHANGED) */
   --primary: #C1652F; /* Terracotta */
   --secondary: #1B4B5A; /* Bleu sarcelle */
   --accent: #E8A33D; /* Moutarde */
   --bg-color: #F5EDE4; /* Sable chaud */
   --text-color: #2B2622; /* Anthracite */
   
-  /* Additional UI Colors */
+  /* Additional UI Colors (UNCHANGED) */
   --surface-color: #FFFFFF;
-  --border-color: rgba(43, 38, 34, 0.1);
+  --border-color: rgba(43, 38, 34, 0.08);
   --error-color: #dc3545;
   --success-color: #28a745;
   
   /* Glassmorphism */
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.5);
+  --glass-bg: rgba(245, 237, 228, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.6);
   
   /* Typography */
   --font-heading: 'Outfit', sans-serif;
   --font-body: 'Inter', sans-serif;
   
-  /* Shadows */
-  --shadow-sm: 0 2px 4px rgba(43, 38, 34, 0.05);
-  --shadow-md: 0 8px 16px rgba(43, 38, 34, 0.08);
-  --shadow-lg: 0 16px 32px rgba(43, 38, 34, 0.12);
-  --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+  /* Neumorphism Tactile Soft Depth Tokens */
+  --neu-shadow-raised: 7px 7px 16px rgba(195, 175, 155, 0.45), -7px -7px 16px rgba(255, 255, 255, 0.9);
+  --neu-shadow-raised-sm: 4px 4px 10px rgba(195, 175, 155, 0.35), -4px -4px 10px rgba(255, 255, 255, 0.8);
+  --neu-shadow-raised-lg: 12px 12px 28px rgba(195, 175, 155, 0.5), -12px -12px 28px rgba(255, 255, 255, 0.95);
+  --neu-shadow-inset: inset 4px 4px 8px rgba(195, 175, 155, 0.4), inset -4px -4px 8px rgba(255, 255, 255, 0.85);
+  --neu-shadow-inset-sm: inset 2px 2px 5px rgba(195, 175, 155, 0.35), inset -2px -2px 5px rgba(255, 255, 255, 0.8);
+  --neu-shadow-pressed: inset 5px 5px 10px rgba(195, 175, 155, 0.5), inset -5px -5px 10px rgba(255, 255, 255, 0.9);
+  
+  /* Dark Surface Neumorphism Tokens (--secondary: #1B4B5A) */
+  --neu-dark-raised: 6px 6px 14px rgba(12, 32, 40, 0.55), -6px -6px 14px rgba(35, 95, 115, 0.35);
+  --neu-dark-inset: inset 4px 4px 8px rgba(12, 32, 40, 0.55), inset -4px -4px 8px rgba(35, 95, 115, 0.35);
+
+  /* Shadows mapped to Neumorphism */
+  --shadow-sm: var(--neu-shadow-raised-sm);
+  --shadow-md: var(--neu-shadow-raised);
+  --shadow-lg: var(--neu-shadow-raised-lg);
+  --shadow-glass: var(--neu-shadow-raised);
 }
 
 * {
@@ -65,14 +77,18 @@ button {
   font-family: var(--font-heading);
 }
 
-/* Utilities */
-.glass-panel {
-  background: var(--glass-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--shadow-glass);
-  border-radius: 16px;
+/* Utilities & Neumorphic Classes */
+.glass-panel, .neu-panel {
+  background: var(--bg-color);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: var(--neu-shadow-raised);
+  border-radius: 20px;
+}
+
+.neu-inset {
+  background: var(--bg-color);
+  box-shadow: var(--neu-shadow-inset);
+  border-radius: 14px;
 }
 
 .btn-primary {
@@ -80,16 +96,21 @@ button {
   color: #fff;
   border: none;
   padding: 12px 24px;
-  border-radius: 8px;
+  border-radius: 14px;
   font-size: 1rem;
   font-weight: 600;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 4px 12px rgba(232, 163, 61, 0.3);
+  transition: all 0.25s ease;
+  box-shadow: 5px 5px 12px rgba(195, 175, 155, 0.5), -5px -5px 12px rgba(255, 255, 255, 0.85);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(232, 163, 61, 0.4);
+  box-shadow: 7px 7px 16px rgba(195, 175, 155, 0.6), -7px -7px 16px rgba(255, 255, 255, 0.95);
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+  box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.25), inset -3px -3px 6px rgba(255, 255, 255, 0.3);
 }
 
 .btn-secondary {
@@ -97,18 +118,24 @@ button {
   color: #fff;
   border: none;
   padding: 12px 24px;
-  border-radius: 8px;
+  border-radius: 14px;
   font-size: 1rem;
   font-weight: 600;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.25s ease;
+  box-shadow: 5px 5px 12px rgba(195, 175, 155, 0.5), -5px -5px 12px rgba(255, 255, 255, 0.85);
 }
 
 .btn-secondary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(27, 75, 90, 0.3);
+  box-shadow: 7px 7px 16px rgba(195, 175, 155, 0.6), -7px -7px 16px rgba(255, 255, 255, 0.95);
 }
 
-/* Form Styles */
+.btn-secondary:active {
+  transform: translateY(1px);
+  box-shadow: var(--neu-dark-inset);
+}
+
+/* Form Styles - Neumorphic Sunken Inputs */
 .form-group {
   margin-bottom: 1.5rem;
   text-align: left;
@@ -117,26 +144,28 @@ button {
 .form-group label {
   display: block;
   margin-bottom: 0.5rem;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.9rem;
   color: var(--secondary);
 }
 
 .form-control {
   width: 100%;
-  padding: 12px 16px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
+  padding: 14px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 14px;
   font-size: 1rem;
   font-family: var(--font-body);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  background: var(--surface-color);
+  transition: all 0.25s ease;
+  background: var(--bg-color);
+  box-shadow: var(--neu-shadow-inset);
+  color: var(--text-color);
 }
 
 .form-control:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(193, 101, 47, 0.2);
+  box-shadow: inset 3px 3px 6px rgba(195, 175, 155, 0.5), inset -3px -3px 6px rgba(255, 255, 255, 0.9), 0 0 0 3px rgba(193, 101, 47, 0.15);
 }
 
 .auth-layout {
@@ -145,16 +174,18 @@ button {
   align-items: center;
   justify-content: center;
   padding: 2rem;
+  background-color: var(--bg-color);
 }
 
 .auth-container {
   display: flex;
   width: 100%;
   max-width: 1000px;
-  background: var(--surface-color);
-  border-radius: 24px;
+  background: var(--bg-color);
+  border-radius: 28px;
   overflow: hidden;
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--neu-shadow-raised-lg);
+  border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
 .auth-lottie {
@@ -164,6 +195,9 @@ button {
   align-items: center;
   justify-content: center;
   padding: 2rem;
+  box-shadow: var(--neu-shadow-inset);
+  margin: 1.5rem;
+  border-radius: 20px;
 }
 
 .auth-form-wrapper {
@@ -397,12 +431,21 @@ button {
   margin-bottom: 4rem;
 }
 
+/* Neumorphic About Cards Grid */
+.about-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-bottom: 4rem;
+}
+
 .about-card {
-  background: var(--surface-color);
-  border: 1px solid var(--border-color);
-  border-radius: 20px;
+  background: var(--bg-color);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 24px;
   padding: 2.5rem 2rem;
-  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease, border-color 0.3s ease;
+  box-shadow: var(--neu-shadow-raised);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -412,9 +455,8 @@ button {
 }
 
 .about-card:hover {
-  transform: translateY(-8px);
-  box-shadow: var(--shadow-lg);
-  border-color: rgba(193, 101, 47, 0.3);
+  transform: translateY(-6px);
+  box-shadow: var(--neu-shadow-raised-lg);
 }
 
 .about-card::before {
@@ -434,21 +476,23 @@ button {
 }
 
 .about-card-icon-wrapper {
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
-  background: rgba(193, 101, 47, 0.08);
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
+  background: var(--bg-color);
+  box-shadow: var(--neu-shadow-inset-sm);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--primary);
   margin-bottom: 1.5rem;
-  transition: background 0.3s ease, color 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .about-card:hover .about-card-icon-wrapper {
   background: var(--primary);
   color: white;
+  box-shadow: 4px 4px 10px rgba(193, 101, 47, 0.4), -4px -4px 10px rgba(255, 255, 255, 0.8);
 }
 
 .about-card h3 {
@@ -464,19 +508,20 @@ button {
   opacity: 0.85;
 }
 
-/* Stats Section */
+/* Neumorphic Stats Section (Dark Surface) */
 .stats-container {
   display: flex;
   justify-content: space-around;
   flex-wrap: wrap;
   gap: 2rem;
   background: var(--secondary);
-  border-radius: 24px;
+  border-radius: 28px;
   padding: 3rem 2rem;
   color: white;
   margin-top: 4rem;
   text-align: center;
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--neu-dark-raised);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .stat-item {
@@ -498,46 +543,27 @@ button {
   opacity: 0.9;
 }
 
-/* Enhanced Navbar link styling */
+/* Enhanced Navbar link styling with Neumorphism */
 .nav-center-link {
   color: var(--secondary);
   text-decoration: none;
   font-weight: 600;
-  padding: 0.5rem 1.25rem;
-  border-radius: 8px;
-  transition: all 0.3s ease;
+  padding: 0.6rem 1.25rem;
+  border-radius: 12px;
+  transition: all 0.25s ease;
   position: relative;
-}
-
-.nav-center-link::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  width: 0;
-  height: 2px;
-  background-color: var(--primary);
-  transition: width 0.3s ease, left 0.3s ease;
 }
 
 .nav-center-link:hover {
   color: var(--primary);
-  background-color: rgba(193, 101, 47, 0.05);
-}
-
-.nav-center-link:hover::after {
-  width: 60%;
-  left: 20%;
+  background-color: var(--bg-color);
+  box-shadow: var(--neu-shadow-raised-sm);
 }
 
 .nav-center-link.active {
   color: var(--primary);
-  background-color: rgba(193, 101, 47, 0.08);
-}
-
-.nav-center-link.active::after {
-  width: 60%;
-  left: 20%;
+  background-color: var(--bg-color);
+  box-shadow: var(--neu-shadow-inset-sm);
 }
 
 /* Dashboard Sidebar Layout */
@@ -549,8 +575,9 @@ button {
 
 .dashboard-sidebar {
   width: 280px;
-  background: var(--surface-color);
-  border-right: 1px solid var(--border-color);
+  background: var(--bg-color);
+  border-right: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: var(--neu-shadow-raised);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -563,7 +590,7 @@ button {
   align-items: center;
   text-align: center;
   padding-bottom: 2rem;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid rgba(43, 38, 34, 0.06);
   margin-bottom: 2rem;
 }
 
@@ -575,6 +602,7 @@ button {
   border: 3px solid var(--primary);
   margin-bottom: 1rem;
   background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  box-shadow: var(--neu-shadow-raised-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -596,15 +624,16 @@ button {
   text-transform: uppercase;
   font-weight: 700;
   letter-spacing: 0.05em;
-  background: rgba(193, 101, 47, 0.1);
-  padding: 0.25rem 0.75rem;
+  background: var(--bg-color);
+  box-shadow: var(--neu-shadow-inset-sm);
+  padding: 0.35rem 0.85rem;
   border-radius: 9999px;
 }
 
 .sidebar-menu {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
   flex-grow: 1;
 }
 
@@ -615,24 +644,28 @@ button {
   width: 100%;
   padding: 1rem 1.25rem;
   border: none;
-  background: transparent;
+  background: var(--bg-color);
   color: var(--text-color);
   font-size: 1rem;
   font-weight: 500;
-  border-radius: 12px;
+  border-radius: 14px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
   text-align: left;
+  box-shadow: var(--neu-shadow-raised-sm);
 }
 
 .sidebar-menu-btn:hover {
-  background: rgba(27, 75, 90, 0.05);
-  color: var(--secondary);
+  background: var(--bg-color);
+  color: var(--primary);
+  box-shadow: var(--neu-shadow-raised);
 }
 
 .sidebar-menu-btn.active {
-  background: var(--secondary);
-  color: white;
+  background: var(--bg-color);
+  color: var(--secondary);
+  font-weight: 700;
+  box-shadow: var(--neu-shadow-inset);
 }
 
 .dashboard-main-content {
@@ -661,10 +694,11 @@ button {
   display: flex;
   align-items: center;
   gap: 1.5rem;
-  background: rgba(193, 101, 47, 0.04);
+  background: var(--bg-color);
+  box-shadow: var(--neu-shadow-inset);
   padding: 1.5rem;
-  border-radius: 16px;
-  border: 1px dashed rgba(193, 101, 47, 0.2);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
   margin-bottom: 2rem;
 }
 
@@ -673,8 +707,8 @@ button {
   height: 90px;
   border-radius: 50%;
   object-fit: cover;
-  border: 4px solid white;
-  box-shadow: var(--shadow-md);
+  border: 4px solid var(--bg-color);
+  box-shadow: var(--neu-shadow-raised);
 }
 
 .profile-avatar-input-wrapper {

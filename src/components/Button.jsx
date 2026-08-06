@@ -12,53 +12,57 @@ export default function Button({
     fontFamily: 'var(--font-heading)',
     cursor: disabled || loading ? 'not-allowed' : 'pointer',
     border: 'none',
-    borderRadius: '8px',
+    borderRadius: '14px',
     fontWeight: 600,
-    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+    transition: 'all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)',
     opacity: disabled || loading ? 0.6 : 1,
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
     gap: '0.5rem',
+    outline: 'none',
   };
 
   const variants = {
     primary: {
       backgroundColor: 'var(--accent)',
       color: '#fff',
-      boxShadow: '0 4px 12px rgba(232, 163, 61, 0.3)',
+      boxShadow: '4px 4px 12px rgba(195, 175, 155, 0.45), -4px -4px 12px rgba(255, 255, 255, 0.85)',
     },
     secondary: {
       backgroundColor: 'var(--secondary)',
       color: '#fff',
+      boxShadow: '4px 4px 12px rgba(195, 175, 155, 0.45), -4px -4px 12px rgba(255, 255, 255, 0.85)',
     },
     outline: {
-      background: 'transparent',
+      background: 'var(--bg-color)',
       color: 'var(--secondary)',
-      border: '1px solid var(--border-color)',
-      boxShadow: 'none',
+      border: '1px solid rgba(255, 255, 255, 0.6)',
+      boxShadow: 'var(--neu-shadow-raised-sm)',
     },
     ghost: {
-      background: 'transparent',
+      background: 'var(--bg-color)',
       color: 'var(--primary)',
-      boxShadow: 'none',
+      border: '1px solid rgba(255, 255, 255, 0.4)',
+      boxShadow: 'var(--neu-shadow-raised-sm)',
     },
     danger: {
       backgroundColor: 'var(--error-color)',
       color: '#fff',
+      boxShadow: '4px 4px 12px rgba(195, 175, 155, 0.45), -4px -4px 12px rgba(255, 255, 255, 0.85)',
     },
   };
 
   const sizes = {
-    small:  { padding: '8px 16px',  fontSize: '0.9rem' },
-    medium: { padding: '12px 24px', fontSize: '1rem'   },
-    large:  { padding: '16px 32px', fontSize: '1.1rem' },
+    small:  { padding: '8px 18px',  fontSize: '0.9rem', borderRadius: '10px' },
+    medium: { padding: '12px 24px', fontSize: '1rem',   borderRadius: '14px' },
+    large:  { padding: '16px 32px', fontSize: '1.1rem', borderRadius: '18px' },
   };
 
   return (
     <button
       style={{ ...baseStyle, ...variants[variant], ...sizes[size], ...style }}
-      className={className}
+      className={`neu-button ${className}`}
       disabled={disabled || loading}
       {...props}
     >
