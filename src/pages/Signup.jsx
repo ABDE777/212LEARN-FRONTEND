@@ -37,11 +37,27 @@ export default function Signup() {
   };
 
   return (
-    <div className="auth-layout">
-      <div className="auth-container">
+    <div className="auth-layout" style={{ position: 'relative', overflow: 'hidden' }}>
+      {/* Animated background blobs */}
+      <div style={{
+        position: 'absolute', top: '-80px', right: '-60px',
+        width: '380px', height: '380px',
+        background: 'radial-gradient(circle, rgba(193,101,47,0.09) 0%, transparent 70%)',
+        borderRadius: '50%', animation: 'blobFloat 11s ease-in-out infinite',
+        pointerEvents: 'none',
+      }} />
+      <div style={{
+        position: 'absolute', bottom: '-60px', left: '-40px',
+        width: '280px', height: '280px',
+        background: 'radial-gradient(circle, rgba(27,75,90,0.07) 0%, transparent 70%)',
+        borderRadius: '50%', animation: 'blobFloat 9s ease-in-out infinite reverse',
+        pointerEvents: 'none',
+      }} />
+
+      <div className="auth-container" style={{ animation: 'scaleIn 0.45s cubic-bezier(0.22,1,0.36,1) both' }}>
         
         {/* Left Section: Form */}
-        <div className="auth-form-wrapper">
+        <div className="auth-form-wrapper" style={{ animation: 'slideInLeft 0.6s cubic-bezier(0.22,1,0.36,1) 0.1s both' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
             <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--secondary)', fontWeight: 500 }}>
               <ArrowLeft size={20} />

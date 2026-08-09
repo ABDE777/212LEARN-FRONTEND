@@ -13,9 +13,11 @@ export function useMeetings(courseId) {
     try {
       const response = await api.get(`/courses/${courseId}/meetings`);
       const data = response.data?.data;
-      // API returns { upcoming: [], past: [] } or a flat array
+      // API returns { meetings: [] } or a flat array
       if (Array.isArray(data)) {
         setMeetings(data);
+      } else if (Array.isArray(data?.meetings)) {
+        setMeetings(data.meetings);
       } else {
         const upcoming = data?.upcoming || [];
         const past = data?.past || [];
@@ -30,15 +32,27 @@ export function useMeetings(courseId) {
     }
   }, [courseId]);
 
-  const createMeeting = async ({ title, meetingUrl, meetingDate }) => {
+  const createMeeting = async ({ title, meetingDate, durationMinutes = 60 }) => {
     const response = await api.post(`/courses/${courseId}/meetings`, {
       title,
-      meetingUrl,
       meetingDate,
+      durationMinutes,
     });
     await fetchMeetings();
     return response.data?.data?.meeting || response.data?.data || response.data;
   };
 
-  return { meetings, loading, error, fetchMeetings, createMeeting };
+  const startMeeting = async (meetingId) => {
+    const response = await api.patch(`/meetings/${meetingId}/start`);
+    await fetchMeetings();
+    return response.data?.data?.meeting || response.data?.data || response.data;
+  };
+
+  const endMeeting = async (meetingId) => {
+    const response = await api.patch(`/meetings/${meetingId}/end`);
+    await fetchMeetings();
+    return response.data?.data?.meeting || response.data?.data || response.data;
+  };
+
+  return { meetings, loading, error, fetchMeetings, createMeeting, startMeeting, endMeeting };
 }

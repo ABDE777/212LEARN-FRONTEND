@@ -7,18 +7,24 @@ import Button from '../components/Button';
 import Navbar from '../components/Navbar';
 import SEOHead from '../components/SEOHead';
 import { CourseCardSkeleton } from '../components/SkeletonLoader';
+import { useAuth } from '../context/AuthContext';
 
 export default function Cart() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const { cart, items: cartItems, fetchCart, removeFromCart, validateCoupon, loading, error } = useCartContext();
   const [couponCode, setCouponCode] = useState('');
   const [couponError, setCouponError] = useState('');
   const [couponSuccess, setCouponSuccess] = useState('');
   const [discount, setDiscount] = useState(0);
-  const navigate = useNavigate();
 
   useEffect(() => {
+    if (user?.role?.toUpperCase() === 'ADMIN') {
+      navigate('/admin/dashboard', { replace: true });
+      return;
+    }
     fetchCart();
-  }, [fetchCart]);
+  }, [fetchCart, user, navigate]);
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;

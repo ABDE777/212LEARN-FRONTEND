@@ -3,6 +3,7 @@ import { Clock, Users, Star, BookOpen, PlayCircle, CheckCircle, Heart, ShoppingC
 import { useCourse, useCourseCurriculum } from '../hooks/useCourses';
 import { useCart } from '../hooks/useCart';
 import { useWishlist } from '../hooks/useWishlist';
+import { useAuth } from '../context/AuthContext';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -11,6 +12,8 @@ import Navbar from '../components/Navbar';
 export default function CourseDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
   const { course, loading: courseLoading, error: courseError } = useCourse(id);
   const { curriculum, loading: curriculumLoading } = useCourseCurriculum(id);
   const { addToCart, loading: cartLoading } = useCart();
@@ -231,7 +234,7 @@ export default function CourseDetails() {
                   {course.isEnrolled ? 'Continuer le cours' : "S'inscrire maintenant"}
                 </Button>
 
-                {!course.isEnrolled && (
+                {!course.isEnrolled && !isAdmin && (
                   <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
                     <Button
                       variant="outline"

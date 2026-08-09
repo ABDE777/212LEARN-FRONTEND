@@ -1,39 +1,231 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Trophy, Flame, Target, BookOpen, Clock, TrendingUp, Award, LogOut, User, Lock, ShoppingCart, Heart } from 'lucide-react';
+import { Trophy, Flame, Target, BookOpen, Clock, TrendingUp, Award, LogOut, User, Lock, ShoppingCart, Heart, Trash2, AlertTriangle, X, Video, Calendar, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStudentDashboardData } from '../hooks/useStudentDashboard';
 import { useAuth } from '../context/AuthContext';
 import { useCartContext } from '../context/CartContext';
+import { useMeetings } from '../hooks/useMeetings';
+import VirtualClassroom from '../components/VirtualClassroom';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import Navbar from '../components/Navbar';
 import ProfileEditForm from '../components/ProfileEditForm';
 import ChangePasswordForm from '../components/ChangePasswordForm';
 import { WishlistContent } from './Wishlist';
-import SEOHead from '../components/SEOHead';
-import { DashboardStatsSkeleton, CourseCardSkeleton } from '../components/SkeletonLoader';
+/* ─── Student Live Sessions Component ────────────────────────── */
+function StudentLiveSessionsTab({ enrollments = [], currentUser }) {
+  const [selectedCourseId, setSelectedCourseId] = useState(enrollments[0]?.course?.id || enrollments[0]?.courseId || '');
+  const { meetings, loading, error, fetchMeetings } = useMeetings(selectedCourseId);
+  const [activeVirtualMeeting, setActiveVirtualMeeting] = useState(null);
+
+  useEffect(() => {
+    if (selectedCourseId) fetchMeetings();
+  }, [selectedCourseId, fetchMeetings]);
+
+  const liveMeetings = meetings.filter(m => m.status === 'LIVE');
+  const upcomingMeetings = meetings.filter(m => m.status === 'SCHEDULED');
+  const pastMeetings = meetings.filter(m => m.status === 'COMPLETED');
+
+  const formatDate = (d) => new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+  const formatTime = (d) => new Date(d).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
+  return (
+    <div>
+      {/* Active Virtual Classroom modal */}
+      {activeVirtualMeeting && (
+        <VirtualClassroom
+          meeting={activeVirtualMeeting}
+          displayName={currentUser?.firstName ? `${currentUser.firstName} ${currentUser.lastName || ''}`.trim() : 'Étudiant'}
+          isInstructor={false}
+          onClose={() => setActiveVirtualMeeting(null)}
+        />
+      )}
+
+      <div style={{ marginBottom: '1.75rem' }}>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.3rem', color: 'var(--text-color)' }}>
+          Classes Virtuelles & Sessions Live
+        </h2>
+        <p style={{ color: 'var(--secondary)', fontSize: '0.92rem' }}>
+          Rejoignez vos cours interactifs en direct et visionnez les enregistrements.
+        </p>
+      </div>
+
+      {/* Course filter pills */}
+      {enrollments.length > 0 ? (
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.75rem' }}>
+          {enrollments.map((e) => {
+            const cId = e.course?.id || e.courseId;
+            const cTitle = e.course?.title || 'Cours';
+            return (
+              <button
+                key={cId}
+                type="button"
+                onClick={() => setSelectedCourseId(cId)}
+                style={{
+                  padding: '0.4rem 1.1rem', borderRadius: '9999px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer',
+                  border: `1.5px solid ${selectedCourseId === cId ? 'var(--primary)' : 'var(--border-color)'}`,
+                  background: selectedCourseId === cId ? 'rgba(193,101,47,0.08)' : 'transparent',
+                  color: selectedCourseId === cId ? 'var(--primary)' : 'var(--secondary)',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {cTitle}
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <p style={{ color: 'var(--secondary)', fontStyle: 'italic', marginBottom: '1.5rem' }}>
+          Vous n'êtes inscrit à aucun cours pour le moment.
+        </p>
+      )}
+
+      {loading && <div style={{ padding: '2rem 0' }}><Clock size={20} className="spin" /> Chargement des sessions…</div>}
+      {error && <p style={{ color: 'var(--error-color)', marginBottom: '1rem' }}>{error}</p>}
+
+      {!loading && !error && meetings.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '3.5rem 1.5rem', background: '#fff', border: '1px dashed var(--border-color)', borderRadius: '16px' }}>
+          <Video size={36} color="var(--secondary)" style={{ opacity: 0.5, marginBottom: '0.75rem' }} />
+          <h3 style={{ fontSize: '1.1rem', color: 'var(--secondary)', marginBottom: '0.3rem' }}>Aucune session disponible</h3>
+          <p style={{ fontSize: '0.85rem', color: 'var(--secondary)', opacity: 0.8 }}>
+            Votre instructeur n'a pas encore planifié de session live pour ce cours.
+          </p>
+        </div>
+      )}
+
+      {/* LIVE NOW */}
+      {liveMeetings.length > 0 && (
+        <div style={{ marginBottom: '2rem' }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#28a745', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#28a745', animation: 'pulse 1s infinite', display: 'inline-block' }} />
+            En direct maintenant ({liveMeetings.length})
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+            {liveMeetings.map((m) => (
+              <div key={m.id} style={{ borderRadius: '16px', background: '#f6fff8', border: '1px solid #28a745', padding: '1.25rem', boxShadow: '0 4px 14px rgba(40,167,69,0.15)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#28a745', background: 'rgba(40,167,69,0.15)', padding: '0.2rem 0.6rem', borderRadius: '999px' }}>
+                    LIVE EN COURS
+                  </span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--secondary)' }}><Clock size={12} /> {formatTime(m.meetingDate)}</span>
+                </div>
+                <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-color)' }}>{m.title}</h4>
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                  <button
+                    onClick={() => setActiveVirtualMeeting(m)}
+                    style={{ flex: 1, padding: '0.5rem 1rem', borderRadius: '8px', background: '#28a745', color: '#fff', border: 'none', fontWeight: 600, fontSize: '0.88rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
+                  >
+                    <Video size={15} /> Rejoindre la classe
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* UPCOMING */}
+      {upcomingMeetings.length > 0 && (
+        <div style={{ marginBottom: '2rem' }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--secondary)', marginBottom: '1rem' }}>
+            Sessions à venir ({upcomingMeetings.length})
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+            {upcomingMeetings.map((m) => (
+              <div key={m.id} style={{ borderRadius: '16px', background: '#fff', border: '1px solid var(--border-color)', padding: '1.25rem' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)', background: 'rgba(193,101,47,0.1)', padding: '0.2rem 0.6rem', borderRadius: '999px' }}>
+                  Planifiée
+                </span>
+                <h4 style={{ fontSize: '0.98rem', fontWeight: 700, marginTop: '0.6rem', marginBottom: '0.4rem', color: 'var(--text-color)' }}>{m.title}</h4>
+                <p style={{ fontSize: '0.82rem', color: 'var(--secondary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <Calendar size={13} /> {formatDate(m.meetingDate)} à {formatTime(m.meetingDate)}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* PAST / RECORDINGS */}
+      {pastMeetings.length > 0 && (
+        <div>
+          <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--secondary)', marginBottom: '1rem' }}>
+            Replays & Enregistrements ({pastMeetings.length})
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+            {pastMeetings.map((m) => (
+              <div key={m.id} style={{ borderRadius: '16px', background: '#f9f9f9', border: '1px solid var(--border-color)', padding: '1.25rem' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--secondary)' }}>Terminée</span>
+                <h4 style={{ fontSize: '0.98rem', fontWeight: 700, marginTop: '0.5rem', marginBottom: '0.4rem', color: 'var(--text-color)' }}>{m.title}</h4>
+                {m.recordingUrl ? (
+                  <a
+                    href={m.recordingUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.75rem', padding: '0.4rem 0.9rem', borderRadius: '8px', background: 'var(--secondary)', color: '#fff', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600 }}
+                  >
+                    <ExternalLink size={13} /> Voir le replay
+                  </a>
+                ) : (
+                  <p style={{ fontSize: '0.78rem', color: 'var(--secondary)', fontStyle: 'italic', marginTop: '0.5rem' }}>Aucun enregistrement disponible</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, logout } = useAuth();
   const { openCart } = useCartContext();
 
-  const initialTab = searchParams.get('tab') || 'dashboard';
-  const [activeTab, setActiveTab] = useState(initialTab);
+  const [activeTab, setActiveTabState] = useState(() => {
+    const tabFromUrl = searchParams.get('tab');
+    if (tabFromUrl) return tabFromUrl;
+    const tabFromStorage = localStorage.getItem('student_active_tab');
+    if (tabFromStorage) return tabFromStorage;
+    return 'dashboard';
+  });
 
-  const { profile, achievements, enrollments, loading, error } = useStudentDashboardData(user?.id);
-
-  useEffect(() => {
-    const tabParam = searchParams.get('tab');
-    if (tabParam) {
-      setActiveTab(tabParam);
-    }
-  }, [searchParams]);
+  const setActiveTab = (newTab) => {
+    setActiveTabState(newTab);
+    localStorage.setItem('student_active_tab', newTab);
+    setSearchParams({ tab: newTab }, { replace: true });
+  };
 
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  // ── Delete own account ────────────────────────────────────────────────────
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'SUPPRIMER') return;
+    setDeleteLoading(true);
+    setDeleteError(null);
+    try {
+      const { default: api } = await import('../services/api');
+      await api.delete('/users/me');
+      logout();
+      navigate('/login');
+    } catch (err) {
+      setDeleteError(
+        err.response?.data?.error?.message ||
+        err.response?.data?.message ||
+        'Impossible de supprimer le compte. Veuillez réessayer.'
+      );
+      setDeleteLoading(false);
+    }
   };
 
   const handleContinueCourse = (courseId, lessonId) => {
@@ -53,6 +245,7 @@ export default function StudentDashboard() {
     return date.toLocaleDateString('fr-FR');
   };
 
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const currentUser = profile || user;
 
   return (
@@ -62,45 +255,40 @@ export default function StudentDashboard() {
 
       <div className="dashboard-layout">
         {/* Sidebar Panel */}
-        <aside className="dashboard-sidebar">
-          <div className="sidebar-user-info">
-            {currentUser?.avatar ? (
-              <img
-                src={currentUser.avatar}
-                alt={`Photo de ${currentUser.firstName}`}
-                className="sidebar-avatar"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-            ) : (
-              <div className="sidebar-avatar">
-                {currentUser?.firstName ? currentUser.firstName.charAt(0).toUpperCase() : '?'}
-              </div>
-            )}
-            <div className="sidebar-username-wrapper">
-              <div className="sidebar-username">
-                {currentUser?.firstName} {currentUser?.lastName}
-              </div>
-              <span className="sidebar-userrole">Étudiant</span>
-            </div>
-          </div>
+        <aside className={`dashboard-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="sidebar-toggle-btn"
+            title={sidebarCollapsed ? "Déplier le menu" : "Réduire le menu"}
+          >
+            {sidebarCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+          </button>
 
           <nav className="sidebar-menu">
             <button
               onClick={() => setActiveTab('dashboard')}
               className={`sidebar-menu-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
+              title="Tableau de bord"
             >
               <Trophy size={18} />
               <span>Tableau de bord</span>
             </button>
-            <button onClick={openCart} className="sidebar-menu-btn">
+            <button onClick={openCart} className="sidebar-menu-btn" title="Mon Panier">
               <ShoppingCart size={18} />
               <span>Mon Panier</span>
             </button>
             <button
+              onClick={() => setActiveTab('lives')}
+              className={`sidebar-menu-btn ${activeTab === 'lives' ? 'active' : ''}`}
+              title="Sessions Live"
+            >
+              <Video size={18} />
+              <span>Sessions Live</span>
+            </button>
+            <button
               onClick={() => setActiveTab('wishlist')}
               className={`sidebar-menu-btn ${activeTab === 'wishlist' ? 'active' : ''}`}
+              title="Mes Souhaits"
             >
               <Heart size={18} />
               <span>Mes Souhaits</span>
@@ -108,6 +296,7 @@ export default function StudentDashboard() {
             <button
               onClick={() => setActiveTab('profile')}
               className={`sidebar-menu-btn ${activeTab === 'profile' ? 'active' : ''}`}
+              title="Mon Profil"
             >
               <User size={18} />
               <span>Mon Profil</span>
@@ -115,6 +304,7 @@ export default function StudentDashboard() {
             <button
               onClick={() => setActiveTab('security')}
               className={`sidebar-menu-btn ${activeTab === 'security' ? 'active' : ''}`}
+              title="Sécurité"
             >
               <Lock size={18} />
               <span>Sécurité</span>
@@ -123,6 +313,7 @@ export default function StudentDashboard() {
               onClick={handleLogout}
               className="sidebar-menu-btn"
               style={{ marginTop: 'auto', color: 'var(--error-color, #ef4444)' }}
+              title="Déconnexion"
             >
               <LogOut size={18} />
               <span>Déconnexion</span>
@@ -133,13 +324,15 @@ export default function StudentDashboard() {
         {/* Main Content Area */}
         <main className="dashboard-main-content">
           {activeTab === 'profile' ? (
-            <ProfileEditForm />
+            <div key="profile" className="tab-panel"><ProfileEditForm /></div>
           ) : activeTab === 'security' ? (
-            <ChangePasswordForm />
+            <div key="security" className="tab-panel"><ChangePasswordForm /></div>
           ) : activeTab === 'wishlist' ? (
-            <WishlistContent embedded={true} />
+            <div key="wishlist" className="tab-panel"><WishlistContent embedded={true} /></div>
+          ) : activeTab === 'lives' ? (
+            <div key="lives" className="tab-panel"><StudentLiveSessionsTab enrollments={enrollments} currentUser={user} /></div>
           ) : (
-            <div>
+            <div key={activeTab} className="tab-panel">
               {/* Welcome Section */}
               <div style={{ marginBottom: '2rem' }}>
                 <h1 style={{ fontSize: '2.25rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-color, #1e293b)' }}>

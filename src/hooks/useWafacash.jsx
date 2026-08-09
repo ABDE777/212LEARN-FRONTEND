@@ -49,15 +49,16 @@ export function useWafacash() {
     }
   };
 
-  const getPendingPayments = useCallback(async () => {
+  const getPendingPayments = useCallback(async (statusFilter = 'all') => {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.get('/payments/wafacash/pending');
+      const url = statusFilter ? `/payments/wafacash/pending?status=${statusFilter}` : '/payments/wafacash/pending';
+      const response = await api.get(url);
       // Unwrap backend envelope
       return response.data?.data || response.data;
     } catch (err) {
-      const errMsg = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to fetch pending payments';
+      const errMsg = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to fetch payments';
       setError(errMsg);
       throw err;
     } finally {

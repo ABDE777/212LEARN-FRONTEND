@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import api from '../services/api';
 
-export function useAdminStats() {
+export function usePublicStats() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -10,12 +10,11 @@ export function useAdminStats() {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.get('/admin/stats');
-      // Backend returns: { success: true, data: { stats: {...} } }
-      const payload = response.data?.data?.stats ?? response.data?.data ?? null;
+      const response = await api.get('/stats');
+      const payload = response.data?.data ?? response.data ?? null;
       setStats(payload);
     } catch (err) {
-      console.error('Failed to fetch admin stats:', err);
+      console.error('Failed to fetch public stats:', err);
       setError('Impossible de charger les statistiques.');
       setStats(null);
     } finally {

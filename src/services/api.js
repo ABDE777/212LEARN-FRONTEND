@@ -1,32 +1,56 @@
 import axios from 'axios';
 
-// Base URL – read from environment variable, fallback to production URL
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://backend-212learn.vercel.app/api/v1';
+// Base URL – read from environment variable, fallback to local dev or production URL
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1';
 
 const api = axios.create({
   baseURL,
 });
 
-// Request interceptor – attach JWT if stored in localStorage or memory
+// ── In-Memory Request Cache & Deduplication ──────────────────────────────────
+const cache = new Map();
+const pendingRequests = new Map();
+const CACHE_TTL_MS = 15000; // 15 seconds in-memory cache for GET queries
+
+/**
+ * Clear cached API responses by URL prefix
+ */
+export const clearApiCache = (pattern) => {
+  if (!pattern) {
+    cache.clear();
+    return;
+  }
+  for (const key of cache.keys()) {
+    if (key.includes(pattern)) {
+      cache.delete(key);
+    }
+  }
+};
+
+// Request interceptor – attach JWT if stored
 api.interceptors.request.use(
   config => {
     const token = window.__AUTH_TOKEN__ || localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    // Cache-busting: force a unique URL on every GET so the browser can never
-    // replay a cached response (and the server can never match an ETag/304).
-    if (config.method === 'get') {
-      config.params = { ...(config.params || {}), _t: Date.now() };
-    }
     return config;
   },
   error => Promise.reject(error)
 );
 
-// Response interceptor – handle 401 (unauthorized) globally
+// Response interceptor – handle caching, deduplication & 401 errors
 api.interceptors.response.use(
-  response => response,
+  response => {
+    // Invalidate GET cache on mutation methods (POST, PUT, PATCH, DELETE)
+    if (['post', 'put', 'patch', 'delete'].includes(response.config.method?.toLowerCase())) {
+      const url = response.config.url || '';
+      if (url.includes('/courses')) clearApiCache('/courses');
+      if (url.includes('/categories')) clearApiCache('/categories');
+      if (url.includes('/users')) clearApiCache('/users');
+    }
+    return response;
+  },
   async error => {
     if (error.response && error.response.status === 401) {
       window.__AUTH_TOKEN__ = null;
@@ -35,5 +59,46 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// Custom cached GET method
+const originalGet = api.get;
+api.get = function (url, config = {}) {
+  // If skipCache option is set, perform direct GET
+  if (config.skipCache) {
+    return originalGet.call(api, url, config);
+  }
+
+  const token = window.__AUTH_TOKEN__ || localStorage.getItem('token') || '';
+  const queryString = JSON.stringify(config.params || {});
+  const cacheKey = `${url}?${queryString}__token:${token.slice(-12)}`;
+
+  // 1. Return cached response if valid
+  const cached = cache.get(cacheKey);
+  if (cached && (Date.now() - cached.timestamp < (config.ttl || CACHE_TTL_MS))) {
+    return Promise.resolve(cached.data);
+  }
+
+  // 2. Deduplicate inflight requests to prevent duplicate network calls
+  if (pendingRequests.has(cacheKey)) {
+    return pendingRequests.get(cacheKey);
+  }
+
+  const requestPromise = originalGet.call(api, url, config)
+    .then(response => {
+      cache.set(cacheKey, {
+        timestamp: Date.now(),
+        data: response,
+      });
+      pendingRequests.delete(cacheKey);
+      return response;
+    })
+    .catch(error => {
+      pendingRequests.delete(cacheKey);
+      throw error;
+    });
+
+  pendingRequests.set(cacheKey, requestPromise);
+  return requestPromise;
+};
 
 export default api;

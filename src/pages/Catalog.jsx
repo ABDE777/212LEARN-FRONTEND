@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Filter, ShoppingCart, Heart } from 'lucide-react';
+import { Search, ShoppingCart, Heart, BookOpen } from 'lucide-react';
 import { useCourses } from '../hooks/useCourses';
 import { useCategories } from '../hooks/useCategories';
 import { useCart } from '../hooks/useCart';
 import { useWishlist } from '../hooks/useWishlist';
+import { useAuth } from '../context/AuthContext';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -12,12 +13,14 @@ import Navbar from '../components/Navbar';
 import { CourseCardSkeleton } from '../components/SkeletonLoader';
 
 export default function Catalog() {
+  const { user } = useAuth();
+  const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
   const [filters, setFilters] = useState({
     category: '',
     level: '',
     search: ''
   });
-  const [showFilters, setShowFilters] = useState(false);
+
 
   const { courses, loading: coursesLoading, error: coursesError } = useCourses(filters);
   const { categories, loading: categoriesLoading } = useCategories();
@@ -69,105 +72,116 @@ export default function Catalog() {
           </p>
         </div>
 
-        {/* Search and Filters */}
-        <div style={{ marginBottom: '2rem' }}>
-          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-            <div style={{ flex: 1, position: 'relative' }}>
-              <Search 
-                size={20} 
-                style={{ 
-                  position: 'absolute', 
-                  left: '12px', 
-                  top: '50%', 
-                  transform: 'translateY(-50%)',
-                  color: 'var(--secondary)'
-                }} 
-              />
-              <input
-                type="text"
-                placeholder="Rechercher un cours..."
-                value={filters.search}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '12px 16px 12px 44px',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '8px',
-                  fontSize: '1rem',
-                  fontFamily: 'var(--font-body)',
-                  background: 'var(--surface-color)'
-                }}
-              />
-            </div>
-            <Button
-              variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-            >
-              <Filter size={20} />
-              Filtres
-            </Button>
-            {(filters.category || filters.level || filters.search) && (
-              <Button variant="ghost" onClick={clearFilters}>
-                Effacer
-              </Button>
-            )}
+        {/* Search and Filters - Always visible horizontal bar */}
+        <div style={{ marginBottom: '2rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          {/* Search */}
+          <div style={{ flex: '1 1 280px', position: 'relative', minWidth: '200px' }}>
+            <Search
+              size={18}
+              style={{
+                position: 'absolute',
+                left: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: 'var(--secondary)',
+                pointerEvents: 'none',
+              }}
+            />
+            <input
+              type="text"
+              placeholder="Rechercher un cours..."
+              value={filters.search}
+              onChange={(e) => handleFilterChange('search', e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px 14px 10px 40px',
+                border: '1px solid var(--border-color)',
+                borderRadius: '10px',
+                fontSize: '0.92rem',
+                fontFamily: 'var(--font-body)',
+                background: 'var(--surface-color)',
+                color: 'var(--text-color)',
+                outline: 'none',
+                boxSizing: 'border-box',
+              }}
+            />
           </div>
 
-          {showFilters && (
-            <Card variant="default" padding="1.5rem" style={{ marginBottom: '1rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500, color: 'var(--secondary)' }}>
-                    Catégorie
-                  </label>
-                  <select
-                    value={filters.category}
-                    onChange={(e) => handleFilterChange('category', e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: '8px',
-                      fontSize: '1rem',
-                      fontFamily: 'var(--font-body)',
-                      background: 'var(--surface-color)'
-                    }}
-                  >
-                    <option value="">Toutes les catégories</option>
-                    {allCategories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+          {/* Category filter */}
+          <div style={{ flex: '0 1 220px', minWidth: '160px' }}>
+            <select
+              value={filters.category}
+              onChange={(e) => handleFilterChange('category', e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px 14px',
+                border: '1px solid var(--border-color)',
+                borderRadius: '10px',
+                fontSize: '0.92rem',
+                fontFamily: 'var(--font-body)',
+                background: 'var(--surface-color)',
+                color: filters.category ? 'var(--text-color)' : 'var(--secondary)',
+                outline: 'none',
+                cursor: 'pointer',
+                appearance: 'auto',
+              }}
+            >
+              <option value="">Toutes les catégories</option>
+              {allCategories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-                <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500, color: 'var(--secondary)' }}>
-                    Niveau
-                  </label>
-                  <select
-                    value={filters.level}
-                    onChange={(e) => handleFilterChange('level', e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: '8px',
-                      fontSize: '1rem',
-                      fontFamily: 'var(--font-body)',
-                      background: 'var(--surface-color)'
-                    }}
-                  >
-                    <option value="">Tous les niveaux</option>
-                    <option value="beginner">Débutant</option>
-                    <option value="intermediate">Intermédiaire</option>
-                    <option value="advanced">Avancé</option>
-                  </select>
-                </div>
-              </div>
-            </Card>
+          {/* Level filter */}
+          <div style={{ flex: '0 1 190px', minWidth: '140px' }}>
+            <select
+              value={filters.level}
+              onChange={(e) => handleFilterChange('level', e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px 14px',
+                border: '1px solid var(--border-color)',
+                borderRadius: '10px',
+                fontSize: '0.92rem',
+                fontFamily: 'var(--font-body)',
+                background: 'var(--surface-color)',
+                color: filters.level ? 'var(--text-color)' : 'var(--secondary)',
+                outline: 'none',
+                cursor: 'pointer',
+                appearance: 'auto',
+              }}
+            >
+              <option value="">Tous les niveaux</option>
+              <option value="beginner">Débutant</option>
+              <option value="intermediate">Intermédiaire</option>
+              <option value="advanced">Avancé</option>
+            </select>
+          </div>
+
+          {/* Clear filters */}
+          {(filters.category || filters.level || filters.search) && (
+            <button
+              onClick={clearFilters}
+              style={{
+                padding: '10px 16px',
+                borderRadius: '10px',
+                border: '1px solid var(--border-color)',
+                background: 'transparent',
+                color: 'var(--secondary)',
+                fontSize: '0.88rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--error-color)'; e.currentTarget.style.borderColor = 'var(--error-color)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--secondary)'; e.currentTarget.style.borderColor = 'var(--border-color)'; }}
+            >
+              ✕ Effacer
+            </button>
           )}
         </div>
 
@@ -211,16 +225,35 @@ export default function Catalog() {
                 style={{ textDecoration: 'none' }}
               >
                 <Card variant="elevated" style={{ height: '100%', transition: 'transform 0.2s ease' }}>
-                  {course.thumbnail && (
-                    <div
-                      style={{
-                        height: '180px',
-                        background: `url(${course.thumbnail}) center/cover`,
-                        borderRadius: '12px',
-                        marginBottom: '1rem'
-                      }}
-                    />
-                  )}
+                  {/* Thumbnail Banner */}
+                  <div
+                    style={{
+                      height: '170px',
+                      background: course.thumbnail
+                        ? `url(${course.thumbnail}) center/cover no-repeat`
+                        : 'linear-gradient(135deg, #1B4B5A 0%, #2A6F84 55%, #C1652F 100%)',
+                      borderRadius: '12px',
+                      marginBottom: '1rem',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {!course.thumbnail && (
+                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <BookOpen size={40} color="rgba(255,255,255,0.35)" />
+                      </div>
+                    )}
+                    <span style={{
+                      position: 'absolute', bottom: '0.6rem', right: '0.6rem',
+                      background: 'rgba(27,75,90,0.88)', backdropFilter: 'blur(6px)',
+                      color: '#fff', padding: '0.25rem 0.65rem', borderRadius: '9999px',
+                      fontSize: '0.8rem', fontWeight: 700, border: '1px solid rgba(255,255,255,0.2)',
+                    }}>
+                      {course.price === 0 || !course.price ? 'GRATUIT' : `${course.price} MAD`}
+                    </span>
+                  </div>
+
                   <div style={{ marginBottom: '0.5rem' }}>
                     <span style={{ 
                       background: 'var(--bg-color)', 
@@ -269,66 +302,68 @@ export default function Catalog() {
                       )}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    {(() => {
-                      const inCart = cartCourseIds.has(course.id);
-                      const inWishlist = wishlistCourseIds.has(course.id);
-                      return (
-                        <>
-                          <Button 
-                            variant={inCart ? 'ghost' : 'primary'}
-                            style={{
-                              flex: 1,
-                              display: 'flex',
-                              justifyContent: 'center',
-                              alignItems: 'center',
-                              gap: '0.5rem',
-                              ...(inCart && {
-                                opacity: 0.65,
-                                cursor: 'not-allowed',
-                                background: 'var(--border-color)',
-                                color: 'var(--secondary)',
-                                border: '1px solid var(--border-color)'
-                              })
-                            }}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              if (!inCart) addToCart(course.id);
-                            }}
-                            disabled={cartLoading || inCart}
-                          >
-                            <ShoppingCart size={16} />
-                            {inCart ? 'Déjà au panier' : 'Panier'}
-                          </Button>
-                          <Button 
-                            variant={inWishlist ? 'ghost' : 'outline'}
-                            style={{
-                              flex: 1,
-                              display: 'flex',
-                              justifyContent: 'center',
-                              alignItems: 'center',
-                              gap: '0.5rem',
-                              ...(inWishlist && {
-                                opacity: 0.65,
-                                cursor: 'not-allowed',
-                                background: 'var(--border-color)',
-                                color: 'var(--secondary)',
-                                border: '1px solid var(--border-color)'
-                              })
-                            }}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              if (!inWishlist) addToWishlist(course.id);
-                            }}
-                            disabled={wishlistLoading || inWishlist}
-                          >
-                            <Heart size={16} />
-                            {inWishlist ? 'Déjà en souhaits' : 'Souhaits'}
-                          </Button>
-                        </>
-                      );
-                    })()}
-                  </div>
+                  {!isAdmin && (
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      {(() => {
+                        const inCart = cartCourseIds.has(course.id);
+                        const inWishlist = wishlistCourseIds.has(course.id);
+                        return (
+                          <>
+                            <Button 
+                              variant={inCart ? 'ghost' : 'primary'}
+                              style={{
+                                flex: 1,
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                ...(inCart && {
+                                  opacity: 0.65,
+                                  cursor: 'not-allowed',
+                                  background: 'var(--border-color)',
+                                  color: 'var(--secondary)',
+                                  border: '1px solid var(--border-color)'
+                                })
+                              }}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                if (!inCart) addToCart(course.id);
+                              }}
+                              disabled={cartLoading || inCart}
+                            >
+                              <ShoppingCart size={16} />
+                              {inCart ? 'Déjà au panier' : 'Panier'}
+                            </Button>
+                            <Button 
+                              variant={inWishlist ? 'ghost' : 'outline'}
+                              style={{
+                                flex: 1,
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                ...(inWishlist && {
+                                  opacity: 0.65,
+                                  cursor: 'not-allowed',
+                                  background: 'var(--border-color)',
+                                  color: 'var(--secondary)',
+                                  border: '1px solid var(--border-color)'
+                                })
+                              }}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                if (!inWishlist) addToWishlist(course.id);
+                              }}
+                              disabled={wishlistLoading || inWishlist}
+                            >
+                              <Heart size={16} />
+                              {inWishlist ? 'Déjà en souhaits' : 'Souhaits'}
+                            </Button>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  )}
                 </Card>
               </Link>
             ))}

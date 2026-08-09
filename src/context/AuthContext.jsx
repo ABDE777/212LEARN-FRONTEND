@@ -65,6 +65,14 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
+  // Used by flows that already have a token from an API call (e.g. OTP restore)
+  const loginWithToken = (newToken, userData) => {
+    setToken(newToken);
+    window.__AUTH_TOKEN__ = newToken;
+    localStorage.setItem('token', newToken);
+    setUser(userData);
+  };
+
   const updateProfile = async (profileData) => {
     const response = await api.patch('/users/me', profileData);
     const updatedUser = response.data?.data?.user || response.data?.user || response.data;
@@ -77,6 +85,7 @@ export function AuthProvider({ children }) {
     token,
     loading,
     login,
+    loginWithToken,
     signup,
     logout,
     updateProfile,

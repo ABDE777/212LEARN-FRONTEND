@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import {
   BookOpen, Plus, Video, Users, User, LogOut,
   Calendar, Clock, Link, ExternalLink, Copy, Check,
-  CheckCircle, ChevronRight, Zap, Mail, Search,
+  CheckCircle, ChevronRight, ChevronLeft, Zap, Mail, Search,
   HelpCircle, Brain, Lock, Pencil, Trash2, X, Save,
 } from 'lucide-react';
 import { useInstructorCourses, useCreateCourse, useCourseCurriculum, useCourseQuizzes, useCreateQuiz, useGenerateAiQuiz, useAddQuizQuestion, useQuiz, useUpdateQuiz, useDeleteQuiz, useUpdateQuestion, useDeleteQuestion } from '../hooks/useInstructorCourses';
@@ -14,6 +14,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { useAuth } from '../context/AuthContext';
 import ProfileEditForm from '../components/ProfileEditForm';
 import ChangePasswordForm from '../components/ChangePasswordForm';
+import VirtualClassroom from '../components/VirtualClassroom';
 
 /* ─── helpers ─────────────────────────────── */
 const PLATFORMS = [
@@ -78,46 +79,71 @@ function CopyButton({ text }) {
 }
 
 /* ─── Meeting card ─────────────────────────── */
-function MeetingCard({ meeting }) {
-  const isPast = new Date(meeting.meetingDate) < Date.now();
+function MeetingCard({ meeting, onStart, onEnd, onJoin }) {
+  const isPast = meeting.status === 'COMPLETED' || new Date(meeting.meetingDate) < Date.now();
+  const isLive = meeting.status === 'LIVE';
   const countdown = useCountdown(meeting.meetingDate);
-  const isImminent = !isPast && countdown && !countdown.includes('j') && !countdown.includes('h');
+  const isImminent = !isPast && !isLive && countdown && !countdown.includes('j') && !countdown.includes('h');
   const platform = detectPlatform(meeting.meetingUrl);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  const handleStart = async () => {
+    setActionLoading(true);
+    try {
+      await onStart?.(meeting.id);
+      onJoin?.(meeting);
+    } catch (_) {}
+    setActionLoading(false);
+  };
+
+  const handleEnd = async () => {
+    setActionLoading(true);
+    try {
+      await onEnd?.(meeting.id);
+    } catch (_) {}
+    setActionLoading(false);
+  };
 
   return (
     <div style={{
       borderRadius: '16px',
       overflow: 'hidden',
-      border: `1px solid ${isPast ? 'var(--border-color)' : platform.color + '33'}`,
-      background: isPast ? '#f9f9f9' : '#fff',
-      opacity: isPast ? 0.75 : 1,
+      border: `1px solid ${isLive ? '#28a745' : isPast ? 'var(--border-color)' : platform.color + '33'}`,
+      background: isLive ? '#f6fff8' : isPast ? '#f9f9f9' : '#fff',
+      opacity: isPast && !meeting.recordingUrl ? 0.75 : 1,
       transition: 'transform 0.2s, box-shadow 0.2s',
-      boxShadow: isPast ? 'none' : 'var(--shadow-sm)',
+      boxShadow: isLive ? '0 4px 14px rgba(40,167,69,0.18)' : isPast ? 'none' : 'var(--shadow-sm)',
     }}
       onMouseEnter={e => !isPast && (e.currentTarget.style.transform = 'translateY(-3px)', e.currentTarget.style.boxShadow = 'var(--shadow-md)')}
-      onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)', e.currentTarget.style.boxShadow = isPast ? 'none' : 'var(--shadow-sm)')}
+      onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)', e.currentTarget.style.boxShadow = isLive ? '0 4px 14px rgba(40,167,69,0.18)' : isPast ? 'none' : 'var(--shadow-sm)')}
     >
       {/* Colored top bar */}
-      <div style={{ height: '4px', background: isPast ? 'var(--border-color)' : platform.color }} />
+      <div style={{ height: '4px', background: isLive ? '#28a745' : isPast ? 'var(--border-color)' : platform.color }} />
 
       <div style={{ padding: '1.25rem' }}>
-        {/* Platform badge + imminent pulse */}
+        {/* Platform badge + status */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
             padding: '0.2rem 0.6rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 700,
-            background: isPast ? '#eee' : platform.color + '18', color: isPast ? '#999' : platform.color,
+            background: isLive ? 'rgba(40,167,69,0.15)' : isPast ? '#eee' : platform.color + '18',
+            color: isLive ? '#28a745' : isPast ? '#999' : platform.color,
           }}>
             <Video size={11} />
-            {platform.label}
+            {meeting.roomName ? 'Classe Virtuelle 212Learn' : platform.label}
           </span>
 
-          {isPast ? (
+          {isLive ? (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem', fontWeight: 700, color: '#28a745' }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#28a745', animation: 'pulse 1s infinite' }} />
+              EN DIRECT
+            </span>
+          ) : isPast ? (
             <span style={{ fontSize: '0.75rem', color: 'var(--secondary)', fontStyle: 'italic' }}>Terminée</span>
           ) : isImminent ? (
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem', fontWeight: 700, color: '#e74c3c' }}>
               <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#e74c3c', animation: 'pulse 1s infinite' }} />
-              EN COURS / BIENTÔT
+              BIENTÔT
             </span>
           ) : countdown ? (
             <span style={{ fontSize: '0.78rem', color: 'var(--secondary)', fontWeight: 600 }}>
@@ -132,7 +158,7 @@ function MeetingCard({ meeting }) {
         </h3>
 
         {/* Date / time */}
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.85rem', flexWrap: 'wrap' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.82rem', color: 'var(--secondary)' }}>
             <Calendar size={13} /> {formatDate(meeting.meetingDate)}
           </span>
@@ -142,21 +168,79 @@ function MeetingCard({ meeting }) {
         </div>
 
         {/* Actions */}
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          <a
-            href={meeting.meetingUrl}
-            target="_blank"
-            rel="noreferrer"
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-              padding: '0.4rem 0.9rem', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600,
-              background: isPast ? '#eee' : platform.color, color: isPast ? '#888' : '#fff',
-              textDecoration: 'none', transition: 'opacity 0.2s',
-            }}
-          >
-            <ExternalLink size={13} />
-            {isPast ? 'Voir le lien' : 'Rejoindre'}
-          </a>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          {isLive ? (
+            <>
+              <button
+                type="button"
+                onClick={() => onJoin?.(meeting)}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                  padding: '0.45rem 1rem', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600,
+                  background: '#28a745', color: '#fff', border: 'none', cursor: 'pointer',
+                }}
+              >
+                <Video size={14} /> Rejoindre la salle
+              </button>
+              <button
+                type="button"
+                onClick={handleEnd}
+                disabled={actionLoading}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                  padding: '0.45rem 0.85rem', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600,
+                  background: 'rgba(220,53,69,0.1)', color: '#dc3545', border: '1px solid rgba(220,53,69,0.2)', cursor: 'pointer',
+                }}
+              >
+                Terminer la classe
+              </button>
+            </>
+          ) : !isPast ? (
+            <>
+              <button
+                type="button"
+                onClick={handleStart}
+                disabled={actionLoading}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                  padding: '0.45rem 1rem', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600,
+                  background: 'var(--primary)', color: '#fff', border: 'none', cursor: 'pointer',
+                }}
+              >
+                <Zap size={14} /> Démarrer la classe
+              </button>
+              <a
+                href={meeting.meetingUrl}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                  padding: '0.45rem 0.75rem', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 600,
+                  background: 'var(--bg-color)', color: 'var(--secondary)', border: '1px solid var(--border-color)',
+                  textDecoration: 'none',
+                }}
+              >
+                <ExternalLink size={13} /> Lien direct
+              </a>
+            </>
+          ) : meeting.recordingUrl ? (
+            <a
+              href={meeting.recordingUrl}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                padding: '0.45rem 1rem', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600,
+                background: 'var(--secondary)', color: '#fff', textDecoration: 'none',
+              }}
+            >
+              <Video size={14} /> Voir le replay
+            </a>
+          ) : (
+            <span style={{ fontSize: '0.8rem', color: 'var(--secondary)', fontStyle: 'italic' }}>
+              Session terminée
+            </span>
+          )}
           <CopyButton text={meeting.meetingUrl} />
         </div>
       </div>
@@ -191,12 +275,16 @@ function ScheduleForm({ courses, onScheduled }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!courseId || !title.trim() || !url.trim() || !date || !time) return;
+    if (!courseId || !title.trim() || !date || !time) return;
     setError(null);
     setSubmitting(true);
     try {
       const meetingDate = new Date(`${date}T${time}:00`).toISOString();
-      await createMeeting({ title: title.trim(), meetingUrl: url.trim(), meetingDate });
+      await createMeeting({
+        title: title.trim(),
+        meetingDate,
+        meetingUrl: url.trim() || undefined,
+      });
       setSuccess(true);
       onScheduled?.(courseId);
       setTimeout(reset, 2500);
@@ -330,7 +418,7 @@ function ScheduleForm({ courses, onScheduled }) {
             {/* Platform buttons + URL */}
             <div className="form-group" style={{ margin: 0 }}>
               <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.9rem' }}>
-                Lien de la réunion *
+                Lien de la réunion (Optionnel — sinon Classe Virtuelle 212Learn auto-générée)
               </label>
               <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.6rem', flexWrap: 'wrap' }}>
                 {PLATFORMS.map(p => (
@@ -358,8 +446,7 @@ function ScheduleForm({ courses, onScheduled }) {
                   className="form-control"
                   value={url}
                   onChange={e => setUrl(e.target.value)}
-                  placeholder="https://zoom.us/j/123456789"
-                  required
+                  placeholder="Laisser vide pour utiliser la classe virtuelle intégrée Jitsi 212Learn"
                   style={{ paddingLeft: '2.5rem' }}
                 />
                 <Link size={15} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: platform.color, pointerEvents: 'none' }} />
@@ -401,7 +488,7 @@ function ScheduleForm({ courses, onScheduled }) {
             </div>
 
             {/* Live preview card */}
-            {title && url && date && time && (
+            {title && date && time && (
               <div style={{ borderRadius: '12px', border: `1.5px dashed ${platform.color}`, padding: '1.25rem', background: platform.color + '08' }}>
                 <p style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: platform.color, marginBottom: '0.6rem' }}>
                   Aperçu de la session
@@ -416,7 +503,7 @@ function ScheduleForm({ courses, onScheduled }) {
                       {date && time && `${formatDate(new Date(`${date}T${time}`))} à ${time}`}
                     </p>
                     <p style={{ fontSize: '0.78rem', color: platform.color, marginTop: '0.15rem' }}>
-                      via {platform.label}
+                      via {url ? platform.label : 'Classe Virtuelle 212Learn'}
                     </p>
                   </div>
                 </div>
@@ -442,24 +529,36 @@ function ScheduleForm({ courses, onScheduled }) {
 function MeetingsTab({ courses }) {
   const [view, setView] = useState('list'); // 'list' | 'schedule'
   const [activeCourseId, setActiveCourseId] = useState(courses[0]?.id || '');
-  const { meetings, loading, error, fetchMeetings } = useMeetings(activeCourseId);
+  const { meetings, loading, error, fetchMeetings, startMeeting, endMeeting } = useMeetings(activeCourseId);
+  const [activeVirtualMeeting, setActiveVirtualMeeting] = useState(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     if (activeCourseId) fetchMeetings();
   }, [activeCourseId, fetchMeetings]);
 
-  const now = Date.now();
-  const upcoming = meetings.filter(m => new Date(m.meetingDate) >= now).sort((a, b) => new Date(a.meetingDate) - new Date(b.meetingDate));
-  const past = meetings.filter(m => new Date(m.meetingDate) < now).sort((a, b) => new Date(b.meetingDate) - new Date(a.meetingDate));
+  const liveMeetings = meetings.filter(m => m.status === 'LIVE');
+  const upcoming = meetings.filter(m => m.status === 'SCHEDULED').sort((a, b) => new Date(a.meetingDate) - new Date(b.meetingDate));
+  const past = meetings.filter(m => m.status === 'COMPLETED').sort((a, b) => new Date(b.meetingDate) - new Date(a.meetingDate));
 
   return (
     <div>
+      {/* Active Virtual Classroom Modal */}
+      {activeVirtualMeeting && (
+        <VirtualClassroom
+          meeting={activeVirtualMeeting}
+          displayName={user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Instructeur'}
+          isInstructor={true}
+          onClose={() => setActiveVirtualMeeting(null)}
+        />
+      )}
+
       {/* Header row */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.75rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ fontSize: '1.5rem', marginBottom: '0.2rem' }}>Sessions Live</h2>
+          <h2 style={{ fontSize: '1.5rem', marginBottom: '0.2rem' }}>Sessions Live & Classe Virtuelle</h2>
           <p style={{ color: 'var(--secondary)', fontSize: '0.9rem' }}>
-            Planifiez et gérez vos sessions Zoom, Meet ou Teams.
+            Planifiez, démarrez et gérez vos cours virtuels interactifs en direct.
           </p>
         </div>
         <button
@@ -521,15 +620,44 @@ function MeetingsTab({ courses }) {
             </div>
           )}
 
+          {/* Live Sessions NOW */}
+          {liveMeetings.length > 0 && (
+            <div style={{ marginBottom: '2rem' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#28a745', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#28a745', animation: 'pulse 1s infinite', display: 'inline-block' }} />
+                En direct maintenant ({liveMeetings.length})
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+                {liveMeetings.map(m => (
+                  <MeetingCard
+                    key={m.id}
+                    meeting={m}
+                    onStart={startMeeting}
+                    onEnd={endMeeting}
+                    onJoin={(meetingToJoin) => setActiveVirtualMeeting(meetingToJoin)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Upcoming */}
           {upcoming.length > 0 && (
             <div style={{ marginBottom: '2rem' }}>
               <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--secondary)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success-color)', display: 'inline-block' }} />
-                À venir ({upcoming.length})
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)', display: 'inline-block' }} />
+                Planifiées / À venir ({upcoming.length})
               </h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-                {upcoming.map(m => <MeetingCard key={m.id} meeting={m} />)}
+                {upcoming.map(m => (
+                  <MeetingCard
+                    key={m.id}
+                    meeting={m}
+                    onStart={startMeeting}
+                    onEnd={endMeeting}
+                    onJoin={(meetingToJoin) => setActiveVirtualMeeting(meetingToJoin)}
+                  />
+                ))}
               </div>
             </div>
           )}
@@ -539,10 +667,18 @@ function MeetingsTab({ courses }) {
             <div>
               <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--secondary)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--border-color)', display: 'inline-block' }} />
-                Passées ({past.length})
+                Sessions terminées / Enregistrements ({past.length})
               </h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-                {past.map(m => <MeetingCard key={m.id} meeting={m} />)}
+                {past.map(m => (
+                  <MeetingCard
+                    key={m.id}
+                    meeting={m}
+                    onStart={startMeeting}
+                    onEnd={endMeeting}
+                    onJoin={(meetingToJoin) => setActiveVirtualMeeting(meetingToJoin)}
+                  />
+                ))}
               </div>
             </div>
           )}
@@ -1279,8 +1415,22 @@ function QuizzesTab({ courses }) {
 
 /* ─── Main dashboard ──────────────────────── */
 export default function InstructorDashboard() {
-  const [activeTab, setActiveTab] = useState('courses');
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+
+  const [activeTab, setActiveTabState] = useState(() => {
+    const tabFromUrl = searchParams.get('tab');
+    if (tabFromUrl) return tabFromUrl;
+    const tabFromStorage = localStorage.getItem('instructor_active_tab');
+    if (tabFromStorage) return tabFromStorage;
+    return 'courses';
+  });
+
+  const setActiveTab = (newTab) => {
+    setActiveTabState(newTab);
+    localStorage.setItem('instructor_active_tab', newTab);
+    setSearchParams({ tab: newTab }, { replace: true });
+  };
   const { courses, loading, error } = useInstructorCourses();
   const { createCourse, loading: createLoading, error: createError } = useCreateCourse();
   const { user, logout } = useAuth();
@@ -1311,24 +1461,20 @@ export default function InstructorDashboard() {
     { key: 'security', icon: <Lock size={18} />,       label: 'Sécurité' },
   ];
 
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-color)' }}>
       <Navbar />
       <div className="dashboard-layout">
-        <aside className="dashboard-sidebar">
-          <div className="sidebar-user-info">
-            {user?.avatar ? (
-              <img src={user.avatar} alt="Avatar" className="sidebar-avatar" />
-            ) : (
-              <div className="sidebar-avatar">
-                {user?.firstName?.charAt(0).toUpperCase() || '?'}
-              </div>
-            )}
-            <div className="sidebar-username-wrapper">
-              <div className="sidebar-username">{user?.firstName} {user?.lastName}</div>
-              <span className="sidebar-userrole">Instructeur</span>
-            </div>
-          </div>
+        <aside className={`dashboard-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="sidebar-toggle-btn"
+            title={sidebarCollapsed ? "Déplier le menu" : "Réduire le menu"}
+          >
+            {sidebarCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+          </button>
 
           <nav className="sidebar-menu">
             {TABS.map(t => (
@@ -1336,6 +1482,7 @@ export default function InstructorDashboard() {
                 key={t.key}
                 onClick={() => setActiveTab(t.key)}
                 className={`sidebar-menu-btn ${activeTab === t.key ? 'active' : ''}`}
+                title={t.label}
               >
                 {t.icon}
                 <span>{t.label}</span>
@@ -1345,6 +1492,7 @@ export default function InstructorDashboard() {
               onClick={() => { logout(); window.location.href = '/login'; }}
               className="sidebar-menu-btn"
               style={{ marginTop: 'auto', color: 'var(--error-color)' }}
+              title="Déconnexion"
             >
               <LogOut size={18} />
               <span>Déconnexion</span>
@@ -1354,11 +1502,11 @@ export default function InstructorDashboard() {
 
         <main className="dashboard-main-content">
           {activeTab === 'profile' ? (
-            <ProfileEditForm />
+            <div key="profile" className="tab-panel"><ProfileEditForm /></div>
           ) : activeTab === 'security' ? (
-            <ChangePasswordForm />
+            <div key="security" className="tab-panel"><ChangePasswordForm /></div>
           ) : (
-            <div style={{ background: '#fff', padding: '2rem', borderRadius: '16px', boxShadow: 'var(--shadow-sm)' }}>
+            <div key={activeTab} className="tab-panel" style={{ background: '#fff', padding: '2rem', borderRadius: '16px', boxShadow: 'var(--shadow-sm)' }}>
 
               {/* My Courses */}
               {activeTab === 'courses' && (

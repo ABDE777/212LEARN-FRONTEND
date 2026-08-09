@@ -196,6 +196,12 @@ export default function Wishlist() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
+  useEffect(() => {
+    if (user?.role?.toUpperCase() === 'ADMIN') {
+      navigate('/admin/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
+
   const handleLogout = () => {
     logout();
     navigate('/login');
