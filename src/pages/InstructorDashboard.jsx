@@ -5,7 +5,7 @@ import {
   BookOpen, Plus, Video, Users, User, LogOut,
   Calendar, Clock, Link, ExternalLink, Copy, Check,
   CheckCircle, ChevronRight, ChevronLeft, Zap, Mail, Search,
-  HelpCircle, Brain, Lock, Pencil, Trash2, X, Save,
+  HelpCircle, Brain, Lock, Pencil, Trash2, X, Save, LayoutGrid,
 } from 'lucide-react';
 import { useInstructorCourses, useCreateCourse, useCourseCurriculum, useCourseQuizzes, useCreateQuiz, useGenerateAiQuiz, useAddQuizQuestion, useQuiz, useUpdateQuiz, useDeleteQuiz, useUpdateQuestion, useDeleteQuestion } from '../hooks/useInstructorCourses';
 import { useMeetings } from '../hooks/useMeetings';
@@ -15,6 +15,7 @@ import { useAuth } from '../context/AuthContext';
 import ProfileEditForm from '../components/ProfileEditForm';
 import ChangePasswordForm from '../components/ChangePasswordForm';
 import VirtualClassroom from '../components/VirtualClassroom';
+import SessionCalendar from '../components/SessionCalendar';
 
 /* ─── helpers ─────────────────────────────── */
 const PLATFORMS = [
@@ -599,9 +600,9 @@ function ScheduleForm({ courses, onScheduled }) {
 
 /* ─── Meetings tab ─────────────────────────── */
 function MeetingsTab({ courses }) {
-  const [view, setView] = useState('list'); // 'list' | 'schedule'
+  const [view, setView] = useState('calendar'); // 'calendar' | 'schedule'
   const [activeCourseId, setActiveCourseId] = useState(courses[0]?.id || '');
-  const { meetings, loading, error, fetchMeetings, startMeeting, endMeeting, updateMeeting } = useMeetings(activeCourseId);
+  const { meetings, loading, error, fetchMeetings, startMeeting, endMeeting, updateMeeting, deleteMeeting } = useMeetings(activeCourseId);
   const [activeVirtualMeeting, setActiveVirtualMeeting] = useState(null);
   const [editingMeeting, setEditingMeeting] = useState(null);
   const { user } = useAuth();
@@ -609,10 +610,6 @@ function MeetingsTab({ courses }) {
   useEffect(() => {
     if (activeCourseId) fetchMeetings();
   }, [activeCourseId, fetchMeetings]);
-
-  const liveMeetings = meetings.filter(m => m.status === 'LIVE');
-  const upcoming = meetings.filter(m => m.status === 'SCHEDULED').sort((a, b) => new Date(a.meetingDate) - new Date(b.meetingDate));
-  const past = meetings.filter(m => m.status === 'COMPLETED').sort((a, b) => new Date(b.meetingDate) - new Date(a.meetingDate));
 
   const handleEditMeeting = (meeting) => {
     setEditingMeeting(meeting);
@@ -624,6 +621,22 @@ function MeetingsTab({ courses }) {
       setEditingMeeting(null);
     } catch (err) {
       console.error('Failed to update meeting:', err);
+    }
+  };
+
+  const handleDeleteMeeting = async (meetingId) => {
+    try {
+      await deleteMeeting(meetingId);
+    } catch (err) {
+      console.error('Failed to delete meeting:', err);
+    }
+  };
+
+  const handleMeetingClick = (meeting) => {
+    if (meeting.status === 'LIVE') {
+      setActiveVirtualMeeting(meeting);
+    } else if (meeting.status === 'SCHEDULED') {
+      handleEditMeeting(meeting);
     }
   };
 
@@ -689,13 +702,47 @@ function MeetingsTab({ courses }) {
           </p>
         </div>
         <button
-          onClick={() => setView(view === 'schedule' ? 'list' : 'schedule')}
+          onClick={() => setView(view === 'schedule' ? 'calendar' : 'schedule')}
           className={view === 'schedule' ? 'btn-secondary' : 'btn-primary'}
           style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.65rem 1.25rem' }}
         >
-          {view === 'schedule' ? <><Video size={16} /> Voir les sessions</> : <><Calendar size={16} /> Planifier une session</>}
+          {view === 'schedule' ? <><Calendar size={16} /> Voir le calendrier</> : <><Calendar size={16} /> Planifier une session</>}
         </button>
       </div>
+
+      {/* Course filter pills */}
+      {courses.length > 1 && (
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+          {courses.map(c => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => setActiveCourseId(c.id)}
+              style={{
+                padding: '0.35rem 1rem', borderRadius: '9999px', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
+                border: `1.5px solid ${activeCourseId === c.id ? 'var(--primary)' : 'var(--border-color)'}`,
+                background: activeCourseId === c.id ? 'rgba(193,101,47,0.08)' : 'transparent',
+                color: activeCourseId === c.id ? 'var(--primary)' : 'var(--secondary)',
+                transition: 'all 0.15s',
+              }}
+            >
+              {c.title.length > 28 ? c.title.slice(0, 28) + '…' : c.title}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {loading && <LoadingSpinner />}
+      {error && <p style={{ color: 'var(--error-color)' }}>{error}</p>}
+
+      {!loading && !error && (
+        <SessionCalendar
+          meetings={meetings}
+          onMeetingClick={handleMeetingClick}
+          onEditMeeting={handleEditMeeting}
+          onDeleteMeeting={handleDeleteMeeting}
+        />
+      )}
 
       {view === 'schedule' ? (
         <div
@@ -776,72 +823,6 @@ function MeetingsTab({ courses }) {
               <button className="btn-primary" onClick={() => setView('schedule')} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.65rem 1.5rem' }}>
                 <Calendar size={16} /> Planifier maintenant
               </button>
-            </div>
-          )}
-
-          {/* Live Sessions NOW */}
-          {liveMeetings.length > 0 && (
-            <div style={{ marginBottom: '2rem' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#28a745', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#28a745', animation: 'pulse 1s infinite', display: 'inline-block' }} />
-                En direct maintenant ({liveMeetings.length})
-              </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-                {liveMeetings.map(m => (
-                  <MeetingCard
-                    key={m.id}
-                    meeting={m}
-                    onStart={startMeeting}
-                    onEnd={endMeeting}
-                    onJoin={(meetingToJoin) => setActiveVirtualMeeting(meetingToJoin)}
-                    onEdit={handleEditMeeting}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Upcoming */}
-          {upcoming.length > 0 && (
-            <div style={{ marginBottom: '2rem' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--secondary)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)', display: 'inline-block' }} />
-                Planifiées / À venir ({upcoming.length})
-              </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-                {upcoming.map(m => (
-                  <MeetingCard
-                    key={m.id}
-                    meeting={m}
-                    onStart={startMeeting}
-                    onEnd={endMeeting}
-                    onJoin={(meetingToJoin) => setActiveVirtualMeeting(meetingToJoin)}
-                    onEdit={handleEditMeeting}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Past */}
-          {past.length > 0 && (
-            <div>
-              <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--secondary)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--border-color)', display: 'inline-block' }} />
-                Sessions terminées / Enregistrements ({past.length})
-              </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-                {past.map(m => (
-                  <MeetingCard
-                    key={m.id}
-                    meeting={m}
-                    onStart={startMeeting}
-                    onEnd={endMeeting}
-                    onJoin={(meetingToJoin) => setActiveVirtualMeeting(meetingToJoin)}
-                    onEdit={handleEditMeeting}
-                  />
-                ))}
-              </div>
             </div>
           )}
         </>

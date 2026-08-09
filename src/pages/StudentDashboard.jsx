@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCartContext } from '../context/CartContext';
 import { useMeetings } from '../hooks/useMeetings';
 import VirtualClassroom from '../components/VirtualClassroom';
+import SessionCalendar from '../components/SessionCalendar';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import Navbar from '../components/Navbar';
@@ -24,12 +25,11 @@ function StudentLiveSessionsTab({ enrollments = [], currentUser }) {
     if (selectedCourseId) fetchMeetings();
   }, [selectedCourseId, fetchMeetings]);
 
-  const liveMeetings = meetings.filter(m => m.status === 'LIVE');
-  const upcomingMeetings = meetings.filter(m => m.status === 'SCHEDULED');
-  const pastMeetings = meetings.filter(m => m.status === 'COMPLETED');
-
-  const formatDate = (d) => new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
-  const formatTime = (d) => new Date(d).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  const handleMeetingClick = (meeting) => {
+    if (meeting.status === 'LIVE') {
+      setActiveVirtualMeeting(meeting);
+    }
+  };
 
   return (
     <div>
@@ -82,7 +82,7 @@ function StudentLiveSessionsTab({ enrollments = [], currentUser }) {
         </p>
       )}
 
-      {loading && <div style={{ padding: '2rem 0' }}><Clock size={20} className="spin" /> Chargement des sessions…</div>}
+      {loading && <LoadingSpinner />}
       {error && <p style={{ color: 'var(--error-color)', marginBottom: '1rem' }}>{error}</p>}
 
       {!loading && !error && meetings.length === 0 && (
@@ -95,86 +95,12 @@ function StudentLiveSessionsTab({ enrollments = [], currentUser }) {
         </div>
       )}
 
-      {/* LIVE NOW */}
-      {liveMeetings.length > 0 && (
-        <div style={{ marginBottom: '2rem' }}>
-          <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#28a745', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#28a745', animation: 'pulse 1s infinite', display: 'inline-block' }} />
-            En direct maintenant ({liveMeetings.length})
-          </h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-            {liveMeetings.map((m) => (
-              <div key={m.id} style={{ borderRadius: '16px', background: '#f6fff8', border: '1px solid #28a745', padding: '1.25rem', boxShadow: '0 4px 14px rgba(40,167,69,0.15)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#28a745', background: 'rgba(40,167,69,0.15)', padding: '0.2rem 0.6rem', borderRadius: '999px' }}>
-                    LIVE EN COURS
-                  </span>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--secondary)' }}><Clock size={12} /> {formatTime(m.meetingDate)}</span>
-                </div>
-                <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-color)' }}>{m.title}</h4>
-                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-                  <button
-                    onClick={() => setActiveVirtualMeeting(m)}
-                    style={{ flex: 1, padding: '0.5rem 1rem', borderRadius: '8px', background: '#28a745', color: '#fff', border: 'none', fontWeight: 600, fontSize: '0.88rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
-                  >
-                    <Video size={15} /> Rejoindre la classe
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* UPCOMING */}
-      {upcomingMeetings.length > 0 && (
-        <div style={{ marginBottom: '2rem' }}>
-          <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--secondary)', marginBottom: '1rem' }}>
-            Sessions à venir ({upcomingMeetings.length})
-          </h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-            {upcomingMeetings.map((m) => (
-              <div key={m.id} style={{ borderRadius: '16px', background: '#fff', border: '1px solid var(--border-color)', padding: '1.25rem' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)', background: 'rgba(193,101,47,0.1)', padding: '0.2rem 0.6rem', borderRadius: '999px' }}>
-                  Planifiée
-                </span>
-                <h4 style={{ fontSize: '0.98rem', fontWeight: 700, marginTop: '0.6rem', marginBottom: '0.4rem', color: 'var(--text-color)' }}>{m.title}</h4>
-                <p style={{ fontSize: '0.82rem', color: 'var(--secondary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                  <Calendar size={13} /> {formatDate(m.meetingDate)} à {formatTime(m.meetingDate)}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* PAST / RECORDINGS */}
-      {pastMeetings.length > 0 && (
-        <div>
-          <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--secondary)', marginBottom: '1rem' }}>
-            Replays & Enregistrements ({pastMeetings.length})
-          </h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-            {pastMeetings.map((m) => (
-              <div key={m.id} style={{ borderRadius: '16px', background: '#f9f9f9', border: '1px solid var(--border-color)', padding: '1.25rem' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--secondary)' }}>Terminée</span>
-                <h4 style={{ fontSize: '0.98rem', fontWeight: 700, marginTop: '0.5rem', marginBottom: '0.4rem', color: 'var(--text-color)' }}>{m.title}</h4>
-                {m.recordingUrl ? (
-                  <a
-                    href={m.recordingUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.75rem', padding: '0.4rem 0.9rem', borderRadius: '8px', background: 'var(--secondary)', color: '#fff', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600 }}
-                  >
-                    <ExternalLink size={13} /> Voir le replay
-                  </a>
-                ) : (
-                  <p style={{ fontSize: '0.78rem', color: 'var(--secondary)', fontStyle: 'italic', marginTop: '0.5rem' }}>Aucun enregistrement disponible</p>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+      {!loading && !error && meetings.length > 0 && (
+        <SessionCalendar
+          meetings={meetings}
+          onMeetingClick={handleMeetingClick}
+          readOnly={true}
+        />
       )}
     </div>
   );

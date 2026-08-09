@@ -64,5 +64,11 @@ export function useMeetings(courseId) {
     return response.data?.data?.meeting || response.data?.data || response.data;
   };
 
-  return { meetings, loading, error, fetchMeetings, createMeeting, startMeeting, endMeeting, updateMeeting };
+  const deleteMeeting = async (meetingId) => {
+    const response = await api.delete(`/meetings/${meetingId}`);
+    await fetchMeetings();
+    return response.data;
+  };
+
+  return { meetings, loading, error, fetchMeetings, createMeeting, startMeeting, endMeeting, updateMeeting, deleteMeeting };
 }
