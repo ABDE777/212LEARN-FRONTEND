@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { Users, BookOpen, Folder, Settings, User, LogOut, FileText, Pencil, Trash2, BarChart3, TrendingUp, DollarSign, ShieldCheck, ShieldAlert, ChevronLeft, ChevronRight, RotateCcw, Lock, Plus, Mail, X, Loader, Wallet, CheckCircle, XCircle, Clock, Activity, Server, Search, Award, Download, Printer } from 'lucide-react';
+import { Users, BookOpen, Folder, Settings, User, LogOut, FileText, Pencil, Trash2, BarChart3, TrendingUp, DollarSign, ShieldCheck, ShieldAlert, ChevronLeft, ChevronRight, RotateCcw, Lock, Plus, Mail, X, Loader, Wallet, CheckCircle, XCircle, Clock, Activity, Server, Search, Award, Download, Printer, Code, Database, Globe, Video } from 'lucide-react';
 import { useWafacash } from '../hooks/useWafacash';
 import {
   useAdminUsers,
@@ -889,6 +889,7 @@ function AdminCategoryDrawer({
 }) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [icon, setIcon] = useState('');
   const [parentId, setParentId] = useState('');
   const [isSubcategory, setIsSubcategory] = useState(false);
 
@@ -899,12 +900,14 @@ function AdminCategoryDrawer({
     if (editingCategory) {
       setName(editingCategory.name || '');
       setDescription(editingCategory.description || '');
+      setIcon(editingCategory.icon || '');
       const pid = editingCategory.parentId || '';
       setParentId(pid);
       setIsSubcategory(!!pid);
     } else {
       setName('');
       setDescription('');
+      setIcon('');
       const pid = parentCategoryId || '';
       setParentId(pid);
       setIsSubcategory(!!pid);
@@ -918,6 +921,7 @@ function AdminCategoryDrawer({
     const payload = {
       name: name.trim(),
       description: description.trim(),
+      icon: icon.trim() || null,
       parentId: isSubcategory ? (parentId || null) : null,
     };
     try {
@@ -1074,6 +1078,24 @@ function AdminCategoryDrawer({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
+            </div>
+
+            <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem' }}>Icône</label>
+              <select
+                className="form-control"
+                style={{ padding: '10px 14px', fontSize: '0.88rem' }}
+                value={icon}
+                onChange={(e) => setIcon(e.target.value)}
+              >
+                <option value="">-- Choisir une icône --</option>
+                <option value="Code">💻 Code</option>
+                <option value="Database">🗄️ Base de données</option>
+                <option value="Globe">🌐 Web/Réseau</option>
+                <option value="Video">🎥 Vidéo</option>
+                <option value="Users">👥 Pédagogique</option>
+                <option value="BookOpen">📚 Livre (défaut)</option>
+              </select>
             </div>
 
             <div className="form-group" style={{ marginBottom: '1.5rem' }}>
@@ -1709,11 +1731,26 @@ function AdminSubcategoryItem({
   onDelete,
   deleteLoading,
 }) {
+  const getCategoryIcon = (iconName) => {
+    const iconMap = {
+      'Code': Code,
+      'Database': Database,
+      'Globe': Globe,
+      'Video': Video,
+      'BookOpen': BookOpen,
+      'Users': Users,
+    };
+    return iconMap[iconName] || Folder;
+  };
+
+  const SubcategoryIcon = getCategoryIcon(subcategory.icon);
+
   return (
     <div style={{ padding: '0.75rem 1rem', background: '#fff', borderRadius: '10px', border: '1px solid var(--border-color)', transition: 'all 0.2s' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: 0 }}>
-          <span style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '0.9rem' }}>└─ 📄</span>
+          <span style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '0.9rem' }}>└─</span>
+          <SubcategoryIcon size={16} style={{ color: 'var(--primary)' }} />
           <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             <span style={{ fontWeight: 600, fontSize: '0.88rem', color: 'var(--text-color)' }}>{subcategory.name}</span>
             {subcategory.description && (
@@ -1755,6 +1792,20 @@ function AdminCategoryCard({
 }) {
   const subcategories = category.children || [];
 
+  const getCategoryIcon = (iconName) => {
+    const iconMap = {
+      'Code': Code,
+      'Database': Database,
+      'Globe': Globe,
+      'Video': Video,
+      'BookOpen': BookOpen,
+      'Users': Users,
+    };
+    return iconMap[iconName] || Folder;
+  };
+
+  const CategoryIcon = getCategoryIcon(category.icon);
+
   return (
     <div
       style={{
@@ -1776,9 +1827,9 @@ function AdminCategoryCard({
               width: '38px', height: '38px', borderRadius: '10px',
               background: 'linear-gradient(135deg, var(--primary), var(--accent))',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#fff', fontSize: '1.1rem', flexShrink: 0,
+              color: '#fff', flexShrink: 0,
             }}>
-              📁
+              <CategoryIcon size={20} />
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary)' }}>
@@ -3282,6 +3333,7 @@ export default function AdminDashboard() {
     try {
       const payload = { name: form.name.trim() };
       if (form.description.trim()) payload.description = form.description.trim();
+      if (form.icon) payload.icon = form.icon;
       if (form.parentId) payload.parentId = form.parentId;
       await updateCategory(categoryId, payload);
       setCategorySuccess('Catégorie mise à jour avec succès.');

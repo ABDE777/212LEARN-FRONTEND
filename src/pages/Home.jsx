@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import TinderSwipeCategories from '../components/TinderSwipeCategories';
 import { useEffect } from 'react';
 import LottieRaw from 'lottie-react';
 const Lottie = LottieRaw.default || LottieRaw;
@@ -278,18 +279,6 @@ export default function Home() {
 
       {/* Domaines / catalogue */}
       <section className="section-animate" style={{ background: 'var(--surface-color)', padding: '5rem 0', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ textAlign: 'center', marginBottom: '2.5rem', padding: '0 1.5rem', position: 'relative', zIndex: 1 }}>
-          <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>
-            Catalogue
-          </span>
-          <h2 style={{ fontSize: '2.2rem', fontWeight: 800, margin: '0.4rem 0 0.5rem', color: 'var(--text-color)' }}>
-            Explorez nos domaines
-          </h2>
-          <p style={{ margin: 0, color: 'var(--secondary)', fontSize: '1.05rem' }}>
-            Filtrez par thème et trouvez le cours adapté à votre niveau.
-          </p>
-        </div>
-
         {catLoading ? (
           <LoadingSpinner />
         ) : catError ? (
@@ -303,59 +292,14 @@ export default function Home() {
             { id: 'f5', name: 'Projets pratiques', description: 'Exercices et cas concrets.' },
           ];
           const cards = allCategories.length > 0 ? allCategories : FALLBACK;
-          const loop = [...cards, ...cards];
 
           return (
-            <div className="cat-marquee-wrapper">
-              <div className="cat-fade cat-fade-left" />
-              <div className="cat-fade cat-fade-right" />
-              <div className="cat-marquee-track">
-                {loop.map((category, idx) => {
-                  const Icon = getCategoryIcon(category.name);
-                  return (
-                    <Link key={`${category.id}-${idx}`} to={`/courses?category=${category.id}`} className="cat-card">
-                      <div className="cat-card-icon">
-                        <Icon size={26} color="var(--primary)" />
-                      </div>
-                      <h3 className="cat-card-title">{category.name}</h3>
-                      <p className="cat-card-desc">
-                        {category.description || 'Voir les cours de cette catégorie'}
-                      </p>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
+            <TinderSwipeCategories 
+              categories={cards}
+              onSelectCategory={(category) => window.location.href = `/courses?category=${category.id}`}
+            />
           );
         })()}
-
-        <style>{`
-          .cat-marquee-wrapper { position: relative; overflow: hidden; }
-          .cat-marquee-track {
-            display: flex; gap: 1.5rem; width: max-content;
-            animation: catScroll 32s linear infinite; padding: 0.5rem 0 1.5rem;
-          }
-          .cat-marquee-wrapper:hover .cat-marquee-track { animation-play-state: paused; }
-          @keyframes catScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-          .cat-card {
-            flex-shrink: 0; width: 230px; padding: 1.75rem 1.5rem; background: #fff;
-            border: 1px solid var(--border-color); border-radius: 20px; box-shadow: var(--shadow-sm);
-            text-decoration: none; transition: all 0.25s ease; cursor: pointer;
-            display: flex; flex-direction: column; align-items: flex-start; gap: 0.6rem;
-          }
-          .cat-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-md); border-color: var(--primary); }
-          .cat-card-icon {
-            width: 48px; height: 48px; border-radius: 14px; background: rgba(193, 101, 47, 0.08);
-            display: flex; align-items: center; justify-content: center; transition: background 0.25s;
-          }
-          .cat-card:hover .cat-card-icon { background: var(--primary); }
-          .cat-card:hover .cat-card-icon svg { color: #fff !important; }
-          .cat-card-title { font-size: 0.95rem; font-weight: 700; color: var(--text-color); margin: 0; }
-          .cat-card-desc { font-size: 0.8rem; color: var(--secondary); margin: 0; line-height: 1.5; }
-          .cat-fade { position: absolute; top: 0; bottom: 0; width: 120px; z-index: 2; pointer-events: none; }
-          .cat-fade-left { left: 0; background: linear-gradient(to right, var(--surface-color) 0%, transparent 100%); }
-          .cat-fade-right { right: 0; background: linear-gradient(to left, var(--surface-color) 0%, transparent 100%); }
-        `}</style>
       </section>
 
       {/* Cours phares */}
