@@ -1,311 +1,344 @@
-import React from 'react';
-import { BookOpen, Users, Award, Compass, Target, Heart, Zap, Globe, CheckCircle, Quote } from 'lucide-react';
+import { useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  Target, Heart, Zap, Globe, Quote, ArrowRight, MapPin,
+  Lightbulb, Handshake, Eye, Flag, Users
+} from 'lucide-react';
 import LottieRaw from 'lottie-react';
 const Lottie = LottieRaw.default || LottieRaw;
 import aboutAnimation from '../lotties/Education2.json';
 import Navbar from '../components/Navbar';
-import { usePublicStats } from '../hooks/usePublicStats';
+import BackgroundBlobs from '../components/about/BackgroundBlobs';
+import SectionDivider from '../components/about/SectionDivider';
+import GlowCard from '../components/about/GlowCard';
 import { usePublicTestimonials } from '../hooks/usePublicTestimonials';
 import LoadingSpinner from '../components/LoadingSpinner';
 
+const BG_SAND = '#F5EDE4';
+const BG_WHITE = '#ffffff';
+const BG_CTA = '#C1652F';
+
 function About() {
-  const { stats, loading: statsLoading } = usePublicStats();
   const { testimonials, loading: testimonialsLoading } = usePublicTestimonials();
 
-  const cards = [
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) entry.target.classList.add('in-view');
+        });
+      },
+      { threshold: 0.12 }
+    );
+    document.querySelectorAll('.section-animate').forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
+  const missionVision = [
     {
-      icon: <BookOpen size={28} />,
-      title: "Cours de Qualité",
-      desc: "Accédez à une large sélection de cours dispensés par des professionnels qualifiés et passionnés dans divers domaines."
+      icon: Flag,
+      label: 'Mission',
+      title: 'Rendre l’informatique accessible',
+      text: 'Offrir aux apprenants francophones — au Maroc et ailleurs — des formations claires, suivies et utiles pour avancer dans leurs études ou leur carrière.',
     },
     {
-      icon: <Users size={28} />,
-      title: "Communauté Active",
-      desc: "Échangez avec d'autres étudiants et instructeurs, collaborez sur des projets et progressez ensemble au quotidien."
+      icon: Eye,
+      label: 'Vision',
+      title: 'Une référence de confiance',
+      text: 'Devenir la plateforme de référence où étudiants et formateurs se rencontrent pour apprendre l’informatique avec sérieux, proximité et qualité.',
+    },
+  ];
+
+  const storyBeats = [
+    {
+      year: 'Pourquoi « 212 »',
+      text: '212 est l’indicatif téléphonique du Maroc. Notre nom ancre le projet dans son territoire tout en s’ouvrant à toute la francophonie.',
     },
     {
-      icon: <Award size={28} />,
-      title: "Certifications Validées",
-      desc: "Valorisez vos compétences et donnez un élan à votre carrière avec des certificats reconnus à la fin de vos formations."
+      year: 'Le constat',
+      text: 'Beaucoup de ressources en ligne sont dispersées, en anglais uniquement, ou sans vrai accompagnement. Les étudiants avaient besoin d’un lieu unique, structuré et en français.',
     },
     {
-      icon: <Compass size={28} />,
-      title: "Apprentissage Flexible",
-      desc: "Étudiez à votre propre rythme, où que vous soyez, grâce à notre plateforme optimisée pour tous vos appareils."
-    }
+      year: 'La réponse',
+      text: '212Learn regroupe cours, classes virtuelles, quiz et suivi dans une même plateforme — pensée pour les réalités locales (niveaux, langue, rythme, accessibilité).',
+    },
   ];
 
   const values = [
     {
-      icon: <Target size={32} color="#C1652F" />,
-      title: "Excellence",
-      desc: "Nous nous engageons à fournir un contenu de la plus haute qualité, régulièrement mis à jour."
+      icon: Target,
+      title: 'Exigence pédagogique',
+      desc: 'Des programmes structurés, des objectifs clairs et un contenu révisé pour rester utile et à jour.',
     },
     {
-      icon: <Heart size={32} color="#C1652F" />,
-      title: "Passion",
-      desc: "Notre amour pour l'éducation nous pousse à créer des expériences d'apprentissage inspirantes."
+      icon: Heart,
+      title: 'Proximité humaine',
+      desc: 'Derrière chaque cours : des instructeurs, des lives et un suivi — pas seulement des vidéos anonymes.',
     },
     {
-      icon: <Zap size={32} color="#C1652F" />,
-      title: "Innovation",
-      desc: "Nous intégrons les dernières technologies pour rendre l'apprentissage plus efficace."
+      icon: Zap,
+      title: 'Pratique avant tout',
+      desc: 'Exercices, projets et évaluations pour transformer la théorie en compétences concrètes.',
     },
     {
-      icon: <Globe size={32} color="#C1652F" />,
-      title: "Accessibilité",
-      desc: "L'éducation de qualité doit être accessible à tous, partout et à tout moment."
-    }
+      icon: Globe,
+      title: 'Accessibilité',
+      desc: 'Apprendre depuis chez soi, à son rythme, avec une interface simple et un parcours compréhensible.',
+    },
   ];
 
+  const whoWeServe = [
+    {
+      icon: Users,
+      title: 'Les apprenants',
+      desc: 'Étudiants, autodidactes et personnes en reconversion qui veulent un cadre sérieux pour progresser en informatique.',
+    },
+    {
+      icon: Lightbulb,
+      title: 'Les instructeurs',
+      desc: 'Formateurs et professionnels qui souhaitent transmettre leur savoir avec les bons outils (cours, live, devoirs).',
+    },
+    {
+      icon: Handshake,
+      title: 'La communauté',
+      desc: 'Un écosystème où l’on apprend ensemble — questions, feedback, et progression partagée.',
+    },
+  ];
 
   return (
-    <div style={{ background: 'var(--bg-color)', minHeight: '100vh' }}>
+    <div className="about-page">
       <Navbar />
-      {/* Hero Section */}
-      <header className="about-hero">
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '3rem', flexWrap: 'wrap', padding: '4rem 2rem' }}>
-          <div style={{ flex: '1 1 480px', textAlign: 'left' }}>
-            <span className="about-badge">Notre Mission</span>
-            <h1 className="about-title" style={{ textAlign: 'left' }}>Apprendre sans limites avec 212Learn</h1>
-            <p className="about-subtitle" style={{ textAlign: 'left', margin: 0 }}>
-              Une plateforme éducative moderne, conçue pour connecter les meilleurs instructeurs avec des étudiants passionnés désireux d'acquérir de nouvelles compétences.
+
+      {/* Hero */}
+      <section className="about-hero-modern">
+        <BackgroundBlobs />
+        <div className="floating-objects" aria-hidden="true">
+          <div className="floating-circle" style={{ top: '12%', left: '6%', width: '80px', height: '80px', background: 'var(--primary)', opacity: 0.16, animationDuration: '7s' }} />
+          <div className="floating-circle" style={{ bottom: '18%', right: '10%', width: '70px', height: '70px', background: 'var(--accent)', opacity: 0.2, animationDelay: '-2s' }} />
+        </div>
+
+        <div className="about-hero-inner">
+          <div className="about-hero-copy anim-slide-left">
+            <span className="about-eyebrow">
+              <MapPin size={14} />
+              À propos de 212Learn
+            </span>
+            <h1>
+              Nous construisons une école en ligne{' '}
+              <span style={{ color: 'var(--primary)' }}>ancrée au Maroc</span>, ouverte à la francophonie.
+            </h1>
+            <p>
+              212Learn n’est pas seulement un catalogue de vidéos : c’est un projet éducatif né
+              d’un besoin réel — apprendre l’informatique en français, avec un cadre clair et un suivi humain.
+            </p>
+            <div className="about-hero-actions">
+              <Link to="/courses" className="btn-primary about-micro-btn" style={{ padding: '14px 28px', borderRadius: '14px' }}>
+                Voir nos formations
+              </Link>
+              <Link
+                to="/"
+                className="btn-secondary about-micro-btn"
+                style={{
+                  padding: '14px 24px',
+                  borderRadius: '14px',
+                  background: 'rgba(255,255,255,0.75)',
+                  color: 'var(--text-color)',
+                  border: '1px solid rgba(255,255,255,0.9)',
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
+                }}
+              >
+                Retour à l’accueil
+              </Link>
+            </div>
+          </div>
+
+          <div className="about-hero-visual anim-slide-right">
+            <div className="about-lottie-glow" aria-hidden="true" />
+            <svg className="about-hero-ring" viewBox="0 0 200 200" aria-hidden="true">
+              <circle cx="100" cy="100" r="92" fill="none" stroke="rgba(193,101,47,0.25)" strokeWidth="1.5" strokeDasharray="6 8" />
+              <circle cx="100" cy="100" r="78" fill="none" stroke="rgba(27,75,90,0.18)" strokeWidth="1" strokeDasharray="4 10" />
+            </svg>
+            <div className="about-lottie-frame">
+              <Lottie animationData={aboutAnimation} loop />
+            </div>
+          </div>
+        </div>
+        <SectionDivider fill={BG_WHITE} />
+      </section>
+
+      {/* Mission & Vision */}
+      <section className="section-animate about-section-pad about-section-white about-section-relative">
+        <BackgroundBlobs variant="cool" />
+        <div className="about-container">
+          <div className="about-section-head">
+            <span className="about-eyebrow muted">Notre boussole</span>
+            <h2>Mission & vision</h2>
+            <p>Ce que nous voulons accomplir — et où nous voulons aller.</p>
+          </div>
+
+          <div className="about-mission-grid">
+            {missionVision.map(({ icon: Icon, label, title, text }) => (
+              <GlowCard
+                key={label}
+                icon={<Icon size={26} />}
+                label={label}
+                title={title}
+                description={text}
+              />
+            ))}
+          </div>
+        </div>
+        <SectionDivider fill={BG_SAND} />
+      </section>
+
+      {/* Histoire */}
+      <section className="section-animate about-story about-section-sand about-section-relative">
+        <BackgroundBlobs />
+        <div className="about-container about-story-grid">
+          <div>
+            <span className="about-eyebrow muted">Notre histoire</span>
+            <h2>D’un constat local à une plateforme ouverte</h2>
+            <p>
+              Le projet 212Learn est né au Maroc, porté par des personnes convaincues que
+              la qualité pédagogique ne doit pas dépendre d’un campus physique ni d’une barrière de langue.
+            </p>
+            <p>
+              Nous avons conçu une plateforme où l’on peut s’inscrire à un cours, suivre des leçons,
+              rejoindre un live, rendre un devoir et mesurer sa progression — sans se perdre entre dix outils différents.
+            </p>
+            <p style={{ marginBottom: 0 }}>
+              Aujourd’hui, nous continuons à faire grandir ce projet avec la même exigence :
+              utile, lisible, et proche des apprenants.
             </p>
           </div>
-          <div style={{ 
-            flex: '1 1 360px', 
-            maxWidth: '460px', 
-            background: 'var(--bg-color)', 
-            padding: '1.5rem', 
-            borderRadius: '28px', 
-            boxShadow: 'var(--neu-shadow-raised)', 
-            border: '1px solid rgba(255, 255, 255, 0.7)',
-            margin: '0 auto'
-          }}>
-            <Lottie animationData={aboutAnimation} loop={true} />
-          </div>
-        </div>
-      </header>
 
-      {/* Stats Section */}
-      <section style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)', padding: '4rem 2rem', color: '#fff' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <h2 style={{ textAlign: 'center', fontSize: '2.3rem', marginBottom: '3rem', fontWeight: 800 }}>Nos réalisations</h2>
-          {statsLoading ? (
-            <div style={{ textAlign: 'center' }}><LoadingSpinner /></div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem', textAlign: 'center' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-                <div style={{ fontSize: '3rem', fontWeight: 900, color: '#f093fb' }}>{`+${stats?.totalUsers || 0}`}</div>
-                <div style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.8)' }}>Étudiants Actifs</div>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-                <div style={{ fontSize: '3rem', fontWeight: 900, color: '#43e97b' }}>{`+${stats?.totalCourses || 0}`}</div>
-                <div style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.8)' }}>Cours Disponibles</div>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-                <div style={{ fontSize: '3rem', fontWeight: 900, color: '#4facfe' }}>{`+${stats?.totalInstructors || 0}`}</div>
-                <div style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.8)' }}>Instructeurs Experts</div>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-                <div style={{ fontSize: '3rem', fontWeight: 900, color: '#fee140' }}>{`${stats?.satisfactionRate || 98}%`}</div>
-                <div style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.8)' }}>Taux de Satisfaction</div>
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Cards Section */}
-      <section className="about-section">
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '5rem 2rem' }}>
-          <h2 className="section-section-title" style={{ textAlign: 'center', marginBottom: '3rem' }}>Pourquoi choisir notre plateforme ?</h2>
-          <div className="about-grid">
-            {cards.map((card, idx) => (
-              <div key={idx} className="about-card">
-                <div className="about-card-icon-wrapper">
-                  {card.icon}
-                </div>
-                <h3>{card.title}</h3>
-                <p>{card.desc}</p>
-              </div>
+          <div className="about-milestone-grid" style={{ gridTemplateColumns: '1fr' }}>
+            {storyBeats.map((beat) => (
+              <GlowCard
+                key={beat.year}
+                label={beat.year}
+                description={beat.text}
+              />
             ))}
           </div>
         </div>
+        <SectionDivider fill={BG_WHITE} />
       </section>
 
-      {/* Our Story Section */}
-      <section style={{ background: 'var(--surface-color)', padding: '5rem 2rem' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '4rem', alignItems: 'center' }}>
-            <div>
-              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>Notre Histoire</span>
-              <h2 style={{ fontSize: '2.3rem', fontWeight: 800, margin: '0.5rem 0 1.5rem', color: 'var(--text-color)' }}>
-                Nés de la passion pour l'éducation
-              </h2>
-              <p style={{ fontSize: '1.1rem', color: 'var(--secondary)', lineHeight: 1.8, marginBottom: '1.5rem' }}>
-                212Learn est né d'une vision simple mais puissante : rendre l'éducation de qualité accessible à tous au Maroc et dans la francophonie.
-              </p>
-              <p style={{ fontSize: '1.1rem', color: 'var(--secondary)', lineHeight: 1.8, marginBottom: '1.5rem' }}>
-                Fondée par des passionnés de technologie et d'éducation, notre plateforme a grandi pour devenir une référence dans l'apprentissage en ligne, avec des milliers d'étudiants qui nous font confiance chaque jour.
-              </p>
-              <p style={{ fontSize: '1.1rem', color: 'var(--secondary)', lineHeight: 1.8 }}>
-                Notre mission continue d'évoluer, mais notre engagement reste le même : offrir la meilleure expérience d'apprentissage possible.
-              </p>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
-              {[
-                { number: '2026', label: 'Année de création' },
-                { number: '100%', label: 'Engagement qualité' },
-                { number: '24/7', label: 'Support disponible' },
-                { number: '∞', label: 'Apprentissage continu' }
-              ].map((item, idx) => (
-                <div key={idx} style={{ 
-                  background: '#fff', 
-                  padding: '2rem', 
-                  borderRadius: '16px', 
-                  textAlign: 'center',
-                  boxShadow: 'var(--shadow-sm)'
-                }}>
-                  <div style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--primary)', marginBottom: '0.5rem' }}>{item.number}</div>
-                  <div style={{ fontSize: '0.9rem', color: 'var(--secondary)' }}>{item.label}</div>
-                </div>
-              ))}
-            </div>
+      {/* Qui nous servons */}
+      <section className="section-animate about-section-pad about-section-white about-section-relative">
+        <BackgroundBlobs variant="cool" />
+        <div className="about-container">
+          <div className="about-section-head">
+            <span className="about-eyebrow muted">Notre public</span>
+            <h2>Pour qui existons-nous ?</h2>
+            <p>Trois publics, un même engagement : faire progresser les compétences numériques.</p>
           </div>
-        </div>
-      </section>
 
-      {/* Values Section */}
-      <section style={{ padding: '5rem 2rem', background: '#fff' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <h2 style={{ textAlign: 'center', fontSize: '2.3rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--text-color)' }}>
-            Nos Valeurs
-          </h2>
-          <p style={{ textAlign: 'center', fontSize: '1.1rem', color: 'var(--secondary)', marginBottom: '3rem', maxWidth: '600px', margin: '0 auto 3rem' }}>
-            Les principes qui guident chacune de nos actions et décisions
-          </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem' }}>
-            {values.map((value, idx) => (
-              <div key={idx} style={{ 
-                background: 'var(--bg-color)', 
-                padding: '2rem', 
-                borderRadius: '20px', 
-                textAlign: 'center',
-                transition: 'transform 0.3s ease',
-                border: '1px solid var(--border-color)'
-              }}>
-                <div style={{ 
-                  width: '70px', 
-                  height: '70px', 
-                  borderRadius: '50%', 
-                  background: 'rgba(193, 101, 47, 0.1)', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center', 
-                  margin: '0 auto 1.5rem' 
-                }}>
-                  {value.icon}
-                </div>
-                <h3 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--text-color)' }}>{value.title}</h3>
-                <p style={{ fontSize: '0.95rem', color: 'var(--secondary)', lineHeight: 1.6 }}>{value.desc}</p>
-              </div>
+          <div className="about-audience-grid">
+            {whoWeServe.map(({ icon: Icon, title, desc }) => (
+              <GlowCard
+                key={title}
+                icon={<Icon size={26} />}
+                title={title}
+                description={desc}
+              />
             ))}
           </div>
         </div>
+        <SectionDivider fill={BG_SAND} />
       </section>
 
-      {/* Testimonials Section */}
-      <section style={{ padding: '5rem 2rem', background: 'var(--surface-color)' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <h2 style={{ textAlign: 'center', fontSize: '2.3rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--text-color)' }}>
-            Ce que disent nos étudiants
-          </h2>
-          <p style={{ textAlign: 'center', fontSize: '1.1rem', color: 'var(--secondary)', marginBottom: '3rem', maxWidth: '600px', margin: '0 auto 3rem' }}>
-            Découvrez les témoignages de ceux qui ont transformé leur carrière avec 212Learn
-          </p>
+      {/* Valeurs */}
+      <section className="section-animate about-section-pad about-section-sand about-section-relative">
+        <BackgroundBlobs />
+        <div className="about-container">
+          <div className="about-section-head">
+            <span className="about-eyebrow muted">Ce qui nous guide</span>
+            <h2>Nos valeurs</h2>
+            <p>Les principes que nous appliquons dans le produit, la pédagogie et le support.</p>
+          </div>
+
+          <div className="about-values-grid card-stagger">
+            {values.map((value) => {
+              const Icon = value.icon;
+              return (
+                <GlowCard
+                  key={value.title}
+                  centered
+                  icon={<Icon size={28} />}
+                  title={value.title}
+                  description={value.desc}
+                />
+              );
+            })}
+          </div>
+        </div>
+        <SectionDivider fill={BG_WHITE} />
+      </section>
+
+      {/* Témoignages */}
+      <section className="section-animate about-testimonials about-section-white about-section-relative">
+        <BackgroundBlobs variant="cool" />
+        <div className="about-container">
+          <div className="about-section-head">
+            <span className="about-eyebrow muted">Ils nous font confiance</span>
+            <h2>La voix de notre communauté</h2>
+            <p>Des retours d’apprenants qui utilisent 212Learn au quotidien.</p>
+          </div>
+
           {testimonialsLoading ? (
             <div style={{ textAlign: 'center' }}><LoadingSpinner /></div>
           ) : testimonials.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--secondary)' }}>
-              Aucun témoignage disponible pour le moment.
-            </div>
+            <p style={{ textAlign: 'center', color: 'var(--secondary)' }}>
+              Les témoignages apparaîtront ici dès qu’ils seront publiés.
+            </p>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-              {testimonials.map((testimonial) => (
-                <div key={testimonial.id} style={{ 
-                  background: '#fff', 
-                  padding: '2rem', 
-                  borderRadius: '20px',
-                  boxShadow: 'var(--shadow-sm)',
-                  position: 'relative'
-                }}>
-                  <Quote size={32} color="var(--primary)" style={{ opacity: 0.2, marginBottom: '1rem' }} />
-                  <p style={{ fontSize: '1rem', color: 'var(--text-color)', lineHeight: 1.7, marginBottom: '1.5rem', fontStyle: 'italic' }}>
-                    "{testimonial.comment}"
-                  </p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    {testimonial.user?.avatar ? (
-                      <img 
-                        src={testimonial.user.avatar} 
-                        alt={`${testimonial.user.firstName} ${testimonial.user.lastName}`}
-                        style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover' }}
-                      />
-                    ) : (
-                      <div style={{ 
-                        width: '50px', 
-                        height: '50px', 
-                        borderRadius: '50%', 
-                        background: 'var(--primary)', 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center', 
-                        color: '#fff', 
-                        fontWeight: 700, 
-                        fontSize: '1.2rem' 
-                      }}>
-                        {testimonial.user?.firstName?.[0] || 'U'}
-                      </div>
-                    )}
-                    <div>
-                      <div style={{ fontWeight: 700, color: 'var(--text-color)' }}>
-                        {`${testimonial.user?.firstName} ${testimonial.user?.lastName}`.trim()}
-                      </div>
-                      <div style={{ fontSize: '0.85rem', color: 'var(--secondary)' }}>
-                        {testimonial.course?.title || 'Étudiant'}
+            <div className="about-testimonial-grid card-stagger">
+              {testimonials.map((testimonial) => {
+                const name = `${testimonial.user?.firstName || ''} ${testimonial.user?.lastName || ''}`.trim() || 'Apprenant';
+                const initial = testimonial.user?.firstName?.[0] || 'A';
+                return (
+                  <article key={testimonial.id} className="about-testimonial-card about-glass-panel">
+                    <Quote size={28} className="about-quote-icon" />
+                    <p>&ldquo;{testimonial.comment}&rdquo;</p>
+                    <div className="about-testimonial-author">
+                      {testimonial.user?.avatar ? (
+                        <img src={testimonial.user.avatar} alt={name} />
+                      ) : (
+                        <span className="about-avatar-fallback">{initial}</span>
+                      )}
+                      <div>
+                        <strong>{name}</strong>
+                        <span>{testimonial.course?.title || 'Communauté 212Learn'}</span>
                       </div>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  </article>
+                );
+              })}
             </div>
           )}
         </div>
+        <SectionDivider fill={BG_CTA} />
       </section>
 
-      {/* CTA Section */}
-      <section style={{ padding: '5rem 2rem', background: 'linear-gradient(135deg, var(--primary) 0%, #d46b28 100%)', color: '#fff', textAlign: 'center' }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <h2 style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: '1rem' }}>Prêt à commencer votre parcours ?</h2>
-          <p style={{ fontSize: '1.2rem', opacity: 0.95, marginBottom: '2rem' }}>
-            Rejoignez des milliers d'étudiants et commencez à apprendre dès aujourd'hui
+      {/* CTA */}
+      <section className="about-cta">
+        <div className="about-cta-inner">
+          <h2>Rejoignez l’aventure 212Learn</h2>
+          <p>
+            Que vous soyez apprenant ou instructeur, vous faites partie de ce que nous construisons.
+            Commencez par explorer le catalogue — ou créez votre compte.
           </p>
-          <a 
-            href="/courses" 
-            style={{ 
-              display: 'inline-block', 
-              padding: '1rem 2.5rem', 
-              background: '#fff', 
-              color: 'var(--primary)', 
-              textDecoration: 'none', 
-              fontWeight: 700, 
-              fontSize: '1.1rem', 
-              borderRadius: '12px',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
-            }}
-          >
-            Explorer les cours
-          </a>
+          <div style={{ display: 'flex', gap: '0.85rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link to="/signup" className="about-cta-btn about-micro-btn">
+              Créer un compte
+              <ArrowRight size={18} />
+            </Link>
+            <Link to="/courses" className="about-cta-ghost about-micro-btn">
+              Parcourir les cours
+            </Link>
+          </div>
         </div>
       </section>
     </div>

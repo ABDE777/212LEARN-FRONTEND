@@ -1,36 +1,32 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useEffect } from 'react';
 import LottieRaw from 'lottie-react';
 const Lottie = LottieRaw.default || LottieRaw;
 import heroAnimation from '../lotties/Hero section.json';
 import {
-  BookOpen, Users, Video, Code, Database, Globe, Award, User, Zap,
-  Star, ArrowRight, CheckCircle2, Sparkles, GraduationCap, ShieldCheck, PlayCircle
+  BookOpen, Users, Video, Code, Database, Globe, Award, Zap,
+  ArrowRight, GraduationCap, ShieldCheck, PlayCircle, Laptop,
+  ClipboardCheck, MonitorPlay
 } from 'lucide-react';
 import { useCategories } from '../hooks/useCategories';
 import { useCourses } from '../hooks/useCourses';
 import { usePublicStats } from '../hooks/usePublicStats';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
 import AnimatedLogo from '../components/AnimatedLogo';
 import { useAuth } from '../context/AuthContext';
 
 export default function Home() {
   const { categories, loading: catLoading, error: catError } = useCategories();
-  const { courses, loading: coursesLoading } = useCourses({ limit: 6 });
+  const { courses } = useCourses({ limit: 6 });
   const { stats, loading: statsLoading } = usePublicStats();
   const { user, isAuthenticated } = useAuth();
-  const navigate = useNavigate();
 
-  // Intersection Observer for scroll-triggered animations
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('in-view');
-          }
+          if (entry.isIntersecting) entry.target.classList.add('in-view');
         });
       },
       { threshold: 0.12 }
@@ -46,14 +42,11 @@ export default function Home() {
     return '/student/dashboard';
   };
 
-  // Flatten nested categories into a single array
   const flattenCategories = (cats) => {
     let result = [];
     for (const cat of cats) {
       result.push(cat);
-      if (cat.children && cat.children.length > 0) {
-        result = result.concat(flattenCategories(cat.children));
-      }
+      if (cat.children?.length > 0) result = result.concat(flattenCategories(cat.children));
     }
     return result;
   };
@@ -70,12 +63,11 @@ export default function Home() {
     return BookOpen;
   };
 
-  // Featured courses to show (up to 3 real courses, fallback if empty)
-  const featuredCourses = courses && courses.length > 0 ? courses.slice(0, 3) : [
+  const featuredCourses = courses?.length > 0 ? courses.slice(0, 3) : [
     {
       id: 'demo-1',
       title: 'Développement Web Fullstack avec React & Node.js',
-      description: 'Maîtrisez les technologies modernes pour créer des applications web complètes et évolutives.',
+      description: 'Créez des applications web complètes, du front au back, avec les outils utilisés en entreprise.',
       price: 299,
       level: 'Intermédiaire',
       category: { name: 'Développement Web' },
@@ -84,7 +76,7 @@ export default function Home() {
     {
       id: 'demo-2',
       title: 'Fondamentaux des Bases de Données SQL & PostgreSQL',
-      description: 'Concevez, modélisez et optimisez vos bases de données relationnelles professionnelles.',
+      description: 'Apprenez à concevoir, interroger et sécuriser une base de données professionnelle.',
       price: 199,
       level: 'Débutant',
       category: { name: 'Base de données' },
@@ -92,8 +84,8 @@ export default function Home() {
     },
     {
       id: 'demo-3',
-      title: 'Algorithmique & Structures de Données Avancées',
-      description: 'Renforcez votre logique de programmation pour résoudre des problèmes complexes.',
+      title: 'Algorithmique & Structures de Données',
+      description: 'Renforcez votre logique pour réussir examens, entretiens et projets complexes.',
       price: 249,
       level: 'Avancé',
       category: { name: 'Programmation' },
@@ -101,34 +93,76 @@ export default function Home() {
     },
   ];
 
+  const audience = [
+    {
+      icon: GraduationCap,
+      title: 'Étudiants en informatique',
+      desc: 'Renforcez vos cours universitaires avec des modules pratiques, des quiz et un suivi clair de votre progression.',
+    },
+    {
+      icon: Laptop,
+      title: 'Autodidactes & reconversions',
+      desc: 'Suivez un parcours structuré à votre rythme pour passer d’un débutant motivé à un profil prêt pour le marché.',
+    },
+    {
+      icon: Users,
+      title: 'Instructeurs & formateurs',
+      desc: 'Publiez vos cours, animez des sessions live et accompagnez vos apprenants depuis un espace dédié.',
+    },
+  ];
+
+  const platformFeatures = [
+    {
+      icon: MonitorPlay,
+      title: 'Cours vidéo + live',
+      desc: 'Regardez des leçons à la demande et rejoignez des classes virtuelles pour poser vos questions en direct.',
+    },
+    {
+      icon: ClipboardCheck,
+      title: 'Quiz & devoirs',
+      desc: 'Validez ce que vous apprenez avec des évaluations, des rendus et un retour pédagogique.',
+    },
+    {
+      icon: PlayCircle,
+      title: 'Espace étudiant',
+      desc: 'Retrouvez vos inscriptions, votre progression, vos notes et vos ressources au même endroit.',
+    },
+    {
+      icon: Award,
+      title: 'Attestations de réussite',
+      desc: 'Terminez un parcours et obtenez une attestation pour valoriser vos compétences.',
+    },
+  ];
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-color)' }}>
       <Navbar />
 
-      {/* ── 1. Hero Section ── */}
+      {/* Hero — Accueil = proposition claire + action */}
       <section className="hero-section">
-        <div className="floating-objects">
-          <div className="floating-circle" style={{ top: '10%', left: '5%', width: '90px', height: '90px', background: 'var(--primary)', opacity: 0.2, animationDelay: '0s', animationDuration: '7s' }}></div>
-          <div className="floating-circle" style={{ top: '60%', left: '10%', width: '65px', height: '65px', background: 'var(--accent)', opacity: 0.25, animationDelay: '-2s', animationDuration: '5s' }}></div>
-          <div className="floating-circle" style={{ top: '30%', right: '15%', width: '110px', height: '110px', background: 'var(--secondary)', opacity: 0.12, animationDelay: '-4s', animationDuration: '9s' }}></div>
-          <div className="floating-circle" style={{ bottom: '20%', right: '8%', width: '75px', height: '75px', background: 'var(--primary)', opacity: 0.15, animationDelay: '-1s', animationDuration: '6s' }}></div>
-          <div className="floating-blob" style={{ top: '20%', left: '20%', width: '280px', height: '280px', background: 'rgba(193, 101, 47, 0.09)', animationDelay: '0s' }}></div>
-          <div className="floating-blob" style={{ bottom: '10%', right: '20%', width: '220px', height: '220px', background: 'rgba(27, 75, 90, 0.07)', animationDelay: '-4s' }}></div>
+        <div className="floating-objects" aria-hidden="true">
+          <div className="floating-circle" style={{ top: '10%', left: '5%', width: '90px', height: '90px', background: 'var(--primary)', opacity: 0.2, animationDuration: '7s' }} />
+          <div className="floating-circle" style={{ top: '60%', left: '10%', width: '65px', height: '65px', background: 'var(--accent)', opacity: 0.25, animationDelay: '-2s', animationDuration: '5s' }} />
+          <div className="floating-circle" style={{ top: '30%', right: '15%', width: '110px', height: '110px', background: 'var(--secondary)', opacity: 0.12, animationDelay: '-4s', animationDuration: '9s' }} />
+          <div className="floating-blob" style={{ top: '20%', left: '20%', width: '280px', height: '280px', background: 'rgba(193, 101, 47, 0.09)' }} />
+          <div className="floating-blob" style={{ bottom: '10%', right: '20%', width: '220px', height: '220px', background: 'rgba(27, 75, 90, 0.07)', animationDelay: '-4s' }} />
         </div>
 
         <div className="hero-left" style={{ zIndex: 1 }}>
           <AnimatedLogo size={420} />
           <div className="hero-text-wrapper">
             <div className="hero-trust-badge">
-              <span className="badge-dot"></span>
+              <span className="badge-dot" />
               <Zap size={13} color="var(--primary)" />
-              Plateforme officielle d'apprentissage 212LEARN
+              Plateforme e-learning · Maroc & francophonie
             </div>
             <h1 className="hero-title">
-              Élevez votre parcours <span style={{ color: 'var(--primary)', textDecoration: 'underline', textDecorationColor: 'rgba(193,101,47,0.3)', textUnderlineOffset: '6px' }}>d'apprentissage</span>.
+              Apprenez l&apos;informatique{' '}
+              <span style={{ color: 'var(--primary)' }}>en ligne</span>, avec un vrai suivi.
             </h1>
             <p className="hero-desc">
-              La plateforme d'e-learning ultime conçue pour vous accompagner tout au long de votre cursus en informatique. Apprenez, connectez-vous et développez vos compétences.
+              212Learn est votre catalogue de formations en programmation, web et bases de données :
+              inscrivez-vous à un cours, suivez les leçons, participez aux lives et validez vos compétences.
             </p>
             <div className="hero-buttons">
               {isAuthenticated ? (
@@ -137,49 +171,63 @@ export default function Home() {
                 </Link>
               ) : (
                 <Link to="/signup" className="btn-primary" style={{ padding: '14px 32px', fontSize: '1.1rem', borderRadius: '16px' }}>
-                  Commencer gratuitement
+                  Créer mon compte
                 </Link>
               )}
-              <Link to="/courses" className="btn-secondary" style={{ padding: '14px 28px', fontSize: '1.1rem', background: 'rgba(255,255,255,0.8)', color: 'var(--text-color)', border: '1px solid rgba(255,255,255,0.9)', boxShadow: '0 4px 16px rgba(0,0,0,0.06)', backdropFilter: 'blur(8px)', borderRadius: '16px' }}>
-                Parcourir les cours
+              <Link
+                to="/courses"
+                className="btn-secondary"
+                style={{
+                  padding: '14px 28px',
+                  fontSize: '1.1rem',
+                  background: 'rgba(255,255,255,0.8)',
+                  color: 'var(--text-color)',
+                  border: '1px solid rgba(255,255,255,0.9)',
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
+                  backdropFilter: 'blur(8px)',
+                  borderRadius: '16px',
+                }}
+              >
+                Voir le catalogue
               </Link>
             </div>
           </div>
         </div>
-        
+
         <div className="hero-right">
-          <div style={{ 
-            position: 'absolute', 
-            width: '450px', 
-            height: '450px', 
-            background: 'radial-gradient(circle, rgba(193, 101, 47, 0.15) 0%, transparent 70%)', 
-            borderRadius: '50%',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            zIndex: 0,
-            animation: 'blobFloat 8s ease-in-out infinite'
-          }}></div>
-          
+          <div
+            style={{
+              position: 'absolute',
+              width: '450px',
+              height: '450px',
+              background: 'radial-gradient(circle, rgba(193, 101, 47, 0.15) 0%, transparent 70%)',
+              borderRadius: '50%',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              zIndex: 0,
+              animation: 'blobFloat 8s ease-in-out infinite',
+            }}
+          />
           <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: '550px' }}>
-            <Lottie animationData={heroAnimation} loop={true} />
+            <Lottie animationData={heroAnimation} loop />
           </div>
         </div>
       </section>
 
-      {/* ── 2. Key Stats Counter Banner ── */}
+      {/* Preuve sociale légère — Accueil */}
       <section style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)', padding: '3.5rem 2rem', color: '#fff', boxShadow: '0 10px 30px rgba(0,0,0,0.15)' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem', textAlign: 'center' }}>
           {statsLoading ? (
             <LoadingSpinner />
           ) : (
             [
-              { icon: <GraduationCap size={28} color="#f093fb" />, number: `+${stats?.totalUsers || 0}`, label: 'Étudiants passionnés' },
-              { icon: <BookOpen size={28} color="#43e97b" />, number: `+${stats?.totalCourses || 0}`, label: 'Cours & Formations' },
-              { icon: <ShieldCheck size={28} color="#4facfe" />, number: `${stats?.satisfactionRate || 98}%`, label: 'Taux de satisfaction' },
-              { icon: <Award size={28} color="#fee140" />, number: `+${stats?.totalInstructors || 0}`, label: 'Instructeurs certifiés' },
-            ].map((s, idx) => (
-              <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+              { icon: <GraduationCap size={28} color="#f093fb" />, number: `+${stats?.totalUsers || 0}`, label: 'Apprenants inscrits' },
+              { icon: <BookOpen size={28} color="#43e97b" />, number: `+${stats?.totalCourses || 0}`, label: 'Cours au catalogue' },
+              { icon: <Users size={28} color="#4facfe" />, number: `+${stats?.totalInstructors || 0}`, label: 'Instructeurs' },
+              { icon: <ShieldCheck size={28} color="#fee140" />, number: `${stats?.satisfactionRate || 98}%`, label: 'Satisfaction' },
+            ].map((s) => (
+              <div key={s.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
                 <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.25rem' }}>
                   {s.icon}
                 </div>
@@ -191,17 +239,56 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── 3. Categories Marquee ── */}
-      <section className="section-animate" style={{ background: 'var(--surface-color)', padding: '5rem 0', position: 'relative', overflow: 'hidden' }}>
-        <div className="floating-objects">
-          <div className="floating-circle" style={{ top: '15%', left: '3%', width: '90px', height: '90px', background: 'var(--accent)', opacity: 0.14, animationDelay: '-3s' }}></div>
-          <div className="floating-circle" style={{ top: '70%', left: '8%', width: '50px', height: '50px', background: 'var(--primary)', opacity: 0.2, animationDelay: '-1s' }}></div>
-          <div className="floating-circle" style={{ top: '20%', right: '5%', width: '75px', height: '75px', background: 'var(--secondary)', opacity: 0.09, animationDelay: '-5s' }}></div>
+      {/* Pour qui — Accueil oriente le visiteur */}
+      <section className="section-animate" style={{ padding: '5rem 2rem', background: '#fff' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+              Pour qui ?
+            </span>
+            <h2 style={{ fontSize: '2.2rem', fontWeight: 800, margin: '0.4rem 0 0.75rem', color: 'var(--text-color)' }}>
+              Une plateforme pensée pour apprendre et enseigner
+            </h2>
+            <p style={{ margin: 0, color: 'var(--secondary)', fontSize: '1.05rem', maxWidth: '640px', marginInline: 'auto', lineHeight: 1.6 }}>
+              Que vous cherchiez un cours, un parcours complet ou un outil pour former, 212Learn vous donne un point d&apos;entrée clair.
+            </p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.5rem' }}>
+            {audience.map(({ icon: Icon, title, desc }) => (
+              <article
+                key={title}
+                style={{
+                  background: 'var(--bg-color)',
+                  borderRadius: '22px',
+                  padding: '1.75rem',
+                  border: '1px solid rgba(255,255,255,0.7)',
+                  boxShadow: 'var(--neu-shadow-raised-sm)',
+                }}
+              >
+                <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'rgba(193,101,47,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem', color: 'var(--primary)' }}>
+                  <Icon size={24} />
+                </div>
+                <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.15rem', color: 'var(--secondary)' }}>{title}</h3>
+                <p style={{ margin: 0, fontSize: '0.92rem', lineHeight: 1.6, color: 'var(--text-color)', opacity: 0.85 }}>{desc}</p>
+              </article>
+            ))}
+          </div>
         </div>
+      </section>
 
-        <h2 style={{ textAlign: 'center', marginBottom: '3rem', fontSize: '2.3rem', position: 'relative', zIndex: 1, fontWeight: 800 }}>
-          Explorer nos domaines d'apprentissage
-        </h2>
+      {/* Domaines / catalogue */}
+      <section className="section-animate" style={{ background: 'var(--surface-color)', padding: '5rem 0', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ textAlign: 'center', marginBottom: '2.5rem', padding: '0 1.5rem', position: 'relative', zIndex: 1 }}>
+          <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+            Catalogue
+          </span>
+          <h2 style={{ fontSize: '2.2rem', fontWeight: 800, margin: '0.4rem 0 0.5rem', color: 'var(--text-color)' }}>
+            Explorez nos domaines
+          </h2>
+          <p style={{ margin: 0, color: 'var(--secondary)', fontSize: '1.05rem' }}>
+            Filtrez par thème et trouvez le cours adapté à votre niveau.
+          </p>
+        </div>
 
         {catLoading ? (
           <LoadingSpinner />
@@ -209,13 +296,13 @@ export default function Home() {
           <div style={{ textAlign: 'center', color: 'var(--error-color)', padding: '0 2rem' }}>{catError}</div>
         ) : (() => {
           const FALLBACK = [
-            { id: 'f1', name: 'Informatique & Code', description: 'Algorithmes, Java, Python & C++.', icon: 'BookOpen' },
-            { id: 'f2', name: 'Sessions Live Interactives', description: 'Rencontrez vos enseignants en direct.', icon: 'Video' },
-            { id: 'f3', name: 'Suivi Pédagogique', description: 'Évaluation continue et devoirs.', icon: 'Users' },
-            { id: 'f4', name: 'Développement Web', description: 'React, Node.js, HTML5, CSS3.', icon: 'Globe' },
-            { id: 'f5', name: 'Bases de Données', description: 'PostgreSQL, SQL & NoSQL.', icon: 'Database' },
+            { id: 'f1', name: 'Programmation', description: 'Algorithmes, Java, Python, C++.' },
+            { id: 'f2', name: 'Développement Web', description: 'HTML, CSS, React, Node.js.' },
+            { id: 'f3', name: 'Bases de Données', description: 'SQL, PostgreSQL, modélisation.' },
+            { id: 'f4', name: 'Sessions Live', description: 'Classes virtuelles avec instructeurs.' },
+            { id: 'f5', name: 'Projets pratiques', description: 'Exercices et cas concrets.' },
           ];
-          const cards = (allCategories && allCategories.length > 0 ? allCategories : FALLBACK);
+          const cards = allCategories.length > 0 ? allCategories : FALLBACK;
           const loop = [...cards, ...cards];
 
           return (
@@ -226,17 +313,13 @@ export default function Home() {
                 {loop.map((category, idx) => {
                   const Icon = getCategoryIcon(category.name);
                   return (
-                    <Link
-                      key={`${category.id}-${idx}`}
-                      to={`/courses?category=${category.id}`}
-                      className="cat-card"
-                    >
+                    <Link key={`${category.id}-${idx}`} to={`/courses?category=${category.id}`} className="cat-card">
                       <div className="cat-card-icon">
                         <Icon size={26} color="var(--primary)" />
                       </div>
                       <h3 className="cat-card-title">{category.name}</h3>
                       <p className="cat-card-desc">
-                        {category.description || 'Explorez nos cours dans cette spécialité'}
+                        {category.description || 'Voir les cours de cette catégorie'}
                       </p>
                     </Link>
                   );
@@ -256,13 +339,13 @@ export default function Home() {
           @keyframes catScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
           .cat-card {
             flex-shrink: 0; width: 230px; padding: 1.75rem 1.5rem; background: #fff;
-            border: 1px solid var(--border-color); borderRadius: 20px; box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color); border-radius: 20px; box-shadow: var(--shadow-sm);
             text-decoration: none; transition: all 0.25s ease; cursor: pointer;
             display: flex; flex-direction: column; align-items: flex-start; gap: 0.6rem;
           }
           .cat-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-md); border-color: var(--primary); }
           .cat-card-icon {
-            width: 48px; height: 48px; borderRadius: 14px; background: rgba(193, 101, 47, 0.08);
+            width: 48px; height: 48px; border-radius: 14px; background: rgba(193, 101, 47, 0.08);
             display: flex; align-items: center; justify-content: center; transition: background 0.25s;
           }
           .cat-card:hover .cat-card-icon { background: var(--primary); }
@@ -275,35 +358,37 @@ export default function Home() {
         `}</style>
       </section>
 
-      {/* ── 4. Featured Courses Showcase ── */}
-      <section className="section-animate" style={{ padding: '5rem 2rem', background: '#fff', position: 'relative' }}>
+      {/* Cours phares */}
+      <section className="section-animate" style={{ padding: '5rem 2rem', background: '#fff' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem', flexWrap: 'wrap', gap: '1rem' }}>
             <div>
               <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                🌟 Formations populaires
+                Commencer ici
               </span>
-              <h2 style={{ fontSize: '2.3rem', fontWeight: 800, margin: '0.3rem 0 0', color: 'var(--text-color)' }}>
-                Découvrez nos cours phares
+              <h2 style={{ fontSize: '2.2rem', fontWeight: 800, margin: '0.3rem 0 0', color: 'var(--text-color)' }}>
+                Cours populaires
               </h2>
             </div>
             <Link to="/courses" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)', fontWeight: 700, textDecoration: 'none', fontSize: '1rem' }}>
-              Voir tout le catalogue <ArrowRight size={18} />
+              Tout le catalogue <ArrowRight size={18} />
             </Link>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
             {featuredCourses.map((c) => (
-              <div key={c.id} style={{
-                background: 'var(--bg-color)',
-                borderRadius: '20px',
-                border: '1px solid var(--border-color)',
-                overflow: 'hidden',
-                boxShadow: 'var(--neu-shadow-raised-sm)',
-                transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                display: 'flex',
-                flexDirection: 'column',
-              }}
+              <div
+                key={c.id}
+                style={{
+                  background: 'var(--bg-color)',
+                  borderRadius: '20px',
+                  border: '1px solid var(--border-color)',
+                  overflow: 'hidden',
+                  boxShadow: 'var(--neu-shadow-raised-sm)',
+                  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
                 onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-6px)'; e.currentTarget.style.boxShadow = 'var(--shadow-md)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'var(--neu-shadow-raised-sm)'; }}
               >
@@ -329,8 +414,8 @@ export default function Home() {
                     <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary)' }}>
                       {Number(c.price) > 0 ? `${c.price} MAD` : 'Gratuit'}
                     </span>
-                    <Link to={`/courses/${c.id}`} style={{ padding: '8px 16px', borderRadius: '10px', background: 'var(--primary)', color: '#fff', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600, transition: 'opacity 0.2s' }}>
-                      Détails →
+                    <Link to={`/courses/${c.id}`} style={{ padding: '8px 16px', borderRadius: '10px', background: 'var(--primary)', color: '#fff', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600 }}>
+                      Voir le cours
                     </Link>
                   </div>
                 </div>
@@ -340,23 +425,23 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── 5. How It Works Process ── */}
-      <section className="section-animate" style={{ padding: '5rem 2rem', background: 'var(--surface-color)', position: 'relative' }}>
+      {/* Comment ça marche */}
+      <section className="section-animate" style={{ padding: '5rem 2rem', background: 'var(--surface-color)' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto', textAlign: 'center' }}>
           <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>
-            🚀 Processus simple
+            En 3 étapes
           </span>
-          <h2 style={{ fontSize: '2.3rem', fontWeight: 800, margin: '0.4rem 0 3.5rem', color: 'var(--text-color)' }}>
-            Comment fonctionne 212LEARN ?
+          <h2 style={{ fontSize: '2.2rem', fontWeight: 800, margin: '0.4rem 0 3rem', color: 'var(--text-color)' }}>
+            Comment démarrer sur 212Learn
           </h2>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem', position: 'relative' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
             {[
-              { step: '01', title: 'Créez votre compte', desc: 'Inscrivez-vous en 30 secondes pour accéder immédiatement à votre tableau de bord personnel.' },
-              { step: '02', title: 'Suivez vos cours & visios', desc: 'Accédez aux vidéos, exercices et séances en direct avec des instructeurs qualifiés.' },
-              { step: '03', title: 'Validez vos compétences', desc: 'Passez les quiz, validez vos devoirs et obtenez vos attestations certifiées.' },
-            ].map((st, i) => (
-              <div key={i} style={{ background: '#fff', borderRadius: '24px', padding: '2.5rem 2rem', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)', textAlign: 'left', position: 'relative' }}>
+              { step: '01', title: 'Créez votre compte', desc: 'Inscription gratuite. Vous accédez à votre tableau de bord étudiant (ou instructeur).' },
+              { step: '02', title: 'Choisissez un cours', desc: 'Parcourez le catalogue, consultez le programme, puis inscrivez-vous au parcours qui vous convient.' },
+              { step: '03', title: 'Apprenez et validez', desc: 'Suivez les vidéos et lives, faites les quiz et devoirs, puis obtenez votre attestation.' },
+            ].map((st) => (
+              <div key={st.step} style={{ background: '#fff', borderRadius: '24px', padding: '2.5rem 2rem', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)', textAlign: 'left' }}>
                 <div style={{ fontSize: '3rem', fontWeight: 900, color: 'rgba(193,101,47,0.15)', lineHeight: 1, marginBottom: '1rem' }}>
                   {st.step}
                 </div>
@@ -368,95 +453,115 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── 6. Why Choose Us Section ── */}
-      <section className="section-animate" style={{ padding: '5rem 2rem', background: '#fff', position: 'relative', overflow: 'hidden', color: 'var(--text-color)' }}>
-        <div className="floating-objects">
-          <div className="floating-circle" style={{ top: '10%', left: '6%', width: '85px', height: '85px', background: 'var(--primary)', opacity: 0.08, animationDelay: '-4s' }}></div>
-          <div className="floating-circle" style={{ top: '65%', left: '10%', width: '55px', height: '55px', background: 'var(--accent)', opacity: 0.12, animationDelay: '-2s' }}></div>
-          <div className="floating-circle" style={{ top: '25%', right: '7%', width: '95px', height: '95px', background: 'var(--secondary)', opacity: 0.06, animationDelay: '-6s' }}></div>
-        </div>
-        
+      {/* Ce que vous trouvez sur la plateforme */}
+      <section className="section-animate" style={{ padding: '5rem 2rem', background: '#fff', position: 'relative', overflow: 'hidden' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
-          <h2 style={{ textAlign: 'center', marginBottom: '1rem', fontSize: '2.3rem', color: 'var(--text-color)', fontWeight: 800 }}>
-            Pourquoi nous choisir ?
-          </h2>
-          <p style={{ textAlign: 'center', marginBottom: '4rem', fontSize: '1.1rem', color: 'var(--secondary)', opacity: 0.8 }}>
-            Une expérience pédagogique complète et adaptée à vos ambitions
-          </p>
-          
+          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+              Sur la plateforme
+            </span>
+            <h2 style={{ fontSize: '2.2rem', fontWeight: 800, margin: '0.4rem 0 0.75rem', color: 'var(--text-color)' }}>
+              Tout ce qu&apos;il faut pour progresser
+            </h2>
+            <p style={{ margin: 0, color: 'var(--secondary)', fontSize: '1.05rem', maxWidth: '560px', marginInline: 'auto' }}>
+              Des outils concrets — pas seulement des vidéos isolées.
+            </p>
+          </div>
+
           <div className="card-stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '2rem' }}>
-            {[
-              { icon: <BookOpen size={38} color="#fff" />, title: 'Programme structuré', desc: 'Des contenus méthodiques et révisés par des experts en informatique.' },
-              { icon: <Video size={38} color="#fff" />, title: 'Sessions Live', desc: 'Rejoignez vos cours interactifs en visioconférence directe.' },
-              { icon: <Users size={38} color="#fff" />, title: 'Accompagnement continu', desc: 'Retours personnalisés sur vos rendus et suivi personnalisé.' },
-              { icon: <Award size={38} color="#fff" />, title: 'Gamification & Badges', desc: 'Cumulez des points et récompenses pour mesurer vos progrès.' },
-            ].map(({ icon, title, desc }, i) => (
-              <div key={i} className="why-choose-card" style={{ 
-                background: 'var(--bg-color)', 
-                borderRadius: '24px', 
-                padding: '2.5rem 2rem',
-                textAlign: 'center',
-                border: '1px solid rgba(255,255,255,0.7)',
-                transition: 'transform 0.35s cubic-bezier(0.22,1,0.36,1), box-shadow 0.35s ease',
-                boxShadow: 'var(--neu-shadow-raised)',
-                position: 'relative',
-                overflow: 'hidden',
-              }}>
-                <div style={{ 
-                  width: '75px', height: '75px', 
-                  background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)', 
-                  borderRadius: '22px', 
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  margin: '0 auto 1.5rem auto',
-                  boxShadow: '0 8px 20px rgba(193,101,47,0.3)',
-                  transition: 'transform 0.3s ease'
-                }}>
-                  {icon}
+            {platformFeatures.map(({ icon: Icon, title, desc }) => (
+              <div
+                key={title}
+                className="why-choose-card"
+                style={{
+                  background: 'var(--bg-color)',
+                  borderRadius: '24px',
+                  padding: '2.5rem 2rem',
+                  textAlign: 'center',
+                  border: '1px solid rgba(255,255,255,0.7)',
+                  transition: 'transform 0.35s cubic-bezier(0.22,1,0.36,1), box-shadow 0.35s ease',
+                  boxShadow: 'var(--neu-shadow-raised)',
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}
+              >
+                <div
+                  style={{
+                    width: '75px',
+                    height: '75px',
+                    background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
+                    borderRadius: '22px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 1.5rem auto',
+                    boxShadow: '0 8px 20px rgba(193,101,47,0.3)',
+                    transition: 'transform 0.3s ease',
+                  }}
+                >
+                  <Icon size={34} color="#fff" />
                 </div>
                 <h3 style={{ marginBottom: '0.75rem', fontSize: '1.2rem', color: 'var(--secondary)', fontWeight: 700 }}>{title}</h3>
-                <p style={{ fontSize: '0.93rem', color: 'var(--text-color)', lineHeight: '1.65', opacity: 0.8 }}>{desc}</p>
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: 'linear-gradient(90deg, var(--primary), var(--accent))', opacity: 0, transition: 'opacity 0.3s' }} className="card-accent-line" />
+                <p style={{ fontSize: '0.93rem', color: 'var(--text-color)', lineHeight: '1.65', opacity: 0.8, margin: 0 }}>{desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── 7. Call To Action Banner ── */}
+      {/* Lien doux vers À propos + CTA */}
       <section style={{ padding: '5rem 2rem', background: 'var(--bg-color)' }}>
-        <div style={{
-          maxWidth: '1100px',
-          margin: '0 auto',
-          background: 'linear-gradient(135deg, var(--primary) 0%, #d46b28 100%)',
-          borderRadius: '32px',
-          padding: '4rem 2rem',
-          textAlign: 'center',
-          color: '#fff',
-          boxShadow: '0 20px 60px rgba(193,101,47,0.35)',
-          position: 'relative',
-          overflow: 'hidden',
-        }}>
+        <div
+          style={{
+            maxWidth: '1100px',
+            margin: '0 auto 2rem',
+            textAlign: 'center',
+            padding: '0 1rem 2rem',
+          }}
+        >
+          <p style={{ margin: '0 0 0.75rem', color: 'var(--secondary)', fontSize: '1rem' }}>
+            Envie d&apos;en savoir plus sur notre projet et nos valeurs ?
+          </p>
+          <Link to="/about" style={{ color: 'var(--primary)', fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+            Découvrir qui nous sommes <ArrowRight size={16} />
+          </Link>
+        </div>
+
+        <div
+          style={{
+            maxWidth: '1100px',
+            margin: '0 auto',
+            background: 'linear-gradient(135deg, var(--primary) 0%, #d46b28 100%)',
+            borderRadius: '32px',
+            padding: '4rem 2rem',
+            textAlign: 'center',
+            color: '#fff',
+            boxShadow: '0 20px 60px rgba(193,101,47,0.35)',
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+        >
           <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '160px', height: '160px', borderRadius: '50%', background: 'rgba(255,255,255,0.15)' }} />
           <div style={{ position: 'absolute', bottom: '-40px', left: '-40px', width: '140px', height: '140px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
-          
-          <h2 style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: '1rem', letterSpacing: '-0.5px' }}>
-            Prêt à faire décoller vos compétences ?
+
+          <h2 style={{ fontSize: '2.4rem', fontWeight: 900, marginBottom: '1rem', letterSpacing: '-0.5px', color: '#fff' }}>
+            Prêt à choisir votre premier cours ?
           </h2>
-          <p style={{ fontSize: '1.15rem', opacity: 0.95, maxWidth: '650px', margin: '0 auto 2.5rem', lineHeight: 1.6 }}>
-            Rejoignez des milliers d'apprenants et accédez immédiatement à l'ensemble des cours et ressources pédagogiques.
+          <p style={{ fontSize: '1.15rem', opacity: 0.95, maxWidth: '620px', margin: '0 auto 2.5rem', lineHeight: 1.6 }}>
+            Créez un compte, ouvrez le catalogue et commencez dès aujourd&apos;hui — à votre rythme.
           </p>
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
             {isAuthenticated ? (
               <Link to={getDashboardPath(user?.role)} style={{ padding: '14px 32px', borderRadius: '16px', background: '#fff', color: 'var(--primary)', textDecoration: 'none', fontWeight: 800, fontSize: '1.05rem', boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}>
-                Accéder à mon espace →
+                Mon espace →
               </Link>
             ) : (
               <Link to="/signup" style={{ padding: '14px 32px', borderRadius: '16px', background: '#fff', color: 'var(--primary)', textDecoration: 'none', fontWeight: 800, fontSize: '1.05rem', boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}>
-                Créer un compte gratuit
+                Créer un compte
               </Link>
             )}
             <Link to="/courses" style={{ padding: '14px 28px', borderRadius: '16px', background: 'rgba(255,255,255,0.2)', color: '#fff', textDecoration: 'none', fontWeight: 700, fontSize: '1.05rem', border: '1px solid rgba(255,255,255,0.4)', backdropFilter: 'blur(6px)' }}>
-              Découvrir les cours
+              Ouvrir le catalogue
             </Link>
           </div>
         </div>
@@ -467,9 +572,6 @@ export default function Home() {
           transform: translateY(-10px) scale(1.02);
           box-shadow: 0 20px 50px rgba(193,101,47,0.15), var(--neu-shadow-raised-lg);
         }
-        .why-choose-card:hover .card-accent-line {
-          opacity: 1 !important;
-        }
         .why-choose-card:hover > div:first-child {
           transform: scale(1.08) rotate(-3deg);
         }
@@ -477,4 +579,3 @@ export default function Home() {
     </div>
   );
 }
-
