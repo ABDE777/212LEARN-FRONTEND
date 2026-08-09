@@ -5,10 +5,12 @@ const Lottie = LottieRaw.default || LottieRaw;
 import aboutAnimation from '../lotties/Education2.json';
 import Navbar from '../components/Navbar';
 import { usePublicStats } from '../hooks/usePublicStats';
+import { usePublicTestimonials } from '../hooks/usePublicTestimonials';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 function About() {
   const { stats, loading: statsLoading } = usePublicStats();
+  const { testimonials, loading: testimonialsLoading } = usePublicTestimonials();
 
   const cards = [
     {
@@ -56,26 +58,6 @@ function About() {
     }
   ];
 
-  const testimonials = [
-    {
-      name: "Sarah Benali",
-      role: "Développeuse Fullstack",
-      text: "212Learn m'a permis de transitionner vers le développement web en seulement 6 mois. Les cours sont excellents et la communauté très supportive.",
-      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80"
-    },
-    {
-      name: "Ahmed Tazi",
-      role: "Data Scientist",
-      text: "La qualité des formations est exceptionnelle. J'ai pu acquérir des compétences en data science qui m'ont permis d'obtenir mon emploi actuel.",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80"
-    },
-    {
-      name: "Fatima Zahra",
-      role: "Étudiante en informatique",
-      text: "Grâce aux sessions live et au suivi personnalisé, j'ai pu progresser rapidement. Les instructeurs sont vraiment disponibles et pédagogues.",
-      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80"
-    }
-  ];
 
   return (
     <div style={{ background: 'var(--bg-color)', minHeight: '100vh' }}>
@@ -173,7 +155,7 @@ function About() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
               {[
-                { number: '2024', label: 'Année de création' },
+                { number: '2026', label: 'Année de création' },
                 { number: '100%', label: 'Engagement qualité' },
                 { number: '24/7', label: 'Support disponible' },
                 { number: '∞', label: 'Apprentissage continu' }
@@ -242,33 +224,62 @@ function About() {
           <p style={{ textAlign: 'center', fontSize: '1.1rem', color: 'var(--secondary)', marginBottom: '3rem', maxWidth: '600px', margin: '0 auto 3rem' }}>
             Découvrez les témoignages de ceux qui ont transformé leur carrière avec 212Learn
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-            {testimonials.map((testimonial, idx) => (
-              <div key={idx} style={{ 
-                background: '#fff', 
-                padding: '2rem', 
-                borderRadius: '20px',
-                boxShadow: 'var(--shadow-sm)',
-                position: 'relative'
-              }}>
-                <Quote size={32} color="var(--primary)" style={{ opacity: 0.2, marginBottom: '1rem' }} />
-                <p style={{ fontSize: '1rem', color: 'var(--text-color)', lineHeight: 1.7, marginBottom: '1.5rem', fontStyle: 'italic' }}>
-                  "{testimonial.text}"
-                </p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <img 
-                    src={testimonial.avatar} 
-                    alt={testimonial.name}
-                    style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover' }}
-                  />
-                  <div>
-                    <div style={{ fontWeight: 700, color: 'var(--text-color)' }}>{testimonial.name}</div>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--secondary)' }}>{testimonial.role}</div>
+          {testimonialsLoading ? (
+            <div style={{ textAlign: 'center' }}><LoadingSpinner /></div>
+          ) : testimonials.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--secondary)' }}>
+              Aucun témoignage disponible pour le moment.
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+              {testimonials.map((testimonial) => (
+                <div key={testimonial.id} style={{ 
+                  background: '#fff', 
+                  padding: '2rem', 
+                  borderRadius: '20px',
+                  boxShadow: 'var(--shadow-sm)',
+                  position: 'relative'
+                }}>
+                  <Quote size={32} color="var(--primary)" style={{ opacity: 0.2, marginBottom: '1rem' }} />
+                  <p style={{ fontSize: '1rem', color: 'var(--text-color)', lineHeight: 1.7, marginBottom: '1.5rem', fontStyle: 'italic' }}>
+                    "{testimonial.comment}"
+                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    {testimonial.user?.avatar ? (
+                      <img 
+                        src={testimonial.user.avatar} 
+                        alt={`${testimonial.user.firstName} ${testimonial.user.lastName}`}
+                        style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <div style={{ 
+                        width: '50px', 
+                        height: '50px', 
+                        borderRadius: '50%', 
+                        background: 'var(--primary)', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        color: '#fff', 
+                        fontWeight: 700, 
+                        fontSize: '1.2rem' 
+                      }}>
+                        {testimonial.user?.firstName?.[0] || 'U'}
+                      </div>
+                    )}
+                    <div>
+                      <div style={{ fontWeight: 700, color: 'var(--text-color)' }}>
+                        {`${testimonial.user?.firstName} ${testimonial.user?.lastName}`.trim()}
+                      </div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--secondary)' }}>
+                        {testimonial.course?.title || 'Étudiant'}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
