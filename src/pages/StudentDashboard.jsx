@@ -11,6 +11,8 @@ import Button from '../components/Button';
 import Navbar from '../components/Navbar';
 import ProfileEditForm from '../components/ProfileEditForm';
 import ChangePasswordForm from '../components/ChangePasswordForm';
+import SEOHead from '../components/SEOHead';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { WishlistContent } from './Wishlist';
 /* ─── Student Live Sessions Component ────────────────────────── */
 function StudentLiveSessionsTab({ enrollments = [], currentUser }) {
@@ -183,6 +185,7 @@ export default function StudentDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, logout } = useAuth();
   const { openCart } = useCartContext();
+  const { profile, achievements, enrollments, loading, error } = useStudentDashboardData(user?.id);
 
   const [activeTab, setActiveTabState] = useState(() => {
     const tabFromUrl = searchParams.get('tab');
@@ -246,7 +249,7 @@ export default function StudentDashboard() {
   };
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
-  const currentUser = profile || user;
+  const currentUser = user;
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-color, #f8fafc)' }}>
@@ -345,8 +348,8 @@ export default function StudentDashboard() {
 
               {/* Gamification Stats */}
               {loading && !achievements ? (
-                <div style={{ marginBottom: '2.5rem' }}>
-                  <DashboardStatsSkeleton />
+                <div style={{ marginBottom: '2.5rem', textAlign: 'center' }}>
+                  <LoadingSpinner />
                 </div>
               ) : (
                 <div
@@ -482,9 +485,8 @@ export default function StudentDashboard() {
                     </div>
 
                     {loading && enrollments.length === 0 ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        <CourseCardSkeleton />
-                        <CourseCardSkeleton />
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', textAlign: 'center' }}>
+                        <LoadingSpinner />
                       </div>
                     ) : enrollments.length === 0 ? (
                       /* Empty State Enrolled Courses */

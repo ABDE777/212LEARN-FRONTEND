@@ -54,5 +54,15 @@ export function useMeetings(courseId) {
     return response.data?.data?.meeting || response.data?.data || response.data;
   };
 
-  return { meetings, loading, error, fetchMeetings, createMeeting, startMeeting, endMeeting };
+  const updateMeeting = async (meetingId, { title, meetingDate, meetingUrl }) => {
+    const response = await api.patch(`/meetings/${meetingId}`, {
+      title,
+      meetingDate,
+      meetingUrl,
+    });
+    await fetchMeetings();
+    return response.data?.data?.meeting || response.data?.data || response.data;
+  };
+
+  return { meetings, loading, error, fetchMeetings, createMeeting, startMeeting, endMeeting, updateMeeting };
 }

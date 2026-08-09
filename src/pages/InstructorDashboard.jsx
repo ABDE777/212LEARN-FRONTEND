@@ -79,12 +79,12 @@ function CopyButton({ text }) {
 }
 
 /* ─── Meeting card ─────────────────────────── */
-function MeetingCard({ meeting, onStart, onEnd, onJoin }) {
+function MeetingCard({ meeting, onStart, onEnd, onJoin, onEdit }) {
   const isPast = meeting.status === 'COMPLETED' || new Date(meeting.meetingDate) < Date.now();
   const isLive = meeting.status === 'LIVE';
+  const isScheduled = meeting.status === 'SCHEDULED';
   const countdown = useCountdown(meeting.meetingDate);
   const isImminent = !isPast && !isLive && countdown && !countdown.includes('j') && !countdown.includes('h');
-  const platform = detectPlatform(meeting.meetingUrl);
   const [actionLoading, setActionLoading] = useState(false);
 
   const handleStart = async () => {
@@ -104,11 +104,15 @@ function MeetingCard({ meeting, onStart, onEnd, onJoin }) {
     setActionLoading(false);
   };
 
+  const handleEdit = () => {
+    onEdit?.(meeting);
+  };
+
   return (
     <div style={{
       borderRadius: '16px',
       overflow: 'hidden',
-      border: `1px solid ${isLive ? '#28a745' : isPast ? 'var(--border-color)' : platform.color + '33'}`,
+      border: `1px solid ${isLive ? '#28a745' : isPast ? 'var(--border-color)' : 'var(--primary)33'}`,
       background: isLive ? '#f6fff8' : isPast ? '#f9f9f9' : '#fff',
       opacity: isPast && !meeting.recordingUrl ? 0.75 : 1,
       transition: 'transform 0.2s, box-shadow 0.2s',
@@ -118,7 +122,7 @@ function MeetingCard({ meeting, onStart, onEnd, onJoin }) {
       onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)', e.currentTarget.style.boxShadow = isLive ? '0 4px 14px rgba(40,167,69,0.18)' : isPast ? 'none' : 'var(--shadow-sm)')}
     >
       {/* Colored top bar */}
-      <div style={{ height: '4px', background: isLive ? '#28a745' : isPast ? 'var(--border-color)' : platform.color }} />
+      <div style={{ height: '4px', background: isLive ? '#28a745' : isPast ? 'var(--border-color)' : 'var(--primary)' }} />
 
       <div style={{ padding: '1.25rem' }}>
         {/* Platform badge + status */}
@@ -126,11 +130,11 @@ function MeetingCard({ meeting, onStart, onEnd, onJoin }) {
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
             padding: '0.2rem 0.6rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 700,
-            background: isLive ? 'rgba(40,167,69,0.15)' : isPast ? '#eee' : platform.color + '18',
-            color: isLive ? '#28a745' : isPast ? '#999' : platform.color,
+            background: isLive ? 'rgba(40,167,69,0.15)' : isPast ? '#eee' : 'rgba(193,101,47,0.18)',
+            color: isLive ? '#28a745' : isPast ? '#999' : 'var(--primary)',
           }}>
             <Video size={11} />
-            {meeting.roomName ? 'Classe Virtuelle 212Learn' : platform.label}
+            Classe Virtuelle 212Learn
           </span>
 
           {isLive ? (
@@ -195,7 +199,7 @@ function MeetingCard({ meeting, onStart, onEnd, onJoin }) {
                 Terminer la classe
               </button>
             </>
-          ) : !isPast ? (
+          ) : isScheduled ? (
             <>
               <button
                 type="button"
@@ -209,19 +213,17 @@ function MeetingCard({ meeting, onStart, onEnd, onJoin }) {
               >
                 <Zap size={14} /> Démarrer la classe
               </button>
-              <a
-                href={meeting.meetingUrl}
-                target="_blank"
-                rel="noreferrer"
+              <button
+                type="button"
+                onClick={handleEdit}
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                  padding: '0.45rem 0.75rem', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 600,
-                  background: 'var(--bg-color)', color: 'var(--secondary)', border: '1px solid var(--border-color)',
-                  textDecoration: 'none',
+                  padding: '0.45rem 0.85rem', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600,
+                  background: 'rgba(193,101,47,0.1)', color: '#C1652F', border: '1px solid rgba(193,101,47,0.2)', cursor: 'pointer',
                 }}
               >
-                <ExternalLink size={13} /> Lien direct
-              </a>
+                <Pencil size={14} /> Modifier
+              </button>
             </>
           ) : meeting.recordingUrl ? (
             <a
@@ -241,19 +243,123 @@ function MeetingCard({ meeting, onStart, onEnd, onJoin }) {
               Session terminée
             </span>
           )}
-          <CopyButton text={meeting.meetingUrl} />
         </div>
       </div>
     </div>
   );
 }
 
-/* ─── Schedule form ────────────────────────── */
+/* ─── Edit meeting form ─────────────────────── */
+function EditMeetingForm({ meeting, onSave, onCancel }) {
+  const [title, setTitle] = useState(meeting.title || '');
+  const [date, setDate] = useState(new Date(meeting.meetingDate).toISOString().slice(0, 10));
+  const [time, setTime] = useState(new Date(meeting.meetingDate).toISOString().slice(11, 16));
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+
+  // minimum datetime = now + 5 min
+  const minDate = new Date(Date.now() + 5 * 60 * 1000).toISOString().slice(0, 10);
+  const minTime = new Date(Date.now() + 5 * 60 * 1000).toISOString().slice(11, 16);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!title.trim() || !date || !time) return;
+    setError(null);
+    setSubmitting(true);
+    try {
+      const meetingDate = new Date(`${date}T${time}:00`).toISOString();
+      await onSave({
+        title: title.trim(),
+        meetingDate,
+      });
+    } catch (err) {
+      setError(
+        err.response?.data?.error?.message ||
+        err.response?.data?.message ||
+        'Impossible de modifier la session. Vérifiez les champs et réessayez.'
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      {error && (
+        <div style={{ padding: '0.75rem 1rem', background: '#f8d7da', border: '1px solid #f5c6cb', color: '#721c24', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+          {error}
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gap: '1.25rem' }}>
+        {/* Title */}
+        <div className="form-group" style={{ margin: 0 }}>
+          <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.9rem' }}>
+            Titre de la session *
+          </label>
+          <input
+            type="text"
+            className="form-control"
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            placeholder="ex : Q&A React Hooks — Session Live"
+            required
+          />
+        </div>
+
+        {/* Date + Time */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div className="form-group" style={{ margin: 0 }}>
+            <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.9rem' }}>
+              Date *
+            </label>
+            <input
+              type="date"
+              className="form-control"
+              value={date}
+              min={minDate}
+              onChange={e => setDate(e.target.value)}
+              required
+            />
+          </div>
+          <div className="form-group" style={{ margin: 0 }}>
+            <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.9rem' }}>
+              Heure *
+            </label>
+            <input
+              type="time"
+              className="form-control"
+              value={time}
+              onChange={e => setTime(e.target.value)}
+              required
+            />
+          </div>
+        </div>
+
+        <div style={{ padding: '1rem', background: 'rgba(193,101,47,0.08)', borderRadius: '8px', border: '1px solid rgba(193,101,47,0.15)' }}>
+          <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Video size={16} style={{ color: 'var(--primary)' }} />
+            Cette session utilisera la classe virtuelle intégrée Jitsi 212Learn
+          </p>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.75rem', justifyContent: 'flex-end' }}>
+        <button type="button" onClick={onCancel} className="btn-secondary" style={{ padding: '0.75rem 1.25rem', background: 'transparent', color: 'var(--secondary)', boxShadow: 'none', border: '1px solid var(--border-color)' }}>
+          Annuler
+        </button>
+        <button type="submit" disabled={submitting} className="btn-primary" style={{ padding: '0.75rem 1.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+          {submitting ? 'Modification…' : <><Save size={16} /> Enregistrer</>}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 function ScheduleForm({ courses, onScheduled }) {
   const [step, setStep] = useState(1); // 1 = pick course, 2 = fill details
   const [courseId, setCourseId] = useState('');
   const [title, setTitle] = useState('');
-  const [url, setUrl]   = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -261,7 +367,6 @@ function ScheduleForm({ courses, onScheduled }) {
   const [success, setSuccess] = useState(false);
 
   const { createMeeting } = useMeetings(courseId);
-  const platform = detectPlatform(url);
   const selectedCourse = courses.find(c => c.id === courseId);
 
   // minimum datetime = now + 5 min
@@ -269,7 +374,7 @@ function ScheduleForm({ courses, onScheduled }) {
   const minTime = new Date(Date.now() + 5 * 60 * 1000).toISOString().slice(11, 16);
 
   const reset = () => {
-    setStep(1); setCourseId(''); setTitle(''); setUrl('');
+    setStep(1); setCourseId(''); setTitle('');
     setDate(''); setTime(''); setError(null); setSuccess(false);
   };
 
@@ -283,7 +388,7 @@ function ScheduleForm({ courses, onScheduled }) {
       await createMeeting({
         title: title.trim(),
         meetingDate,
-        meetingUrl: url.trim() || undefined,
+        // No meetingUrl - will use in-app Jitsi virtual classroom
       });
       setSuccess(true);
       onScheduled?.(courseId);
@@ -415,47 +520,14 @@ function ScheduleForm({ courses, onScheduled }) {
               />
             </div>
 
-            {/* Platform buttons + URL */}
+            {/* Virtual Classroom Info */}
             <div className="form-group" style={{ margin: 0 }}>
-              <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.9rem' }}>
-                Lien de la réunion (Optionnel — sinon Classe Virtuelle 212Learn auto-générée)
-              </label>
-              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.6rem', flexWrap: 'wrap' }}>
-                {PLATFORMS.map(p => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => {
-                      if (p.id !== 'custom') setUrl(`https://${p.pattern}.com/`);
-                    }}
-                    style={{
-                      padding: '0.3rem 0.75rem', borderRadius: '9999px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer',
-                      border: `1.5px solid ${platform.id === p.id ? p.color : 'var(--border-color)'}`,
-                      background: platform.id === p.id ? p.color + '18' : 'transparent',
-                      color: platform.id === p.id ? p.color : 'var(--secondary)',
-                      transition: 'all 0.15s',
-                    }}
-                  >
-                    {p.label}
-                  </button>
-                ))}
-              </div>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type="url"
-                  className="form-control"
-                  value={url}
-                  onChange={e => setUrl(e.target.value)}
-                  placeholder="Laisser vide pour utiliser la classe virtuelle intégrée Jitsi 212Learn"
-                  style={{ paddingLeft: '2.5rem' }}
-                />
-                <Link size={15} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: platform.color, pointerEvents: 'none' }} />
-              </div>
-              {url && (
-                <p style={{ fontSize: '0.78rem', color: platform.color, marginTop: '0.3rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                  <Zap size={11} /> Plateforme détectée : {platform.label}
+              <div style={{ padding: '1rem', background: 'rgba(193,101,47,0.08)', borderRadius: '8px', border: '1px solid rgba(193,101,47,0.15)' }}>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Video size={16} style={{ color: 'var(--primary)' }} />
+                  Cette session utilisera la classe virtuelle intégrée Jitsi 212Learn
                 </p>
-              )}
+              </div>
             </div>
 
             {/* Date + Time */}
@@ -529,8 +601,9 @@ function ScheduleForm({ courses, onScheduled }) {
 function MeetingsTab({ courses }) {
   const [view, setView] = useState('list'); // 'list' | 'schedule'
   const [activeCourseId, setActiveCourseId] = useState(courses[0]?.id || '');
-  const { meetings, loading, error, fetchMeetings, startMeeting, endMeeting } = useMeetings(activeCourseId);
+  const { meetings, loading, error, fetchMeetings, startMeeting, endMeeting, updateMeeting } = useMeetings(activeCourseId);
   const [activeVirtualMeeting, setActiveVirtualMeeting] = useState(null);
+  const [editingMeeting, setEditingMeeting] = useState(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -540,6 +613,19 @@ function MeetingsTab({ courses }) {
   const liveMeetings = meetings.filter(m => m.status === 'LIVE');
   const upcoming = meetings.filter(m => m.status === 'SCHEDULED').sort((a, b) => new Date(a.meetingDate) - new Date(b.meetingDate));
   const past = meetings.filter(m => m.status === 'COMPLETED').sort((a, b) => new Date(b.meetingDate) - new Date(a.meetingDate));
+
+  const handleEditMeeting = (meeting) => {
+    setEditingMeeting(meeting);
+  };
+
+  const handleUpdateMeeting = async (updatedData) => {
+    try {
+      await updateMeeting(editingMeeting.id, updatedData);
+      setEditingMeeting(null);
+    } catch (err) {
+      console.error('Failed to update meeting:', err);
+    }
+  };
 
   return (
     <div>
@@ -551,6 +637,47 @@ function MeetingsTab({ courses }) {
           isInstructor={true}
           onClose={() => setActiveVirtualMeeting(null)}
         />
+      )}
+
+      {/* Edit Meeting Drawer */}
+      {editingMeeting && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+            zIndex: 1000
+          }}
+          onClick={() => setEditingMeeting(null)}
+        >
+          <div
+            style={{
+              position: 'absolute', right: 0, top: 0, bottom: 0,
+              width: '450px', maxWidth: '90vw', background: '#fff',
+              boxShadow: '-4px 0 24px rgba(0,0,0,0.15)',
+              display: 'flex', flexDirection: 'column'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>
+                Modifier la session
+              </h3>
+              <button
+                type="button"
+                onClick={() => setEditingMeeting(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem' }}
+              >
+                <X size={24} style={{ color: 'var(--secondary)' }} />
+              </button>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
+              <EditMeetingForm
+                meeting={editingMeeting}
+                onSave={handleUpdateMeeting}
+                onCancel={() => setEditingMeeting(null)}
+              />
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Header row */}
@@ -571,13 +698,45 @@ function MeetingsTab({ courses }) {
       </div>
 
       {view === 'schedule' ? (
-        <ScheduleForm
-          courses={courses}
-          onScheduled={(cId) => {
-            setActiveCourseId(cId);
-            setView('list');
+        <div
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+            zIndex: 1000
           }}
-        />
+          onClick={() => setView('list')}
+        >
+          <div
+            style={{
+              position: 'absolute', right: 0, top: 0, bottom: 0,
+              width: '500px', maxWidth: '90vw', background: '#fff',
+              boxShadow: '-4px 0 24px rgba(0,0,0,0.15)',
+              display: 'flex', flexDirection: 'column'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>
+                Planifier une session
+              </h3>
+              <button
+                type="button"
+                onClick={() => setView('list')}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem' }}
+              >
+                <X size={24} style={{ color: 'var(--secondary)' }} />
+              </button>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
+              <ScheduleForm
+                courses={courses}
+                onScheduled={(cId) => {
+                  setActiveCourseId(cId);
+                  setView('list');
+                }}
+              />
+            </div>
+          </div>
+        </div>
       ) : (
         <>
           {/* Course filter pills */}
@@ -635,6 +794,7 @@ function MeetingsTab({ courses }) {
                     onStart={startMeeting}
                     onEnd={endMeeting}
                     onJoin={(meetingToJoin) => setActiveVirtualMeeting(meetingToJoin)}
+                    onEdit={handleEditMeeting}
                   />
                 ))}
               </div>
@@ -656,6 +816,7 @@ function MeetingsTab({ courses }) {
                     onStart={startMeeting}
                     onEnd={endMeeting}
                     onJoin={(meetingToJoin) => setActiveVirtualMeeting(meetingToJoin)}
+                    onEdit={handleEditMeeting}
                   />
                 ))}
               </div>
@@ -677,6 +838,7 @@ function MeetingsTab({ courses }) {
                     onStart={startMeeting}
                     onEnd={endMeeting}
                     onJoin={(meetingToJoin) => setActiveVirtualMeeting(meetingToJoin)}
+                    onEdit={handleEditMeeting}
                   />
                 ))}
               </div>

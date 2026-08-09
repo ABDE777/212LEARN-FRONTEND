@@ -163,7 +163,7 @@ function About() {
             </div>
           </div>
         </div>
-        <SectionDivider fill={BG_WHITE} />
+        <SectionDivider fill={BG_WHITE} flip={true} />
       </section>
 
       {/* Mission & Vision */}
@@ -188,7 +188,7 @@ function About() {
             ))}
           </div>
         </div>
-        <SectionDivider fill={BG_SAND} />
+        <SectionDivider fill={BG_SAND} flip={true} />
       </section>
 
       {/* Histoire */}
@@ -222,7 +222,7 @@ function About() {
             ))}
           </div>
         </div>
-        <SectionDivider fill={BG_WHITE} />
+        <SectionDivider fill={BG_WHITE} flip={true} />
       </section>
 
       {/* Qui nous servons */}
@@ -246,7 +246,7 @@ function About() {
             ))}
           </div>
         </div>
-        <SectionDivider fill={BG_SAND} />
+        <SectionDivider fill={BG_SAND} flip={true} />
       </section>
 
       {/* Valeurs */}
@@ -274,7 +274,7 @@ function About() {
             })}
           </div>
         </div>
-        <SectionDivider fill={BG_WHITE} />
+        <SectionDivider fill={BG_WHITE} flip={true} />
       </section>
 
       {/* Témoignages */}
@@ -319,28 +319,28 @@ function About() {
             </div>
           )}
         </div>
-        <SectionDivider fill={BG_CTA} />
+        <SectionDivider gradient={{ from: 'var(--primary)', to: '#d46b28' }} flip={true} />
       </section>
 
       {/* CTA */}
-      <section className="about-cta">
-        <div className="about-cta-inner">
-          <h2>Rejoignez l’aventure 212Learn</h2>
-          <p>
-            Que vous soyez apprenant ou instructeur, vous faites partie de ce que nous construisons.
-            Commencez par explorer le catalogue — ou créez votre compte.
-          </p>
-          <div style={{ display: 'flex', gap: '0.85rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link to="/signup" className="about-cta-btn about-micro-btn">
-              Créer un compte
-              <ArrowRight size={18} />
-            </Link>
-            <Link to="/courses" className="about-cta-ghost about-micro-btn">
-              Parcourir les cours
-            </Link>
+        <section className="about-cta">
+          <div className="about-cta-inner">
+            <h2>Rejoignez l’aventure 212Learn</h2>
+            <p>
+              Que vous soyez apprenant ou instructeur, vous faites partie de ce que nous construisons.
+              Commencez par explorer le catalogue — ou créez votre compte.
+            </p>
+            <div style={{ display: 'flex', gap: '0.85rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Link to="/signup" className="about-cta-btn about-micro-btn">
+                Créer un compte
+                <ArrowRight size={18} />
+              </Link>
+              <Link to="/courses" className="about-cta-ghost about-micro-btn">
+                Parcourir les cours
+              </Link>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
     </div>
   );
 }

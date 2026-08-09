@@ -591,7 +591,9 @@ button {
 /* SVG wave dividers */
 .about-section-divider {
   position: relative;
-  width: 100%;
+  width: 100vw;
+  left: 50%;
+  transform: translateX(-50%);
   overflow: hidden;
   line-height: 0;
   margin-top: 3.5rem;
@@ -599,7 +601,7 @@ button {
 }
 
 .about-section-divider--flip {
-  transform: rotate(180deg);
+  transform: translateX(-50%) rotate(180deg);
   margin-top: 0;
   margin-bottom: 0;
 }
@@ -1214,6 +1216,9 @@ button {
   color: #fff;
   font-weight: 700;
   font-size: 1.1rem;
+  line-height: 1;
+  padding: 0;
+  margin: 0;
 }
 
 .about-testimonial-author strong {
