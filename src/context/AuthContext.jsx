@@ -81,6 +81,27 @@ export function AuthProvider({ children }) {
     return updatedUser;
   };
 
+  const changePassword = async (currentPassword, newPassword) => {
+    const response = await api.patch('/users/me/password', { currentPassword, newPassword });
+    return response.data;
+  };
+
+  const deleteAccount = async () => {
+    await api.delete('/users/me');
+    logout();
+  };
+
+  const uploadAvatar = async (file) => {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    const response = await api.post('/users/me/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    const updatedUser = response.data?.data?.user || response.data?.user || response.data;
+    setUser(updatedUser);
+    return updatedUser;
+  };
+
   const value = {
     user,
     token,
@@ -90,6 +111,9 @@ export function AuthProvider({ children }) {
     signup,
     logout,
     updateProfile,
+    changePassword,
+    deleteAccount,
+    uploadAvatar,
     isAuthenticated: !!token
   };
 

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Trophy, Flame, Target, BookOpen, Clock, TrendingUp, Award, LogOut, User, Lock, ShoppingCart, Heart, Trash2, AlertTriangle, X, Video, Calendar, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trophy, Flame, Target, BookOpen, Clock, TrendingUp, Award, LogOut, User, Lock, ShoppingCart, Heart, Trash2, AlertTriangle, X, Video, Calendar, ExternalLink, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { useStudentDashboardData } from '../hooks/useStudentDashboard';
 import { useAuth } from '../context/AuthContext';
 import { useCartContext } from '../context/CartContext';
 import { useMeetings } from '../hooks/useMeetings';
+import { useCourseSearch } from '../hooks/useCourseSearch';
 import VirtualClassroom from '../components/VirtualClassroom';
 import SessionCalendar from '../components/SessionCalendar';
 import Card from '../components/Card';
@@ -15,6 +16,124 @@ import ChangePasswordForm from '../components/ChangePasswordForm';
 import SEOHead from '../components/SEOHead';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { WishlistContent } from './Wishlist';
+
+/* ─── Course Search Component ────────────────────────── */
+function CourseSearchTab() {
+  const { results, loading, error, searchCourses } = useCourseSearch();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (debouncedQuery) {
+      searchCourses(debouncedQuery);
+    }
+  }, [debouncedQuery, searchCourses]);
+
+  return (
+    <div>
+      <div style={{ marginBottom: '1.75rem' }}>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.3rem', color: 'var(--text-color)' }}>
+          Rechercher des cours
+        </h2>
+        <p style={{ color: 'var(--secondary)', fontSize: '0.92rem' }}>
+          Trouvez des cours par titre, description ou instructeur
+        </p>
+      </div>
+
+      <div style={{ marginBottom: '2rem' }}>
+        <div style={{ position: 'relative' }}>
+          <Search size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--secondary)', pointerEvents: 'none' }} />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Rechercher un cours..."
+            style={{
+              width: '100%',
+              padding: '12px 14px 12px 44px',
+              borderRadius: '12px',
+              border: '1px solid var(--border-color)',
+              fontSize: '1rem',
+              background: 'var(--surface-color)',
+              color: 'var(--text-color)',
+              outline: 'none',
+            }}
+          />
+        </div>
+      </div>
+
+      {loading && <LoadingSpinner />}
+      {error && <p style={{ color: 'var(--error-color)' }}>{error}</p>}
+
+      {!loading && !error && searchQuery && results.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '3rem', border: '2px dashed var(--border-color)', borderRadius: '12px' }}>
+          <Search size={36} style={{ marginBottom: '1rem', opacity: 0.3, color: 'var(--secondary)' }} />
+          <p style={{ color: 'var(--secondary)', fontSize: '0.95rem' }}>
+            Aucun cours trouvé pour "{searchQuery}"
+          </p>
+        </div>
+      )}
+
+      {!loading && !error && results.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+          {results.map((course) => (
+            <div
+              key={course.id}
+              style={{
+                padding: '1.5rem',
+                background: '#fff',
+                borderRadius: '16px',
+                border: '1px solid var(--border-color)',
+                boxShadow: 'var(--shadow-sm)',
+              }}
+            >
+              {course.thumbnail && (
+                <img
+                  src={course.thumbnail}
+                  alt={course.title}
+                  style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '12px', marginBottom: '1rem' }}
+                />
+              )}
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
+                {course.title}
+              </h3>
+              <p style={{ color: 'var(--secondary)', fontSize: '0.9rem', marginBottom: '1rem', lineHeight: 1.5 }}>
+                {course.description?.substring(0, 100)}{course.description?.length > 100 ? '...' : ''}
+              </p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--primary)' }}>
+                  {course.price} MAD
+                </span>
+                <Link
+                  to={`/courses/${course.id}`}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    background: 'var(--primary)',
+                    color: '#fff',
+                    borderRadius: '8px',
+                    textDecoration: 'none',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  Voir
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─── Student Live Sessions Component ────────────────────────── */
 function StudentLiveSessionsTab({ enrollments = [], currentUser }) {
   const [selectedCourseId, setSelectedCourseId] = useState(enrollments[0]?.course?.id || enrollments[0]?.courseId || '');
@@ -205,6 +324,14 @@ export default function StudentDashboard() {
               <span>Mon Panier</span>
             </button>
             <button
+              onClick={() => setActiveTab('search')}
+              className={`sidebar-menu-btn ${activeTab === 'search' ? 'active' : ''}`}
+              title="Rechercher des cours"
+            >
+              <Search size={18} />
+              <span>Rechercher</span>
+            </button>
+            <button
               onClick={() => setActiveTab('lives')}
               className={`sidebar-menu-btn ${activeTab === 'lives' ? 'active' : ''}`}
               title="Sessions Live"
@@ -258,6 +385,8 @@ export default function StudentDashboard() {
             <div key="wishlist" className="tab-panel"><WishlistContent embedded={true} /></div>
           ) : activeTab === 'lives' ? (
             <div key="lives" className="tab-panel"><StudentLiveSessionsTab enrollments={enrollments} currentUser={user} /></div>
+          ) : activeTab === 'search' ? (
+            <div key="search" className="tab-panel"><CourseSearchTab /></div>
           ) : (
             <div key={activeTab} className="tab-panel">
               {/* Welcome Section */}

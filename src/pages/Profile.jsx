@@ -1,13 +1,19 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { User, Mail, FileText, Edit2, X, Check, LogOut, Phone, GraduationCap, Briefcase, Building, Calendar } from 'lucide-react';
+import { User, Mail, FileText, Edit2, X, Check, LogOut, Phone, GraduationCap, Briefcase, Building, Calendar, Camera, Lock, Trash2, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 
 export default function Profile() {
-  const { user, logout, updateProfile } = useAuth();
+  const { user, logout, updateProfile, changePassword, deleteAccount, uploadAvatar } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [avatarLoading, setAvatarLoading] = useState(false);
   const [editData, setEditData] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
@@ -106,6 +112,58 @@ export default function Profile() {
     setEditProfileData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    setAvatarLoading(true);
+    try {
+      await uploadAvatar(file);
+    } catch (err) {
+      console.error('Error uploading avatar:', err);
+      alert('Erreur lors du téléchargement de l\'avatar');
+    } finally {
+      setAvatarLoading(false);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    setPasswordError('');
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordError('Les mots de passe ne correspondent pas');
+      return;
+    }
+    if (passwordData.newPassword.length < 8) {
+      setPasswordError('Le mot de passe doit contenir au moins 8 caractères');
+      return;
+    }
+    
+    setPasswordLoading(true);
+    try {
+      await changePassword(passwordData.currentPassword, passwordData.newPassword);
+      setIsChangingPassword(false);
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      alert('Mot de passe modifié avec succès');
+    } catch (err) {
+      setPasswordError(err.response?.data?.error?.message || 'Erreur lors de la modification du mot de passe');
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.')) {
+      return;
+    }
+    
+    try {
+      await deleteAccount();
+    } catch (err) {
+      console.error('Error deleting account:', err);
+      alert('Erreur lors de la suppression du compte');
+    }
+  };
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-color)' }}>
       <Navbar />
@@ -144,7 +202,7 @@ export default function Profile() {
           {/* Profile Header */}
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '2rem', marginBottom: '2rem' }}>
             {/* Avatar */}
-            <div style={{ flexShrink: 0 }}>
+            <div style={{ flexShrink: 0, position: 'relative' }}>
               {user?.avatar ? (
                 <img
                   src={user.avatar}
@@ -177,6 +235,37 @@ export default function Profile() {
                   {user?.firstName ? user.firstName.charAt(0).toUpperCase() : '?'}
                 </div>
               )}
+              <label
+                style={{
+                  position: 'absolute',
+                  bottom: '0',
+                  right: '0',
+                  background: 'var(--primary)',
+                  color: '#fff',
+                  borderRadius: '50%',
+                  width: '36px',
+                  height: '36px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                  opacity: avatarLoading ? 0.6 : 1,
+                }}
+              >
+                {avatarLoading ? (
+                  <span style={{ fontSize: '0.7rem' }}>...</span>
+                ) : (
+                  <Camera size={18} />
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  disabled={avatarLoading}
+                  style={{ display: 'none' }}
+                />
+              </label>
             </div>
 
             {/* User Info */}
@@ -786,6 +875,210 @@ export default function Profile() {
               </div>
             </div>
           )}
+
+          {/* Security Settings */}
+          <div style={{ 
+            borderTop: '1px solid var(--border-color)', 
+            paddingTop: '2rem',
+            marginTop: '2rem'
+          }}>
+            <h3 style={{ 
+              color: 'var(--primary)', 
+              fontSize: '1.25rem', 
+              fontWeight: 700, 
+              marginBottom: '1.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              <Lock size={24} />
+              Sécurité
+            </h3>
+
+            {/* Change Password */}
+            <div style={{ marginBottom: '2rem' }}>
+              <button
+                onClick={() => setIsChangingPassword(!isChangingPassword)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.75rem 1.25rem',
+                  background: 'var(--surface-color)',
+                  color: 'var(--text-color)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '0.9rem',
+                }}
+              >
+                <Lock size={18} />
+                Changer le mot de passe
+              </button>
+
+              {isChangingPassword && (
+                <div style={{ marginTop: '1.5rem', padding: '1.5rem', background: 'var(--bg-color)', borderRadius: '12px' }}>
+                  {passwordError && (
+                    <div style={{ 
+                      padding: '0.75rem 1rem', 
+                      background: '#fee', 
+                      border: '1px solid #fcc', 
+                      borderRadius: '8px', 
+                      color: '#c33', 
+                      marginBottom: '1rem', 
+                      fontSize: '0.9rem' 
+                    }}>
+                      {passwordError}
+                    </div>
+                  )}
+                  
+                  <div style={{ display: 'grid', gap: '1rem', maxWidth: '400px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--secondary)', marginBottom: '0.5rem' }}>
+                        Mot de passe actuel
+                      </label>
+                      <input
+                        type="password"
+                        value={passwordData.currentPassword}
+                        onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem 1rem',
+                          borderRadius: '10px',
+                          border: '1px solid var(--border-color)',
+                          fontSize: '1rem',
+                          color: 'var(--text-color)',
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--secondary)', marginBottom: '0.5rem' }}>
+                        Nouveau mot de passe
+                      </label>
+                      <input
+                        type="password"
+                        value={passwordData.newPassword}
+                        onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem 1rem',
+                          borderRadius: '10px',
+                          border: '1px solid var(--border-color)',
+                          fontSize: '1rem',
+                          color: 'var(--text-color)',
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--secondary)', marginBottom: '0.5rem' }}>
+                        Confirmer le mot de passe
+                      </label>
+                      <input
+                        type="password"
+                        value={passwordData.confirmPassword}
+                        onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem 1rem',
+                          borderRadius: '10px',
+                          border: '1px solid var(--border-color)',
+                          fontSize: '1rem',
+                          color: 'var(--text-color)',
+                        }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                      <button
+                        onClick={handlePasswordChange}
+                        disabled={passwordLoading}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          padding: '0.6rem 1.2rem',
+                          background: 'var(--primary)',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '10px',
+                          cursor: passwordLoading ? 'not-allowed' : 'pointer',
+                          fontWeight: 600,
+                          fontSize: '0.9rem',
+                          opacity: passwordLoading ? 0.6 : 1,
+                        }}
+                      >
+                        <Check size={18} />
+                        {passwordLoading ? 'Modification...' : 'Modifier'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsChangingPassword(false);
+                          setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                          setPasswordError('');
+                        }}
+                        disabled={passwordLoading}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          padding: '0.6rem 1.2rem',
+                          background: 'transparent',
+                          color: 'var(--text-color)',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '10px',
+                          cursor: passwordLoading ? 'not-allowed' : 'pointer',
+                          fontWeight: 600,
+                          fontSize: '0.9rem',
+                        }}
+                      >
+                        <X size={18} />
+                        Annuler
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Delete Account */}
+            <div style={{ 
+              padding: '1.5rem', 
+              background: '#fee', 
+              border: '1px solid #fcc', 
+              borderRadius: '12px' 
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                <AlertTriangle size={24} style={{ color: '#c33' }} />
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#c33' }}>
+                    Zone de danger
+                  </h4>
+                  <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem', color: '#666' }}>
+                    La suppression de votre compte est irréversible
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleDeleteAccount}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.6rem 1.2rem',
+                  background: '#c33',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '0.9rem',
+                }}
+              >
+                <Trash2 size={18} />
+                Supprimer mon compte
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -19,6 +19,8 @@ import { useCategories } from '../hooks/useCategories';
 import { useAdminStats } from '../hooks/useAdminStats';
 import { useAdminAuditLogs, useSystemDiagnostics } from '../hooks/useAdminAudit';
 import { useAdminMeetings } from '../hooks/useAdminMeetings';
+import { useAdminGroups } from '../hooks/useAdminGroups';
+import { useCoupons } from '../hooks/useCoupons';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useAuth } from '../context/AuthContext';
 import ProfileEditForm from '../components/ProfileEditForm';
@@ -3452,6 +3454,26 @@ export default function AdminDashboard() {
   const { publishCourse, loading: publishLoading, error: publishError } = usePublishCourse();
   const { user, logout } = useAuth();
   const { meetings, loading: meetingsLoading, fetchMeetings, deleteMeeting: adminDeleteMeeting, updateMeeting: adminUpdateMeeting } = useAdminMeetings();
+  const { 
+    groups, 
+    loading: groupsLoading, 
+    error: groupsError, 
+    refetch: refetchGroups,
+    createGroup,
+    updateGroup,
+    assignFormateur,
+    addStudentToGroup,
+    removeStudentFromGroup,
+  } = useAdminGroups();
+  const { 
+    coupons, 
+    loading: couponsLoading, 
+    error: couponsError, 
+    refetch: refetchCoupons,
+    createCoupon,
+    updateCoupon,
+    deleteCoupon,
+  } = useCoupons();
 
   const flatCategories = useMemo(() => flattenCategories(categories), [categories]);
 
@@ -4008,6 +4030,22 @@ export default function AdminDashboard() {
             >
               <Folder size={18} />
               <span>Categories</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('groups')}
+              className={`sidebar-menu-btn ${activeTab === 'groups' ? 'active' : ''}`}
+              title="Groupes"
+            >
+              <Users size={18} />
+              <span>Groupes</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('coupons')}
+              className={`sidebar-menu-btn ${activeTab === 'coupons' ? 'active' : ''}`}
+              title="Coupons"
+            >
+              <Award size={18} />
+              <span>Coupons</span>
             </button>
             <button
               onClick={() => setActiveTab('meetings')}
@@ -4721,6 +4759,196 @@ export default function AdminDashboard() {
                       onDeleteMeeting={handleAdminMeetingDelete}
                       readOnly={false}
                     />
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'groups' && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <div>
+                      <h2 style={{ marginBottom: '0.4rem', fontSize: '1.5rem' }}>Gestion des Groupes</h2>
+                      <p style={{ color: 'var(--secondary)' }}>
+                        Créez et gérez les groupes de formation
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {/* TODO: Open create group modal */}}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '0.6rem 1.2rem',
+                        background: 'var(--primary)',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '10px',
+                        cursor: 'pointer',
+                        fontWeight: 600,
+                        fontSize: '0.9rem',
+                      }}
+                    >
+                      <Plus size={18} />
+                      Nouveau groupe
+                    </button>
+                  </div>
+
+                  {groupsLoading && <LoadingSpinner />}
+                  {groupsError && <p style={{ color: 'var(--error-color)' }}>{groupsError}</p>}
+
+                  {!groupsLoading && !groupsError && groups.length === 0 && (
+                    <div style={{ textAlign: 'center', padding: '3rem', border: '2px dashed var(--border-color)', borderRadius: '12px' }}>
+                      <Users size={36} style={{ marginBottom: '1rem', opacity: 0.3, color: 'var(--secondary)' }} />
+                      <p style={{ color: 'var(--secondary)', fontSize: '0.95rem' }}>
+                        Aucun groupe de formation créé.
+                      </p>
+                    </div>
+                  )}
+
+                  {!groupsLoading && !groupsError && groups.length > 0 && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                      {groups.map((group) => (
+                        <div
+                          key={group.id}
+                          style={{
+                            padding: '1.5rem',
+                            background: 'var(--bg-color)',
+                            borderRadius: '16px',
+                            border: '1px solid var(--border-color)',
+                            boxShadow: 'var(--shadow-sm)',
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-color)', marginBottom: '0.25rem' }}>
+                              {group.name}
+                            </h3>
+                            <div style={{ display: 'flex', gap: '0.35rem' }}>
+                              <button
+                                style={{ padding: '0.4rem', border: '1px solid var(--border-color)', borderRadius: '6px', background: '#fff', cursor: 'pointer' }}
+                                title="Modifier"
+                              >
+                                <Pencil size={14} />
+                              </button>
+                              <button
+                                style={{ padding: '0.4rem', border: '1px solid #f5c6cb', borderRadius: '6px', background: '#fff', color: 'var(--error-color)', cursor: 'pointer' }}
+                                title="Supprimer"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </div>
+                          {group.description && (
+                            <p style={{ color: 'var(--secondary)', fontSize: '0.9rem', marginBottom: '1rem', lineHeight: 1.5 }}>
+                              {group.description}
+                            </p>
+                          )}
+                          <div style={{ display: 'flex', gap: '1rem', fontSize: '0.85rem', color: 'var(--secondary)' }}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                              <Users size={14} />
+                              {group.studentCount || 0} étudiants
+                            </span>
+                            {group.formateur && (
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                <User size={14} />
+                                {group.formateur.firstName} {group.formateur.lastName}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'coupons' && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <div>
+                      <h2 style={{ marginBottom: '0.4rem', fontSize: '1.5rem' }}>Gestion des Coupons</h2>
+                      <p style={{ color: 'var(--secondary)' }}>
+                        Créez et gérez les codes promo
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {/* TODO: Open create coupon modal */}}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '0.6rem 1.2rem',
+                        background: 'var(--primary)',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '10px',
+                        cursor: 'pointer',
+                        fontWeight: 600,
+                        fontSize: '0.9rem',
+                      }}
+                    >
+                      <Plus size={18} />
+                      Nouveau coupon
+                    </button>
+                  </div>
+
+                  {couponsLoading && <LoadingSpinner />}
+                  {couponsError && <p style={{ color: 'var(--error-color)' }}>{couponsError}</p>}
+
+                  {!couponsLoading && !couponsError && coupons.length === 0 && (
+                    <div style={{ textAlign: 'center', padding: '3rem', border: '2px dashed var(--border-color)', borderRadius: '12px' }}>
+                      <Award size={36} style={{ marginBottom: '1rem', opacity: 0.3, color: 'var(--secondary)' }} />
+                      <p style={{ color: 'var(--secondary)', fontSize: '0.95rem' }}>
+                        Aucun coupon créé.
+                      </p>
+                    </div>
+                  )}
+
+                  {!couponsLoading && !couponsError && coupons.length > 0 && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                      {coupons.map((coupon) => (
+                        <div
+                          key={coupon.id}
+                          style={{
+                            padding: '1.5rem',
+                            background: 'var(--bg-color)',
+                            borderRadius: '16px',
+                            border: '1px solid var(--border-color)',
+                            boxShadow: 'var(--shadow-sm)',
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem' }}>
+                            <div>
+                              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-color)', marginBottom: '0.25rem' }}>
+                                {coupon.code}
+                              </h3>
+                              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--primary)' }}>
+                                {coupon.discountType === 'percentage' ? `${coupon.discountValue}%` : `${coupon.discountValue} MAD`}
+                              </span>
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.35rem' }}>
+                              <button
+                                style={{ padding: '0.4rem', border: '1px solid var(--border-color)', borderRadius: '6px', background: '#fff', cursor: 'pointer' }}
+                                title="Modifier"
+                              >
+                                <Pencil size={14} />
+                              </button>
+                              <button
+                                style={{ padding: '0.4rem', border: '1px solid #f5c6cb', borderRadius: '6px', background: '#fff', color: 'var(--error-color)', cursor: 'pointer' }}
+                                title="Supprimer"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: '1rem', fontSize: '0.85rem', color: 'var(--secondary)' }}>
+                            <span>Utilisations: {coupon.usedCount || 0}/{coupon.maxUses || '∞'}</span>
+                            {coupon.expiresAt && (
+                              <span>Expire: {new Date(coupon.expiresAt).toLocaleDateString('fr-FR')}</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
               )}

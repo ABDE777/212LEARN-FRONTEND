@@ -6,10 +6,12 @@ import {
   Calendar, Clock, Link, ExternalLink, Copy, Check,
   CheckCircle, ChevronRight, ChevronLeft, Zap, Mail, Search,
   HelpCircle, Brain, Lock, Pencil, Trash2, X, Save, LayoutGrid,
+  TrendingUp, DollarSign, Award, BarChart3, RefreshCw,
 } from 'lucide-react';
 import { useInstructorCourses, useCreateCourse, useCourseCurriculum, useCourseQuizzes, useCreateQuiz, useGenerateAiQuiz, useAddQuizQuestion, useQuiz, useUpdateQuiz, useDeleteQuiz, useUpdateQuestion, useDeleteQuestion } from '../hooks/useInstructorCourses';
 import { useMeetings } from '../hooks/useMeetings';
 import { useCourseStudents } from '../hooks/useCourseStudents';
+import { useInstructorAnalytics } from '../hooks/useInstructorAnalytics';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useAuth } from '../context/AuthContext';
 import ProfileEditForm from '../components/ProfileEditForm';
@@ -1576,6 +1578,92 @@ function QuizzesTab({ courses }) {
   );
 }
 
+/* ─── Analytics Tab ──────────────────────── */
+function AnalyticsTab({ revenueData, studentsData, completionData, loading, error, refetch }) {
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.75rem' }}>
+        <div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.3rem', color: 'var(--text-color)' }}>
+            Analytics
+          </h2>
+          <p style={{ color: 'var(--secondary)', fontSize: '0.92rem' }}>
+            Suivez vos performances et revenus
+          </p>
+        </div>
+        <button
+          onClick={refetch}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.6rem 1rem',
+            background: 'var(--surface-color)',
+            color: 'var(--text-color)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontWeight: 600,
+            fontSize: '0.85rem',
+          }}
+        >
+          <RefreshCw size={16} />
+          Actualiser
+        </button>
+      </div>
+
+      {loading && <LoadingSpinner />}
+      {error && <p style={{ color: 'var(--error-color)' }}>{error}</p>}
+
+      {!loading && !error && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
+          {/* Revenue Card */}
+          <div style={{ padding: '1.5rem', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', borderRadius: '16px', color: '#fff' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+              <DollarSign size={24} />
+              <span style={{ fontSize: '0.9rem', opacity: 0.9 }}>Revenus mensuels</span>
+            </div>
+            <div style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+              {revenueData?.monthlyRevenue || revenueData?.totalRevenue || 0} MAD
+            </div>
+            <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>
+              {revenueData?.growth >= 0 ? '+' : ''}{revenueData?.growth || 0}% vs mois dernier
+            </div>
+          </div>
+
+          {/* Students Card */}
+          <div style={{ padding: '1.5rem', background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', borderRadius: '16px', color: '#fff' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+              <Users size={24} />
+              <span style={{ fontSize: '0.9rem', opacity: 0.9 }}>Étudiants actifs</span>
+            </div>
+            <div style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+              {studentsData?.activeStudents || studentsData?.totalStudents || 0}
+            </div>
+            <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>
+              {studentsData?.newStudents || 0} nouveaux ce mois
+            </div>
+          </div>
+
+          {/* Completion Card */}
+          <div style={{ padding: '1.5rem', background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)', borderRadius: '16px', color: '#fff' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+              <Award size={24} />
+              <span style={{ fontSize: '0.9rem', opacity: 0.9 }}>Taux de complétion</span>
+            </div>
+            <div style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+              {completionData?.averageCompletion || completionData?.completionRate || 0}%
+            </div>
+            <div style={{ fontSize: '0.85rem', opacity: 0.8 }}>
+              Moyenne sur tous les cours
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─── Main dashboard ──────────────────────── */
 export default function InstructorDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -1597,6 +1685,7 @@ export default function InstructorDashboard() {
   const { courses, loading, error } = useInstructorCourses();
   const { createCourse, loading: createLoading, error: createError } = useCreateCourse();
   const { user, logout } = useAuth();
+  const { revenueData, studentsData, completionData, loading: analyticsLoading, error: analyticsError, refetch: refetchAnalytics } = useInstructorAnalytics();
 
   const [newCourseTitle, setNewCourseTitle] = useState('');
   const [newCourseCategory, setNewCourseCategory] = useState('');
@@ -1615,13 +1704,14 @@ export default function InstructorDashboard() {
   };
 
   const TABS = [
-    { key: 'courses',  icon: <BookOpen size={18} />,  label: 'Mes cours' },
-    { key: 'create',   icon: <Plus size={18} />,       label: 'Créer un cours' },
-    { key: 'quizzes',  icon: <HelpCircle size={18} />, label: 'Quiz' },
-    { key: 'meetings', icon: <Video size={18} />,      label: 'Sessions Live' },
-    { key: 'students', icon: <Users size={18} />,      label: 'Étudiants' },
-    { key: 'profile',  icon: <User size={18} />,       label: 'Mon profil' },
-    { key: 'security', icon: <Lock size={18} />,       label: 'Sécurité' },
+    { key: 'courses',   icon: <BookOpen size={18} />,  label: 'Mes cours' },
+    { key: 'create',    icon: <Plus size={18} />,       label: 'Créer un cours' },
+    { key: 'analytics', icon: <BarChart3 size={18} />,   label: 'Analytics' },
+    { key: 'quizzes',   icon: <HelpCircle size={18} />, label: 'Quiz' },
+    { key: 'meetings',  icon: <Video size={18} />,      label: 'Sessions Live' },
+    { key: 'students',  icon: <Users size={18} />,      label: 'Étudiants' },
+    { key: 'profile',   icon: <User size={18} />,       label: 'Mon profil' },
+    { key: 'security',  icon: <Lock size={18} />,       label: 'Sécurité' },
   ];
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
@@ -1734,6 +1824,18 @@ export default function InstructorDashboard() {
                     </button>
                   </form>
                 </div>
+              )}
+
+              {/* Analytics */}
+              {activeTab === 'analytics' && (
+                <AnalyticsTab
+                  revenueData={revenueData}
+                  studentsData={studentsData}
+                  completionData={completionData}
+                  loading={analyticsLoading}
+                  error={analyticsError}
+                  refetch={refetchAnalytics}
+                />
               )}
 
               {/* Meetings */}
