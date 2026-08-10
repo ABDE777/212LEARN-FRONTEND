@@ -19,7 +19,8 @@ export function AuthProvider({ children }) {
       if (token) {
         try {
           const response = await api.get('/auth/me');
-          setUser(response.data?.data?.user || response.data?.user || response.data);
+          const userData = response.data?.data?.user || response.data?.user || response.data;
+          setUser(userData);
         } catch (error) {
           console.error('Failed to fetch user:', error);
           setToken(null);

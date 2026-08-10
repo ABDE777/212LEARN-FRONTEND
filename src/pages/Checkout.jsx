@@ -1,9 +1,10 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { CreditCard, Lock, CheckCircle, Wallet, FileText, Upload, AlertCircle } from 'lucide-react';
+import { CreditCard, Lock, CheckCircle, Wallet, FileText, Upload, AlertCircle, Building2 } from 'lucide-react';
 import { useCourse } from '../hooks/useCourses';
 import { useCheckout } from '../hooks/usePayments';
 import { useWafacash } from '../hooks/useWafacash';
+import { useTransfer } from '../hooks/useTransfer';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -20,13 +21,17 @@ export default function Checkout() {
 
   const { course, loading: courseLoading, error: courseError } = useCourse(id);
   const { createCheckoutSession, loading: stripeLoading, error: stripeError } = useCheckout();
-  const { requestPayment, submitProof, loading: wafaLoading, error: wafaError } = useWafacash();
+  const { requestPayment: requestWafaPayment, submitProof, loading: wafaLoading, error: wafaError } = useWafacash();
+  const { requestPayment: requestTransferPayment, submitTransferDetails, loading: transferLoading, error: transferError } = useTransfer();
 
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [wafaStep, setWafaStep] = useState(1);
+  const [transferStep, setTransferStep] = useState(1);
   const [paymentData, setPaymentData] = useState(null);
   const [mtcn, setMtcn] = useState('');
+  const [rib, setRib] = useState('');
   const [receiptFile, setReceiptFile] = useState(null);
+  const [transferReceiptFile, setTransferReceiptFile] = useState(null);
   const [localError, setLocalError] = useState('');
 
   useEffect(() => {
@@ -52,11 +57,21 @@ export default function Checkout() {
 
   const handleWafaRequest = async () => {
     try {
-      const data = await requestPayment(id);
+      const data = await requestWafaPayment(id);
       setPaymentData(data);
       setWafaStep(2);
     } catch (error) {
       console.error('Wafacash request failed:', error);
+    }
+  };
+
+  const handleTransferRequest = async () => {
+    try {
+      const data = await requestTransferPayment(id);
+      setPaymentData(data);
+      setTransferStep(2);
+    } catch (error) {
+      console.error('Transfer request failed:', error);
     }
   };
 
@@ -77,6 +92,22 @@ export default function Checkout() {
       setWafaStep(3);
     } catch (error) {
       console.error('Wafacash submit failed:', error);
+    }
+  };
+
+  const handleTransferSubmit = async (e) => {
+    e.preventDefault();
+    setLocalError('');
+    if (!rib || rib.length !== 24) {
+      setLocalError('Le RIB doit contenir exactement 24 chiffres.');
+      return;
+    }
+    try {
+      await submitTransferDetails(paymentData.paymentReference || paymentData.paymentId, rib, transferReceiptFile);
+      await clearCart();
+      setTransferStep(3);
+    } catch (error) {
+      console.error('Transfer submit failed:', error);
     }
   };
 
@@ -107,9 +138,9 @@ export default function Checkout() {
             <Card variant="default" padding="2rem" style={{ marginBottom: '2rem' }}>
               <h2 style={{ marginBottom: '1.5rem', color: 'var(--secondary)' }}>Informations de paiement</h2>
 
-              {(stripeError || wafaError || localError) && (
+              {(stripeError || wafaError || transferError || localError) && (
                 <div style={{ background: '#fee', border: '1px solid #fcc', borderRadius: '8px', padding: '1rem', marginBottom: '1.5rem', color: '#c33' }}>
-                  {stripeError || wafaError || localError}
+                  {stripeError || wafaError || transferError || localError}
                 </div>
               )}
 
@@ -126,7 +157,7 @@ export default function Checkout() {
                   {/* Payment Method Selector */}
                   <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
                     <div 
-                      onClick={() => { setPaymentMethod('card'); setWafaStep(1); }}
+                      onClick={() => { setPaymentMethod('card'); setWafaStep(1); setTransferStep(1); }}
                       style={{ 
                         flex: 1, padding: '1rem', border: `2px solid ${paymentMethod === 'card' ? 'var(--primary)' : 'var(--border-color)'}`,
                         borderRadius: '8px', cursor: 'pointer', textAlign: 'center', background: paymentMethod === 'card' ? 'var(--bg-color)' : 'transparent'
@@ -136,7 +167,7 @@ export default function Checkout() {
                       <div style={{ fontWeight: 600, color: paymentMethod === 'card' ? 'var(--primary)' : 'var(--secondary)' }}>Carte Bancaire</div>
                     </div>
                     <div 
-                      onClick={() => setPaymentMethod('wafacash')}
+                      onClick={() => { setPaymentMethod('wafacash'); setTransferStep(1); }}
                       style={{ 
                         flex: 1, padding: '1rem', border: `2px solid ${paymentMethod === 'wafacash' ? 'var(--primary)' : 'var(--border-color)'}`,
                         borderRadius: '8px', cursor: 'pointer', textAlign: 'center', background: paymentMethod === 'wafacash' ? 'var(--bg-color)' : 'transparent'
@@ -144,6 +175,16 @@ export default function Checkout() {
                     >
                       <Wallet size={24} color={paymentMethod === 'wafacash' ? 'var(--primary)' : 'var(--secondary)'} style={{ marginBottom: '0.5rem' }} />
                       <div style={{ fontWeight: 600, color: paymentMethod === 'wafacash' ? 'var(--primary)' : 'var(--secondary)' }}>Wafacash (Espèces)</div>
+                    </div>
+                    <div 
+                      onClick={() => { setPaymentMethod('transfer'); setWafaStep(1); }}
+                      style={{ 
+                        flex: 1, padding: '1rem', border: `2px solid ${paymentMethod === 'transfer' ? 'var(--primary)' : 'var(--border-color)'}`,
+                        borderRadius: '8px', cursor: 'pointer', textAlign: 'center', background: paymentMethod === 'transfer' ? 'var(--bg-color)' : 'transparent'
+                      }}
+                    >
+                      <Building2 size={24} color={paymentMethod === 'transfer' ? 'var(--primary)' : 'var(--secondary)'} style={{ marginBottom: '0.5rem' }} />
+                      <div style={{ fontWeight: 600, color: paymentMethod === 'transfer' ? 'var(--primary)' : 'var(--secondary)' }}>Virement Bancaire</div>
                     </div>
                   </div>
 
@@ -224,6 +265,92 @@ export default function Checkout() {
                           <h3 style={{ color: 'var(--text-color)', marginBottom: '1rem' }}>Preuve soumise avec succès !</h3>
                           <p style={{ color: 'var(--secondary)', marginBottom: '2rem' }}>
                             Notre équipe va vérifier votre paiement sous 24h. Vous recevrez une notification dès que votre accès sera activé.
+                          </p>
+                          <Button variant="outline" onClick={() => navigate('/dashboard')}>
+                            Aller au tableau de bord
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {paymentMethod === 'transfer' && (
+                    <div>
+                      {transferStep === 1 && (
+                        <div style={{ textAlign: 'center' }}>
+                          <p style={{ color: 'var(--secondary)', marginBottom: '1.5rem' }}>
+                            Effectuez un virement bancaire vers notre compte. Cliquez ci-dessous pour obtenir nos coordonnées bancaires.
+                          </p>
+                          <Button variant="primary" size="large" onClick={handleTransferRequest} loading={transferLoading}>
+                            Obtenir les coordonnées bancaires
+                          </Button>
+                        </div>
+                      )}
+
+                      {transferStep === 2 && paymentData && (
+                        <form onSubmit={handleTransferSubmit}>
+                          <div style={{ background: 'var(--bg-color)', padding: '1.5rem', borderRadius: '8px', marginBottom: '1.5rem' }}>
+                            <h4 style={{ margin: '0 0 1rem 0', color: 'var(--text-color)' }}>Coordonnées Bancaires</h4>
+                            <div style={{ color: 'var(--secondary)', lineHeight: '1.8' }}>
+                              <p style={{ margin: 0 }}><strong>Banque:</strong> {paymentData.bankInfo?.bankName || 'Attijariwafa Bank'}</p>
+                              <p style={{ margin: 0 }}><strong>Titulaire du compte:</strong> {paymentData.bankInfo?.accountName || '212Learn SARL'}</p>
+                              <p style={{ margin: 0 }}><strong>RIB:</strong> <span style={{ fontFamily: 'monospace', fontSize: '1.1rem', color: 'var(--text-color)' }}>{paymentData.bankInfo?.rib || '01178000011800000000123456'}</span></p>
+                              <p style={{ margin: 0 }}><strong>IBAN:</strong> <span style={{ fontFamily: 'monospace', fontSize: '1rem', color: 'var(--text-color)' }}>{paymentData.bankInfo?.iban || 'MA89 0117 8000 0118 0000 0000 1234 56'}</span></p>
+                              <p style={{ margin: 0 }}><strong>SWIFT/BIC:</strong> <span style={{ fontFamily: 'monospace', color: 'var(--text-color)' }}>{paymentData.bankInfo?.swift || 'CWBAMAMM'}</span></p>
+                            </div>
+                          </div>
+
+                          <div style={{ background: 'var(--bg-color)', padding: '1.5rem', borderRadius: '8px', marginBottom: '1.5rem' }}>
+                            <h4 style={{ margin: '0 0 1rem 0', color: 'var(--text-color)' }}>Instructions</h4>
+                            <ol style={{ color: 'var(--secondary)', margin: 0, paddingLeft: '1.2rem', lineHeight: '1.6' }}>
+                              <li>Effectuez un virement vers le compte ci-dessus.</li>
+                              <li>Utilisez la référence : <strong style={{ color: 'var(--text-color)', fontSize: '1.1rem' }}>{paymentData.paymentReference}</strong> dans le libellé du virement.</li>
+                              <li>Transférez le montant de <strong style={{ color: 'var(--text-color)' }}>{paymentData.amount || course.price}€</strong>.</li>
+                              <li>Uploadez une photo de votre relevé de virement.</li>
+                              <li>Indiquez votre RIB (24 chiffres) pour identification.</li>
+                            </ol>
+                          </div>
+
+                          <div style={{ marginBottom: '1rem' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500, color: 'var(--secondary)' }}>Votre RIB (24 chiffres)</label>
+                            <input 
+                              type="text" 
+                              value={rib}
+                              onChange={(e) => setRib(e.target.value)}
+                              placeholder="Ex: 01178000011800000000123456"
+                              maxLength={24}
+                              style={{ width: '100%', padding: '12px', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'var(--bg-color)', color: 'var(--text-color)', fontFamily: 'monospace' }}
+                            />
+                          </div>
+
+                          <div style={{ marginBottom: '2rem' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500, color: 'var(--secondary)' }}>Relevé de virement (Image)</label>
+                            <div style={{ position: 'relative', border: '2px dashed var(--border-color)', borderRadius: '8px', padding: '2rem', textAlign: 'center', background: 'var(--bg-color)' }}>
+                              <input 
+                                type="file" 
+                                accept="image/*"
+                                onChange={(e) => setTransferReceiptFile(e.target.files[0])}
+                                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
+                              />
+                              <Upload size={32} color="var(--secondary)" style={{ marginBottom: '0.5rem' }} />
+                              <p style={{ color: 'var(--secondary)', margin: 0 }}>
+                                {transferReceiptFile ? transferReceiptFile.name : 'Cliquez ou glissez pour uploader le relevé de virement'}
+                              </p>
+                            </div>
+                          </div>
+
+                          <Button type="submit" variant="primary" size="large" style={{ width: '100%' }} loading={transferLoading}>
+                            Soumettre les détails du virement
+                          </Button>
+                        </form>
+                      )}
+
+                      {transferStep === 3 && (
+                        <div style={{ textAlign: 'center', padding: '2rem' }}>
+                          <CheckCircle size={64} color="var(--success-color)" style={{ margin: '0 auto 1rem auto' }} />
+                          <h3 style={{ color: 'var(--text-color)', marginBottom: '1rem' }}>Virement soumis avec succès !</h3>
+                          <p style={{ color: 'var(--secondary)', marginBottom: '2rem' }}>
+                            Notre équipe va vérifier votre virement sous 24-48h. Vous recevrez une notification dès que votre accès sera activé.
                           </p>
                           <Button variant="outline" onClick={() => navigate('/dashboard')}>
                             Aller au tableau de bord

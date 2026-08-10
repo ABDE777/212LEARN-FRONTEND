@@ -2,8 +2,9 @@ import { useMemo, useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { Users, BookOpen, Folder, Settings, User, LogOut, FileText, Pencil, Trash2, BarChart3, TrendingUp, DollarSign, ShieldCheck, ShieldAlert, ChevronLeft, ChevronRight, RotateCcw, Lock, Plus, Mail, X, Loader, Wallet, CheckCircle, XCircle, Clock, Activity, Server, Search, Award, Download, Printer, Code, Database, Globe, Video } from 'lucide-react';
+import { Users, BookOpen, Folder, Settings, User, LogOut, FileText, Pencil, Trash2, BarChart3, TrendingUp, DollarSign, ShieldCheck, ShieldAlert, ChevronLeft, ChevronRight, RotateCcw, Lock, Plus, Mail, X, Loader, Wallet, CheckCircle, XCircle, Clock, Activity, Server, Search, Award, Download, Printer, Code, Database, Globe, Video, Building2 } from 'lucide-react';
 import { useWafacash } from '../hooks/useWafacash';
+import { useTransfer } from '../hooks/useTransfer';
 import {
   useAdminUsers,
   useAdminCourses,
@@ -2508,6 +2509,438 @@ function WafacashTab() {
   );
 }
 
+function TransferTab() {
+  const { getPendingTransfers, verifyTransferPayment, loading, error } = useTransfer();
+  const [transfers, setTransfers] = useState([]);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [verifyLoading, setVerifyLoading] = useState(null);
+  const [notes, setNotes] = useState({});
+  const [actionMsg, setActionMsg] = useState(null);
+  const [selectedTransfer, setSelectedTransfer] = useState(null);
+  const [selectedReceipt, setSelectedReceipt] = useState(null);
+
+  const loadTransfers = useCallback(async (filterOverride) => {
+    const targetFilter = filterOverride !== undefined ? filterOverride : statusFilter;
+    try {
+      const resData = await getPendingTransfers(targetFilter);
+      const rawTransfers = resData?.payments || resData?.data?.payments || resData || [];
+      setTransfers(Array.isArray(rawTransfers) ? rawTransfers : []);
+    } catch (err) {
+      console.error('Failed to load transfers', err);
+    }
+  }, [getPendingTransfers, statusFilter]);
+
+  useEffect(() => {
+    loadTransfers(statusFilter);
+  }, [loadTransfers, statusFilter]);
+
+  const filteredTransfers = useMemo(() => {
+    if (statusFilter === 'pending') {
+      return transfers.filter(p => ['WAITING_VERIFICATION', 'PENDING'].includes(p.status));
+    }
+    if (statusFilter === 'PAID') {
+      return transfers.filter(p => p.status === 'PAID');
+    }
+    if (statusFilter === 'REJECTED') {
+      return transfers.filter(p => p.status === 'REJECTED');
+    }
+    return transfers;
+  }, [transfers, statusFilter]);
+
+  const handleVerify = async (paymentId, action) => {
+    setVerifyLoading(paymentId + action);
+    setActionMsg(null);
+    try {
+      await verifyTransferPayment(paymentId, action, notes[paymentId] || '');
+      setActionMsg({
+        type: 'success',
+        text: action === 'approve' ? 'Virement approuvé ! L\'accès au cours est activé.' : 'Virement rejeté.',
+      });
+      setSelectedTransfer(null);
+      await loadTransfers();
+    } catch (err) {
+      setActionMsg({
+        type: 'error',
+        text: err.response?.data?.error?.message || err.response?.data?.message || 'Impossible de traiter cette action.',
+      });
+    } finally {
+      setVerifyLoading(null);
+    }
+  };
+
+  const handleDownloadReceipt = async (receiptUrl, refCode) => {
+    if (!receiptUrl) return;
+    try {
+      const response = await fetch(receiptUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Releve_Virement_${refCode || 'paiement'}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch {
+      window.open(receiptUrl, '_blank');
+    }
+  };
+
+  const statusBadge = (status) => {
+    const styles = {
+      WAITING_VERIFICATION: { bg: '#fff8e1', color: '#b26a00', icon: <Clock size={13} />, label: 'En attente' },
+      PENDING:              { bg: '#e8f4fd', color: '#2D8CFF', icon: <Clock size={13} />, label: 'Pending' },
+      PAID:                 { bg: '#e8f5e9', color: '#27ae60', icon: <CheckCircle size={13} />, label: 'Payé' },
+      REJECTED:             { bg: '#ffebee', color: '#c62828', icon: <XCircle size={13} />, label: 'Rejeté' },
+    };
+    const s = styles[status] || { bg: '#f5f5f5', color: '#666', icon: null, label: status };
+    return (
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 11px', borderRadius: '999px', fontSize: '0.78rem', fontWeight: 700, background: s.bg, color: s.color }}>
+        {s.icon}{s.label}
+      </span>
+    );
+  };
+
+  return (
+    <div style={{ width: '100%' }}>
+
+      {/* ── Receipt zoom modal ─────────────────────────────── */}
+      {selectedReceipt && createPortal(
+        <div
+          onClick={() => setSelectedReceipt(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.8)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999, padding: '1.5rem' }}
+        >
+          <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', background: '#fff', borderRadius: '16px', maxWidth: '700px', width: '100%', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.35)' }}>
+            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>Relevé de Virement</h3>
+              <button onClick={() => setSelectedReceipt(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--secondary)' }}><X size={22} /></button>
+            </div>
+            <div style={{ padding: '1.5rem', overflowY: 'auto', textAlign: 'center', background: '#f8fafc' }}>
+              <img src={selectedReceipt} alt="Relevé" style={{ maxWidth: '100%', maxHeight: '65vh', objectFit: 'contain', borderRadius: '10px', boxShadow: '0 4px 16px rgba(0,0,0,0.12)' }} />
+            </div>
+            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+              <button
+                onClick={() => handleDownloadReceipt(selectedReceipt, selectedTransfer?.transactionReference || 'releve')}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '9px 18px', background: 'var(--primary)', color: '#fff', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem' }}
+              >
+                <Download size={16} /> Télécharger le relevé
+              </button>
+              <button onClick={() => setSelectedReceipt(null)} style={{ padding: '9px 18px', border: '1px solid var(--border-color)', borderRadius: '8px', background: '#fff', cursor: 'pointer', fontWeight: 600, color: 'var(--secondary)' }}>Fermer</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── Transfer detail slide-over drawer ─────────────────── */}
+      {selectedTransfer && (() => {
+        const p = selectedTransfer;
+        const student = p.enrollment?.user || p.user || p.student;
+        const course = p.enrollment?.course || p.course;
+        const refCode = p.transactionReference || p.paymentReference || p.reference || '—';
+        const currencyStr = p.currency || 'MAD';
+        const isPending = ['WAITING_VERIFICATION', 'PENDING'].includes(p.status);
+
+        return createPortal(
+          <div
+            onClick={() => setSelectedTransfer(null)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(15, 23, 42, 0.55)',
+              backdropFilter: 'blur(6px)',
+              zIndex: 99999,
+              display: 'flex',
+              justifyContent: 'flex-end',
+              animation: 'fadeIn 0.2s ease',
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: '100%',
+                maxWidth: '520px',
+                height: '100%',
+                background: '#fff',
+                boxShadow: '-10px 0 40px rgba(0, 0, 0, 0.2)',
+                display: 'flex',
+                flexDirection: 'column',
+                animation: 'slideInRight 0.35s cubic-bezier(0.22, 1, 0.36, 1)',
+              }}
+            >
+              {/* Drawer Header */}
+              <div
+                style={{
+                  padding: '1.5rem 2rem',
+                  borderBottom: '1px solid var(--border-color)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  background: 'linear-gradient(135deg, rgba(27,75,90,0.04), rgba(193,101,47,0.04))',
+                }}
+              >
+                <div>
+                  <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700, color: 'var(--primary)' }}>Détails du virement</h2>
+                  <p style={{ margin: '0.2rem 0 0', fontSize: '0.85rem', color: 'var(--secondary)' }}>Référence : <strong style={{ fontFamily: 'monospace' }}>{refCode}</strong></p>
+                </div>
+                <button
+                  onClick={() => setSelectedTransfer(null)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--secondary)',
+                    padding: '0.4rem',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <X size={22} />
+                </button>
+              </div>
+
+              {/* Drawer Body */}
+              <div style={{ padding: '2rem', overflowY: 'auto', flex: 1 }}>
+
+                {/* Info Grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                  {[
+                    { label: 'Étudiant', value: student ? `${student.firstName || ''} ${student.lastName || ''}`.trim() || student.email : '—' },
+                    { label: 'Email', value: student?.email || '—' },
+                    { label: 'Cours', value: course?.title || '—' },
+                    { label: 'Montant', value: p.amount ? `${p.amount} ${currencyStr}` : '—', highlight: true },
+                    { label: 'RIB Client', value: p.rib || '—', mono: true },
+                    { label: 'Référence', value: refCode, mono: true },
+                    { label: 'Statut', value: null, badge: statusBadge(p.status) },
+                    { label: 'Date', value: p.createdAt ? new Date(p.createdAt).toLocaleString('fr-FR') : '—' },
+                  ].map(({ label, value, highlight, mono, badge }) => (
+                    <div key={label} style={{ background: 'var(--bg-color)', borderRadius: '10px', padding: '0.85rem 1rem', border: '1px solid var(--border-color)' }}>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.3rem' }}>{label}</div>
+                      {badge || (
+                        <div style={{ fontSize: '0.92rem', fontWeight: highlight ? 800 : 600, color: highlight ? 'var(--primary)' : 'var(--text-color)', fontFamily: mono ? 'monospace' : 'inherit', wordBreak: 'break-all' }}>
+                          {value}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Documents & Downloads Section */}
+                <div style={{ marginBottom: '1.5rem', background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1rem' }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.75rem' }}>
+                    📄 Documents & Téléchargements
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                    {p.transferReceiptUrl && (
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadReceipt(p.transferReceiptUrl, refCode)}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                          padding: '10px 16px', background: '#fff', color: 'var(--text-color)',
+                          border: '1px solid var(--border-color)', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '0.88rem'
+                        }}
+                      >
+                        <Download size={16} /> Télécharger le relevé de virement
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Notes field */}
+                {isPending && (
+                  <div style={{ marginBottom: '1.25rem' }}>
+                    <label style={{ display: 'block', fontWeight: 600, fontSize: '0.88rem', marginBottom: '0.4rem' }}>Notes (optionnel)</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Raison du rejet, remarques..."
+                      value={notes[p.id] || ''}
+                      onChange={(e) => setNotes((prev) => ({ ...prev, [p.id]: e.target.value }))}
+                      style={{ padding: '10px 14px', fontSize: '0.9rem' }}
+                    />
+                  </div>
+                )}
+
+                {/* Receipt Preview */}
+                {p.transferReceiptUrl && (
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: '0.88rem', marginBottom: '0.5rem' }}>Preuve de virement (Aperçu du relevé)</div>
+                    <div
+                      onClick={() => setSelectedReceipt(p.transferReceiptUrl)}
+                      style={{ cursor: 'zoom-in', borderRadius: '10px', overflow: 'hidden', border: '2px solid var(--border-color)', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '120px', maxHeight: '200px' }}
+                    >
+                      <img src={p.transferReceiptUrl} alt="Relevé" style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain' }} />
+                    </div>
+                    <p style={{ margin: '0.4rem 0 0', fontSize: '0.78rem', color: 'var(--secondary)', textAlign: 'center' }}>Cliquer pour agrandir</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Drawer Footer Actions */}
+              <div style={{ padding: '1.25rem 2rem', borderTop: '1px solid var(--border-color)', background: '#fafafa', display: 'flex', gap: '0.75rem' }}>
+                {isPending ? (
+                  <>
+                    <button
+                      onClick={() => handleVerify(p.id, 'approve')}
+                      disabled={!!verifyLoading}
+                      style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '0.75rem', background: '#e8f5e9', color: '#2e7d32', border: '1px solid #c8e6c9', borderRadius: '10px', cursor: 'pointer', fontWeight: 700, fontSize: '0.92rem' }}
+                    >
+                      {verifyLoading === p.id + 'approve' ? <Loader size={15} className="spin" /> : <CheckCircle size={16} />}
+                      Approuver
+                    </button>
+                    <button
+                      onClick={() => handleVerify(p.id, 'reject')}
+                      disabled={!!verifyLoading}
+                      style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '0.75rem', background: '#ffebee', color: '#c62828', border: '1px solid #ffcdd2', borderRadius: '10px', cursor: 'pointer', fontWeight: 700, fontSize: '0.92rem' }}
+                    >
+                      {verifyLoading === p.id + 'reject' ? <Loader size={15} className="spin" /> : <XCircle size={16} />}
+                      Rejeter
+                    </button>
+                  </>
+                ) : (
+                  <button onClick={() => setSelectedTransfer(null)} style={{ flex: 1, padding: '0.75rem', borderRadius: '10px', border: '1px solid var(--border-color)', background: '#fff', cursor: 'pointer', fontWeight: 600, color: 'var(--secondary)', fontSize: '0.92rem' }}>
+                    Fermer
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>,
+          document.body
+        );
+      })()}
+
+      {/* ── Page header ────────────────────────────────────── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h2 style={{ fontSize: '1.65rem', fontWeight: 700, color: 'var(--text-color)', margin: '0 0 0.25rem 0' }}>Virements Bancaires</h2>
+          <p style={{ color: 'var(--secondary)', margin: 0, fontSize: '0.92rem' }}>
+            Consultez tous les virements, filtrez par statut et approuvez ou rejetez les demandes.
+          </p>
+        </div>
+        <button
+          onClick={() => loadTransfers(statusFilter)}
+          disabled={loading}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '9px 18px', border: '1px solid var(--border-color)', borderRadius: '10px', background: 'var(--surface-color)', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-color)', boxShadow: 'var(--shadow-sm)', transition: 'all 0.2s' }}
+        >
+          <RotateCcw size={16} /> Actualiser
+        </button>
+      </div>
+
+      {/* ── Filter Pills (Tous, En attente, Payés, Rejetés) ──── */}
+      <div style={{ display: 'flex', gap: '0.65rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+        {[
+          { id: 'all', label: '🌐 Tous' },
+          { id: 'pending', label: '⏳ En attente' },
+          { id: 'PAID', label: '✅ Payés' },
+          { id: 'REJECTED', label: '❌ Rejetés' },
+        ].map((tab) => {
+          const active = statusFilter === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => {
+                setStatusFilter(tab.id);
+                loadTransfers(tab.id);
+              }}
+              style={{
+                padding: '0.55rem 1.25rem',
+                borderRadius: '99px',
+                border: `1.5px solid ${active ? 'var(--primary)' : 'var(--border-color)'}`,
+                background: active ? 'var(--primary)' : '#fff',
+                color: active ? '#fff' : 'var(--text-color)',
+                fontWeight: 700,
+                fontSize: '0.88rem',
+                cursor: 'pointer',
+                boxShadow: active ? '0 4px 12px rgba(27,75,90,0.2)' : 'none',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {actionMsg && (
+        <div style={{ padding: '1rem 1.25rem', borderRadius: '10px', marginBottom: '1.25rem', background: actionMsg.type === 'success' ? '#e8f5e9' : '#ffebee', color: actionMsg.type === 'success' ? '#2e7d32' : '#c62828', border: `1px solid ${actionMsg.type === 'success' ? '#c8e6c9' : '#ffcdd2'}`, fontWeight: 500 }}>
+          {actionMsg.text}
+        </div>
+      )}
+
+      {error && <p style={{ color: 'var(--error-color)', marginBottom: '1rem', fontWeight: 500 }}>{error}</p>}
+
+      {loading && transfers.length === 0 ? (
+        <LoadingSpinner />
+      ) : filteredTransfers.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '4.5rem 2rem', background: '#fff', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
+          <CheckCircle size={52} color="var(--success-color)" style={{ marginBottom: '1rem' }} />
+          <h3 style={{ color: 'var(--text-color)', marginBottom: '0.5rem', fontSize: '1.25rem', fontWeight: 700 }}>Aucun virement trouvé</h3>
+          <p style={{ color: 'var(--secondary)' }}>Aucune transaction ne correspond à ce filtre.</p>
+        </div>
+      ) : (
+        <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '16px', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: 'var(--bg-color, #f8fafc)', borderBottom: '2px solid var(--border-color)' }}>
+                {['Étudiant', 'Cours', 'Référence', 'Statut', ''].map((h) => (
+                  <th key={h} style={{ textAlign: 'left', padding: '1rem 1.25rem', fontSize: '0.82rem', color: 'var(--secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filteredTransfers.map((p) => {
+                const student = p.enrollment?.user || p.user || p.student;
+                const course = p.enrollment?.course || p.course;
+                const refCode = p.transactionReference || p.paymentReference || p.reference || '—';
+
+                return (
+                  <tr
+                    key={p.id}
+                    onClick={() => setSelectedTransfer(p)}
+                    style={{ borderBottom: '1px solid var(--border-color)', cursor: 'pointer', transition: 'background 0.15s' }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-color)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                  >
+                    {/* Étudiant */}
+                    <td style={{ padding: '1rem 1.25rem' }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-color)' }}>
+                        {student ? `${student.firstName || ''} ${student.lastName || ''}`.trim() || 'Étudiant' : 'Étudiant'}
+                      </div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--secondary)', marginTop: '2px' }}>{student?.email || '—'}</div>
+                    </td>
+                    {/* Cours */}
+                    <td style={{ padding: '1rem 1.25rem', fontWeight: 600, fontSize: '0.92rem', color: 'var(--text-color)', maxWidth: '200px' }}>
+                      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{course?.title || '—'}</div>
+                    </td>
+                    {/* Référence */}
+                    <td style={{ padding: '1rem 1.25rem', fontFamily: 'monospace', fontSize: '0.88rem', color: 'var(--text-color)', fontWeight: 700 }}>
+                      {refCode}
+                    </td>
+                    {/* Statut */}
+                    <td style={{ padding: '1rem 1.25rem' }}>
+                      {statusBadge(p.status)}
+                    </td>
+                    {/* Chevron hint */}
+                    <td style={{ padding: '1rem 1.25rem', color: 'var(--secondary)', textAlign: 'right', fontSize: '1.1rem' }}>
+                      ›
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+    </div>
+  );
+}
+
 function AuditLogsTab() {
   const [page, setPage] = useState(1);
   const { logs, pagination, loading, error, refreshAuditLogs } = useAdminAuditLogs(page, 15);
@@ -3595,10 +4028,18 @@ export default function AdminDashboard() {
             <button
               onClick={() => setActiveTab('wafacash')}
               className={`sidebar-menu-btn ${activeTab === 'wafacash' ? 'active' : ''}`}
-              title="Paiements"
+              title="Paiements Wafacash"
             >
               <Wallet size={18} />
-              <span>Paiements</span>
+              <span>Wafacash</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('transfer')}
+              className={`sidebar-menu-btn ${activeTab === 'transfer' ? 'active' : ''}`}
+              title="Virements"
+            >
+              <Building2 size={18} />
+              <span>Virements</span>
             </button>
             <button
               onClick={() => setActiveTab('audit')}
@@ -3814,6 +4255,7 @@ export default function AdminDashboard() {
                               <th style={{ textAlign: 'left', padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-color)', fontSize: '0.85rem' }}>Nom</th>
                               <th style={{ textAlign: 'left', padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-color)', fontSize: '0.85rem' }}>Email</th>
                               <th style={{ textAlign: 'left', padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-color)', fontSize: '0.85rem' }}>Rôle</th>
+                              <th style={{ textAlign: 'left', padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-color)', fontSize: '0.85rem' }}>Profil</th>
                               {userSubTab === 'deleted' && (
                                 <th style={{ textAlign: 'left', padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-color)', fontSize: '0.85rem' }}>Supprimé le</th>
                               )}
@@ -3862,6 +4304,23 @@ export default function AdminDashboard() {
                                       </span>
                                     );
                                   })()}
+                                </td>
+                                <td style={{ padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-color)', color: 'var(--secondary)', fontSize: '0.85rem' }}>
+                                  {listedUser.profile ? (
+                                    <div style={{ fontSize: '0.8rem' }}>
+                                      {listedUser.role === 'student' ? (
+                                        <div>
+                                          <div>{listedUser.profile.school || '—'}</div>
+                                          <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>{listedUser.profile.fieldOfStudy || '—'}</div>
+                                        </div>
+                                      ) : listedUser.role === 'instructor' ? (
+                                        <div>
+                                          <div>{listedUser.profile.specialization || '—'}</div>
+                                          <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>{listedUser.profile.organization || '—'}</div>
+                                        </div>
+                                      ) : '—'}
+                                    </div>
+                                  ) : '—'}
                                 </td>
                                 {userSubTab === 'deleted' && (
                                   <td style={{ padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-color)', color: 'var(--secondary)', fontSize: '0.85rem' }}>
@@ -4278,6 +4737,8 @@ export default function AdminDashboard() {
               {activeTab === 'stats' && <AdminStatsTab />}
 
               {activeTab === 'wafacash' && <WafacashTab />}
+
+              {activeTab === 'transfer' && <TransferTab />}
 
               {activeTab === 'audit' && <AuditLogsTab />}
 

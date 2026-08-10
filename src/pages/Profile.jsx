@@ -1,18 +1,36 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { User, Mail, FileText, Edit2, X, Check, LogOut } from 'lucide-react';
+import { User, Mail, FileText, Edit2, X, Check, LogOut, Phone, GraduationCap, Briefcase, Building, Calendar } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 
 export default function Profile() {
   const { user, logout, updateProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editData, setEditData] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
     bio: user?.bio || '',
   });
+  const [editProfileData, setEditProfileData] = useState({
+    ...(user?.role === 'student' ? {
+      school: user?.profile?.school || '',
+      fieldOfStudy: user?.profile?.fieldOfStudy || '',
+      educationLevel: user?.profile?.educationLevel || '',
+      academicYear: user?.profile?.academicYear || '',
+      group: user?.profile?.group || '',
+    } : user?.role === 'instructor' ? {
+      specialization: user?.profile?.specialization || '',
+      organization: user?.profile?.organization || '',
+      experienceYears: user?.profile?.experienceYears || '',
+      teachingMode: user?.profile?.teachingMode || '',
+    } : {})
+  });
   const [loading, setLoading] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const profile = user?.profile;
+  const canEditProfile = user?.role === 'instructor' || user?.role === 'admin';
 
   const handleLogout = () => {
     logout();
@@ -46,6 +64,46 @@ export default function Profile() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setEditData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleEditProfile = () => {
+    setEditProfileData({
+      ...(user?.role === 'student' ? {
+        school: user?.profile?.school || '',
+        fieldOfStudy: user?.profile?.fieldOfStudy || '',
+        educationLevel: user?.profile?.educationLevel || '',
+        academicYear: user?.profile?.academicYear || '',
+        group: user?.profile?.group || '',
+      } : user?.role === 'instructor' ? {
+        specialization: user?.profile?.specialization || '',
+        organization: user?.profile?.organization || '',
+        experienceYears: user?.profile?.experienceYears || '',
+        teachingMode: user?.profile?.teachingMode || '',
+      } : {})
+    });
+    setIsEditingProfile(true);
+  };
+
+  const handleCancelProfile = () => {
+    setIsEditingProfile(false);
+  };
+
+  const handleSaveProfile = async () => {
+    setProfileLoading(true);
+    try {
+      // TODO: Implement profile update API call
+      // For now, just close edit mode
+      setIsEditingProfile(false);
+    } catch (err) {
+      console.error('Error updating profile info:', err);
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const handleProfileChange = (e) => {
+    const { name, value } = e.target;
+    setEditProfileData(prev => ({ ...prev, [name]: value }));
   };
 
   return (
@@ -290,6 +348,19 @@ export default function Profile() {
               </div>
             </div>
 
+            {/* Phone */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--secondary)', marginBottom: '0.5rem' }}>
+                Téléphone
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <Phone size={20} style={{ color: 'var(--primary)' }} />
+                <span style={{ fontSize: '1rem', color: 'var(--text-color)' }}>
+                  {user?.phone || '-'}
+                </span>
+              </div>
+            </div>
+
             {/* Bio */}
             <div style={{ gridColumn: '1 / -1' }}>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--secondary)', marginBottom: '0.5rem' }}>
@@ -321,6 +392,400 @@ export default function Profile() {
               )}
             </div>
           </div>
+
+          {/* Profile Information Section */}
+          {profile && (
+            <div style={{ 
+              borderTop: '1px solid var(--border-color)', 
+              paddingTop: '2rem',
+              marginTop: '2rem'
+            }}>
+              <div style={{ 
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '1.5rem'
+              }}>
+                <h3 style={{ 
+                  color: 'var(--primary)', 
+                  fontSize: '1.25rem', 
+                  fontWeight: 700, 
+                  margin: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  {user?.role === 'student' ? (
+                    <>
+                      <GraduationCap size={24} />
+                      Informations académiques
+                    </>
+                  ) : (
+                    <>
+                      <Briefcase size={24} />
+                      Informations professionnelles
+                    </>
+                  )}
+                </h3>
+                {canEditProfile && !isEditingProfile && (
+                  <button
+                    onClick={handleEditProfile}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.6rem 1.2rem',
+                      background: 'var(--primary)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '10px',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                      fontSize: '0.9rem',
+                    }}
+                  >
+                    <Edit2 size={18} />
+                    Modifier
+                  </button>
+                )}
+              </div>
+
+              {isEditingProfile && canEditProfile && (
+                <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                  <button
+                    onClick={handleSaveProfile}
+                    disabled={profileLoading}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.6rem 1.2rem',
+                      background: 'var(--primary)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '10px',
+                      cursor: profileLoading ? 'not-allowed' : 'pointer',
+                      fontWeight: 600,
+                      fontSize: '0.9rem',
+                      opacity: profileLoading ? 0.6 : 1,
+                    }}
+                  >
+                    <Check size={18} />
+                    {profileLoading ? 'Enregistrement...' : 'Enregistrer'}
+                  </button>
+                  <button
+                    onClick={handleCancelProfile}
+                    disabled={profileLoading}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.6rem 1.2rem',
+                      background: 'transparent',
+                      color: 'var(--text-color)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '10px',
+                      cursor: profileLoading ? 'not-allowed' : 'pointer',
+                      fontWeight: 600,
+                      fontSize: '0.9rem',
+                    }}
+                  >
+                    <X size={18} />
+                    Annuler
+                  </button>
+                </div>
+              )}
+
+              <div style={{ 
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                gap: '1.5rem'
+              }}>
+                {user?.role === 'student' ? (
+                  <>
+                    {/* School */}
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--secondary)', marginBottom: '0.5rem' }}>
+                        Établissement
+                      </label>
+                      {isEditingProfile && canEditProfile ? (
+                        <input
+                          type="text"
+                          name="school"
+                          value={editProfileData.school}
+                          onChange={handleProfileChange}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem 1rem',
+                            borderRadius: '10px',
+                            border: '1px solid var(--border-color)',
+                            fontSize: '1rem',
+                            color: 'var(--text-color)',
+                          }}
+                        />
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <Building size={20} style={{ color: 'var(--primary)' }} />
+                          <span style={{ fontSize: '1rem', color: 'var(--text-color)' }}>
+                            {profile.school || '-'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Field of Study */}
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--secondary)', marginBottom: '0.5rem' }}>
+                        Filière / Spécialité
+                      </label>
+                      {isEditingProfile && canEditProfile ? (
+                        <input
+                          type="text"
+                          name="fieldOfStudy"
+                          value={editProfileData.fieldOfStudy}
+                          onChange={handleProfileChange}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem 1rem',
+                            borderRadius: '10px',
+                            border: '1px solid var(--border-color)',
+                            fontSize: '1rem',
+                            color: 'var(--text-color)',
+                          }}
+                        />
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <FileText size={20} style={{ color: 'var(--primary)' }} />
+                          <span style={{ fontSize: '1rem', color: 'var(--text-color)' }}>
+                            {profile.fieldOfStudy || '-'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Education Level */}
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--secondary)', marginBottom: '0.5rem' }}>
+                        Niveau d'étude
+                      </label>
+                      {isEditingProfile && canEditProfile ? (
+                        <input
+                          type="text"
+                          name="educationLevel"
+                          value={editProfileData.educationLevel}
+                          onChange={handleProfileChange}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem 1rem',
+                            borderRadius: '10px',
+                            border: '1px solid var(--border-color)',
+                            fontSize: '1rem',
+                            color: 'var(--text-color)',
+                          }}
+                        />
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <GraduationCap size={20} style={{ color: 'var(--primary)' }} />
+                          <span style={{ fontSize: '1rem', color: 'var(--text-color)' }}>
+                            {profile.educationLevel || '-'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Academic Year */}
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--secondary)', marginBottom: '0.5rem' }}>
+                        Année de formation
+                      </label>
+                      {isEditingProfile && canEditProfile ? (
+                        <input
+                          type="text"
+                          name="academicYear"
+                          value={editProfileData.academicYear}
+                          onChange={handleProfileChange}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem 1rem',
+                            borderRadius: '10px',
+                            border: '1px solid var(--border-color)',
+                            fontSize: '1rem',
+                            color: 'var(--text-color)',
+                          }}
+                        />
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <Calendar size={20} style={{ color: 'var(--primary)' }} />
+                          <span style={{ fontSize: '1rem', color: 'var(--text-color)' }}>
+                            {profile.academicYear || '-'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Group */}
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--secondary)', marginBottom: '0.5rem' }}>
+                        Groupe / Classe
+                      </label>
+                      {isEditingProfile && canEditProfile ? (
+                        <input
+                          type="text"
+                          name="group"
+                          value={editProfileData.group}
+                          onChange={handleProfileChange}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem 1rem',
+                            borderRadius: '10px',
+                            border: '1px solid var(--border-color)',
+                            fontSize: '1rem',
+                            color: 'var(--text-color)',
+                          }}
+                        />
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <User size={20} style={{ color: 'var(--primary)' }} />
+                          <span style={{ fontSize: '1rem', color: 'var(--text-color)' }}>
+                            {profile.group || '-'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* Specialization */}
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--secondary)', marginBottom: '0.5rem' }}>
+                        Spécialisation
+                      </label>
+                      {isEditingProfile && canEditProfile ? (
+                        <input
+                          type="text"
+                          name="specialization"
+                          value={editProfileData.specialization}
+                          onChange={handleProfileChange}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem 1rem',
+                            borderRadius: '10px',
+                            border: '1px solid var(--border-color)',
+                            fontSize: '1rem',
+                            color: 'var(--text-color)',
+                          }}
+                        />
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <Briefcase size={20} style={{ color: 'var(--primary)' }} />
+                          <span style={{ fontSize: '1rem', color: 'var(--text-color)' }}>
+                            {profile.specialization || '-'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Organization */}
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--secondary)', marginBottom: '0.5rem' }}>
+                        Organisation / Entreprise
+                      </label>
+                      {isEditingProfile && canEditProfile ? (
+                        <input
+                          type="text"
+                          name="organization"
+                          value={editProfileData.organization}
+                          onChange={handleProfileChange}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem 1rem',
+                            borderRadius: '10px',
+                            border: '1px solid var(--border-color)',
+                            fontSize: '1rem',
+                            color: 'var(--text-color)',
+                          }}
+                        />
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <Building size={20} style={{ color: 'var(--primary)' }} />
+                          <span style={{ fontSize: '1rem', color: 'var(--text-color)' }}>
+                            {profile.organization || '-'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Experience */}
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--secondary)', marginBottom: '0.5rem' }}>
+                        Années d'expérience
+                      </label>
+                      {isEditingProfile && canEditProfile ? (
+                        <input
+                          type="number"
+                          name="experienceYears"
+                          value={editProfileData.experienceYears}
+                          onChange={handleProfileChange}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem 1rem',
+                            borderRadius: '10px',
+                            border: '1px solid var(--border-color)',
+                            fontSize: '1rem',
+                            color: 'var(--text-color)',
+                          }}
+                        />
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <Calendar size={20} style={{ color: 'var(--primary)' }} />
+                          <span style={{ fontSize: '1rem', color: 'var(--text-color)' }}>
+                            {profile.experienceYears ? `${profile.experienceYears} ans` : '-'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Teaching Mode */}
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--secondary)', marginBottom: '0.5rem' }}>
+                        Mode d'enseignement
+                      </label>
+                      {isEditingProfile && canEditProfile ? (
+                        <select
+                          name="teachingMode"
+                          value={editProfileData.teachingMode}
+                          onChange={handleProfileChange}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem 1rem',
+                            borderRadius: '10px',
+                            border: '1px solid var(--border-color)',
+                            fontSize: '1rem',
+                            color: 'var(--text-color)',
+                            background: 'var(--surface-color)',
+                          }}
+                        >
+                          <option value="">Sélectionner...</option>
+                          <option value="online">En ligne</option>
+                          <option value="in-person">Présentiel</option>
+                          <option value="hybrid">Les deux</option>
+                        </select>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <FileText size={20} style={{ color: 'var(--primary)' }} />
+                          <span style={{ fontSize: '1rem', color: 'var(--text-color)' }}>
+                            {profile.teachingMode === 'online' ? 'En ligne' : 
+                             profile.teachingMode === 'in-person' ? 'Présentiel' : 
+                             profile.teachingMode === 'hybrid' ? 'Les deux' : '-'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
