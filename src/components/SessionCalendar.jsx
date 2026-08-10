@@ -34,18 +34,24 @@ function SessionCalendar({ meetings, onMeetingClick, onEditMeeting, onDeleteMeet
 
   const getMeetingsForDate = (date) => {
     if (!meetings || meetings.length === 0) return [];
-    const dateStr = date.toISOString().split('T')[0];
+    // Use local date string to avoid timezone issues
+    const formatDateLocal = (d) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+    const dateStr = formatDateLocal(date);
     return meetings.filter(meeting => {
-      const meetingDate = new Date(meeting.meetingDate).toISOString().split('T')[0];
+      const meetingDate = formatDateLocal(new Date(meeting.meetingDate));
       return meetingDate === dateStr;
     });
   };
 
   const handleMeetingClick = (meeting) => {
+    setSelectedMeeting(meeting);
     if (onMeetingClick) {
       onMeetingClick(meeting);
-    } else {
-      setSelectedMeeting(meeting);
     }
   };
 
@@ -405,6 +411,66 @@ function SessionCalendar({ meetings, onMeetingClick, onEditMeeting, onDeleteMeet
                 >
                   <Trash2 size={16} />
                   Supprimer
+                </button>
+              </div>
+            )}
+            {!readOnly && selectedMeeting.status === 'SCHEDULED' && (
+              <div style={{ padding: '1.5rem', borderTop: '1px solid var(--border-color)' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onMeetingClick) {
+                      onMeetingClick({ ...selectedMeeting, action: 'start' });
+                    }
+                    setSelectedMeeting(null);
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '0.85rem',
+                    borderRadius: '8px',
+                    background: '#28a745',
+                    color: '#fff',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                  }}
+                >
+                  <Zap size={16} />
+                  Démarrer la session
+                </button>
+              </div>
+            )}
+            {selectedMeeting.status === 'LIVE' && (
+              <div style={{ padding: '1.5rem', borderTop: '1px solid var(--border-color)' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onMeetingClick) {
+                      onMeetingClick(selectedMeeting);
+                    }
+                    setSelectedMeeting(null);
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '0.85rem',
+                    borderRadius: '8px',
+                    background: '#28a745',
+                    color: '#fff',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                  }}
+                >
+                  <Video size={16} />
+                  Rejoindre la classe
                 </button>
               </div>
             )}

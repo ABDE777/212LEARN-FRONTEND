@@ -355,15 +355,29 @@ See [`QUIZ_FRONTEND_GUIDE.md`](./QUIZ_FRONTEND_GUIDE.md) for UI flows.
 | GET | `/pending` | ✓ | admin |
 | PATCH | `/verify` | ✓ | admin — `{ paymentId, action }` |
 
-### Meetings & instructor analytics
+### Meetings & instructor analytics (Jitsi as a Service)
 
 | Method | Path | JWT | Roles |
 |--------|------|-----|-------|
 | GET | `/courses/:courseId/meetings` | ✓ | enrolled PAID / instructor / admin |
 | POST | `/courses/:courseId/meetings` | ✓ | instructor, admin |
+| GET | `/meetings/:id/join` | ✓ | enrolled PAID / instructor / admin — returns JaaS JWT |
+| PATCH | `/meetings/:id/start` | ✓ | instructor, admin |
+| PATCH | `/meetings/:id/end` | ✓ | instructor, admin |
+| PATCH | `/meetings/:id` | ✓ | instructor, admin — update scheduled meetings only |
+| DELETE | `/meetings/:id` | ✓ | instructor, admin — delete scheduled meetings only |
+| POST | `/meetings/webhook` | | Jitsi webhook (no auth) |
+| GET | `/admin/meetings` | ✓ | admin — all meetings with course info |
 | GET | `/instructor/analytics/revenue` | ✓ | instructor, admin |
 | GET | `/instructor/analytics/students` | ✓ | instructor, admin |
 | GET | `/instructor/analytics/completion` | ✓ | instructor, admin |
+
+**JaaS Integration Notes:**
+- Meetings use Jitsi as a Service (JaaS) with RS256 JWT authentication
+- `/meetings/:id/join` returns: `{ jwt, domain, roomName, moderator, meeting }`
+- Frontend should use the returned JWT to initialize Jitsi Meet External API
+- Meeting URL format: `https://{domain}/{appId}/{roomName}`
+- Webhook signature verification enabled (HMAC-SHA256)
 
 ### Categories
 
@@ -499,15 +513,19 @@ Use this in frontend status banners or deploy smoke checks.
 
 ## 12. What changed recently (read this)
 
-1. **Uploads:** signed Cloudinary flow is mandatory for large files on Vercel.
-2. **AI quizzes:** failures return **503**, not fake questions.
-3. **Wafacash verify:** body uses `action: "approve"|"reject"`, not `status`.
-4. **Wafacash submit:** requires `paymentReference` + `mtcn` + `receipt`; ownership checked.
-5. **Assignments:** optional `description` field.
-6. **Password:** min **8** characters on register / change / reset.
-7. **Reset token:** **5 minutes**.
-8. **Unlimited pagination** disabled in production by default.
-9. **Cart / wishlist / coupons** are live under `/cart`, `/wishlist`, `/coupons`.
+1. **JaaS Migration:** Meetings now use Jitsi as a Service with RS256 JWT authentication
+2. **Meeting Join Flow:** Use `GET /meetings/:id/join` to get JWT, domain, and roomName for Jitsi initialization
+3. **Meeting Management:** Update/delete only allowed for SCHEDULED meetings; start/end for instructor/admin
+4. **Admin Calendar:** New `GET /admin/meetings` endpoint for admin to view all meetings with course info
+5. **Uploads:** signed Cloudinary flow is mandatory for large files on Vercel.
+6. **AI quizzes:** failures return **503**, not fake questions.
+7. **Wafacash verify:** body uses `action: "approve"|"reject"`, not `status`.
+8. **Wafacash submit:** requires `paymentReference` + `mtcn` + receipt; ownership checked.
+9. **Assignments:** optional `description` field.
+10. **Password:** min **8** characters on register / change / reset.
+11. **Reset token:** **5 minutes**.
+12. **Unlimited pagination** disabled in production by default.
+13. **Cart / wishlist / coupons** are live under `/cart`, `/wishlist`, `/coupons`.
 
 ---
 

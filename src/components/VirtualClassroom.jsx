@@ -1,34 +1,79 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, Wifi, WifiOff, Users, Maximize2, Minimize2, ExternalLink } from 'lucide-react';
+import { X, Wifi, WifiOff, Users, Maximize2, Minimize2, ExternalLink, PhoneOff } from 'lucide-react';
+import api from '../services/api';
 
 /**
  * VirtualClassroom
  * ─────────────────
  * Intègre Jitsi Meet via l'External API (iframe + JS bridge).
- * Le backend génère meetingUrl = https://meet.jit.si/<roomName>
+ * Le backend génère meetingUrl et JWT token pour JaaS authentication.
  *
  * Props:
  *  - meeting     : { id, title, meetingUrl, roomName, status }
  *  - displayName : nom de l'utilisateur courant
  *  - isInstructor: boolean — contrôles modérateur activés
  *  - onClose     : callback quand l'utilisateur ferme la salle
+ *  - onEndMeeting: callback quand l'instructeur termine la session
  */
-export default function VirtualClassroom({ meeting, displayName, isInstructor, onClose }) {
+export default function VirtualClassroom({ meeting, displayName, isInstructor, onClose, onEndMeeting }) {
   const jitsiContainerRef = useRef(null);
   const apiRef = useRef(null);
   const [apiLoaded, setApiLoaded] = useState(!!window.JitsiMeetExternalAPI);
   const [participantCount, setParticipantCount] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('connecting'); // connecting | connected | error
+  const [jwtToken, setJwtToken] = useState(null);
+  const [domain, setDomain] = useState('meet.jit.si');
+  const [roomName, setRoomName] = useState(null);
 
-  // 1. Charger le script Jitsi si pas encore présent
+  // 1. Fetch JaaS join info from backend
+  useEffect(() => {
+    if (!meeting?.id) return;
+    
+    const fetchJoinInfo = async () => {
+      try {
+        const response = await api.get(`/meetings/${meeting.id}/join`);
+        const data = response.data?.data;
+        if (data?.jwt) {
+          setJwtToken(data.jwt);
+          // Store domain and roomName from response
+          if (data?.domain) setDomain(data.domain);
+          if (data?.roomName) setRoomName(data.roomName);
+        }
+      } catch (err) {
+        console.error('Failed to fetch JaaS join info:', err);
+        // Continue without JWT for fallback to meet.jit.si
+      }
+    };
+    
+    fetchJoinInfo();
+  }, [meeting?.id]);
+
+  // 2. Charger le script Jitsi si pas encore présent
   useEffect(() => {
     if (window.JitsiMeetExternalAPI) {
       setApiLoaded(true);
       return;
     }
+    
+    // Pour JaaS, charger le script avec l'AppID
+    // Extraire l'AppID depuis l'URL de la réunion si disponible
+    let scriptSrc = 'https://meet.jit.si/external_api.js'; // Fallback
+    
+    if (meeting?.meetingUrl) {
+      try {
+        const url = new URL(meeting.meetingUrl);
+        const pathParts = url.pathname.split('/').filter(Boolean);
+        // Si l'URL contient l'AppID (format JaaS), utiliser le script JaaS
+        if (pathParts.length >= 2 && url.hostname === '8x8.vc') {
+          const appId = pathParts[0];
+          scriptSrc = `https://8x8.vc/${appId}/external_api.js`;
+        }
+      } catch (_) {}
+    }
+    
     const script = document.createElement('script');
-    script.src = 'https://meet.jit.si/external_api.js';
+    script.src = scriptSrc;
     script.async = true;
     script.onload = () => setApiLoaded(true);
     script.onerror = () => setConnectionStatus('error');
@@ -37,30 +82,40 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
       // Nettoyage uniquement si le script était en cours de chargement
       if (!window.JitsiMeetExternalAPI) document.head.removeChild(script);
     };
-  }, []);
+  }, [meeting?.meetingUrl]);
 
-  // 2. Initialiser l'API Jitsi quand le script est chargé
+  // 3. Initialiser l'API Jitsi quand le script est chargé
   useEffect(() => {
-    if (!apiLoaded || !jitsiContainerRef.current || !meeting?.meetingUrl) return;
+    if (!apiLoaded || !jitsiContainerRef.current) return;
 
-    // Extraire domain + room depuis l'URL générée par le backend
-    let domain = 'meet.jit.si';
-    let roomName = meeting.roomName || meeting.meetingUrl.split('/').pop();
+    // Use domain and roomName from /join endpoint, or fallback to meetingUrl
+    let jitsiDomain = domain;
+    let jitsiRoomName = roomName;
 
-    try {
-      const url = new URL(meeting.meetingUrl);
-      domain = url.hostname;
-      roomName = url.pathname.replace(/^\//, '') || roomName;
-    } catch (_) {}
+    if (!jitsiDomain || !jitsiRoomName) {
+      // Fallback to parsing meetingUrl
+      if (meeting?.meetingUrl) {
+        try {
+          const url = new URL(meeting.meetingUrl);
+          jitsiDomain = url.hostname;
+          jitsiRoomName = url.pathname.replace(/^\//, '') || meeting.roomName;
+        } catch (_) {
+          jitsiDomain = 'meet.jit.si';
+          jitsiRoomName = meeting.roomName || meeting.meetingUrl.split('/').pop();
+        }
+      } else {
+        return; // No meeting info available
+      }
+    }
 
-    const api = new window.JitsiMeetExternalAPI(domain, {
-      roomName,
+    const apiOptions = {
+      roomName: jitsiRoomName,
       parentNode: jitsiContainerRef.current,
       width: '100%',
       height: '100%',
       configOverwrite: {
-        startWithAudioMuted: !isInstructor,
-        startWithVideoMuted: !isInstructor,
+        startWithAudioMuted: false,
+        startWithVideoMuted: false,
         disableDeepLinking: true,
         prejoinPageEnabled: false,
         enableClosePage: false,
@@ -81,7 +136,14 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
       userInfo: {
         displayName: displayName || 'Participant',
       },
-    });
+    };
+
+    // Add JWT token if available for JaaS
+    if (jwtToken) {
+      apiOptions.jwt = jwtToken;
+    }
+
+    const api = new window.JitsiMeetExternalAPI(jitsiDomain, apiOptions);
 
     apiRef.current = api;
 
@@ -112,7 +174,29 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
       try { api.dispose(); } catch (_) {}
       apiRef.current = null;
     };
-  }, [apiLoaded, meeting?.meetingUrl, meeting?.roomName, meeting?.title, displayName, isInstructor, onClose]);
+  }, [apiLoaded, domain, roomName, meeting?.meetingUrl, meeting?.roomName, meeting?.title, displayName, isInstructor, onClose, jwtToken]);
+
+  // 4. Polling du statut de la réunion pour les étudiants (auto-close quand l'instructeur termine)
+  useEffect(() => {
+    if (!meeting?.id || isInstructor) return; // Pas de polling pour l'instructeur
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await api.get(`/meetings/${meeting.id}`);
+        const currentMeeting = response.data?.data?.meeting;
+        
+        // Si la réunion est terminée (COMPLETED), fermer automatiquement
+        if (currentMeeting?.status === 'COMPLETED') {
+          clearInterval(pollInterval);
+          onClose?.();
+        }
+      } catch (err) {
+        console.error('Failed to poll meeting status:', err);
+      }
+    }, 5000); // Vérifier toutes les 5 secondes
+
+    return () => clearInterval(pollInterval);
+  }, [meeting?.id, isInstructor, onClose]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -242,6 +326,31 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
           >
             <X size={14} />
           </button>
+
+          {/* End Session (instructor only) */}
+          {isInstructor && (
+            <button
+              onClick={() => {
+                if (window.confirm('Êtes-vous sûr de vouloir terminer cette session ? Cela enregistrera la session pour les étudiants.')) {
+                  onEndMeeting?.(meeting.id);
+                }
+              }}
+              title="Terminer la session"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                padding: '0.5rem 1rem', borderRadius: '8px',
+                background: '#dc3545', border: '1px solid #dc3545',
+                color: '#fff', cursor: 'pointer',
+                fontWeight: 600, fontSize: '0.85rem',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#c82333'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = '#dc3545'; }}
+            >
+              <PhoneOff size={14} style={{ marginRight: '0.4rem' }} />
+              Terminer
+            </button>
+          )}
         </div>
       </div>
 

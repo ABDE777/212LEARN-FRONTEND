@@ -25,12 +25,6 @@ function StudentLiveSessionsTab({ enrollments = [], currentUser }) {
     if (selectedCourseId) fetchMeetings();
   }, [selectedCourseId, fetchMeetings]);
 
-  const handleMeetingClick = (meeting) => {
-    if (meeting.status === 'LIVE') {
-      setActiveVirtualMeeting(meeting);
-    }
-  };
-
   return (
     <div>
       {/* Active Virtual Classroom modal */}
@@ -98,7 +92,11 @@ function StudentLiveSessionsTab({ enrollments = [], currentUser }) {
       {!loading && !error && meetings.length > 0 && (
         <SessionCalendar
           meetings={meetings}
-          onMeetingClick={handleMeetingClick}
+          onMeetingClick={(meeting) => {
+            if (meeting.status === 'LIVE') {
+              setActiveVirtualMeeting(meeting);
+            }
+          }}
           readOnly={true}
         />
       )}

@@ -70,5 +70,10 @@ export function useMeetings(courseId) {
     return response.data;
   };
 
-  return { meetings, loading, error, fetchMeetings, createMeeting, startMeeting, endMeeting, updateMeeting, deleteMeeting };
+  const getMeetingJoinInfo = async (meetingId) => {
+    const response = await api.get(`/meetings/${meetingId}/join`);
+    return response.data?.data || response.data;
+  };
+
+  return { meetings, loading, error, fetchMeetings, createMeeting, startMeeting, endMeeting, updateMeeting, deleteMeeting, getMeetingJoinInfo };
 }

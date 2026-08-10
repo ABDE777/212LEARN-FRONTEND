@@ -562,12 +562,12 @@ function ScheduleForm({ courses, onScheduled }) {
 
             {/* Live preview card */}
             {title && date && time && (
-              <div style={{ borderRadius: '12px', border: `1.5px dashed ${platform.color}`, padding: '1.25rem', background: platform.color + '08' }}>
-                <p style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: platform.color, marginBottom: '0.6rem' }}>
+              <div style={{ borderRadius: '12px', border: '1.5px dashed var(--primary)', padding: '1.25rem', background: 'rgba(193,101,47,0.08)' }}>
+                <p style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--primary)', marginBottom: '0.6rem' }}>
                   Aperçu de la session
                 </p>
                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: platform.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <Video size={20} color="#fff" />
                   </div>
                   <div>
@@ -575,8 +575,8 @@ function ScheduleForm({ courses, onScheduled }) {
                     <p style={{ fontSize: '0.82rem', color: 'var(--secondary)' }}>
                       {date && time && `${formatDate(new Date(`${date}T${time}`))} à ${time}`}
                     </p>
-                    <p style={{ fontSize: '0.78rem', color: platform.color, marginTop: '0.15rem' }}>
-                      via {url ? platform.label : 'Classe Virtuelle 212Learn'}
+                    <p style={{ fontSize: '0.78rem', color: 'var(--primary)', marginTop: '0.15rem' }}>
+                      via Classe Virtuelle 212Learn
                     </p>
                   </div>
                 </div>
@@ -632,11 +632,30 @@ function MeetingsTab({ courses }) {
     }
   };
 
-  const handleMeetingClick = (meeting) => {
-    if (meeting.status === 'LIVE') {
+  const handleMeetingClick = async (meeting) => {
+    if (meeting.action === 'start') {
+      // Start the meeting and then open virtual classroom
+      try {
+        const updatedMeeting = await startMeeting(meeting.id);
+        await fetchMeetings();
+        setActiveVirtualMeeting(updatedMeeting || meeting);
+      } catch (err) {
+        console.error('Failed to start meeting:', err);
+      }
+    } else if (meeting.status === 'LIVE') {
       setActiveVirtualMeeting(meeting);
     } else if (meeting.status === 'SCHEDULED') {
       handleEditMeeting(meeting);
+    }
+  };
+
+  const handleEndMeeting = async (meetingId) => {
+    try {
+      await endMeeting(meetingId);
+      setActiveVirtualMeeting(null);
+      await fetchMeetings();
+    } catch (err) {
+      console.error('Failed to end meeting:', err);
     }
   };
 
@@ -649,6 +668,7 @@ function MeetingsTab({ courses }) {
           displayName={user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Instructeur'}
           isInstructor={true}
           onClose={() => setActiveVirtualMeeting(null)}
+          onEndMeeting={handleEndMeeting}
         />
       )}
 

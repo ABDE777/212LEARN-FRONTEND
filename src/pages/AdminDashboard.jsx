@@ -17,12 +17,14 @@ import {
 import { useCategories } from '../hooks/useCategories';
 import { useAdminStats } from '../hooks/useAdminStats';
 import { useAdminAuditLogs, useSystemDiagnostics } from '../hooks/useAdminAudit';
+import { useAdminMeetings } from '../hooks/useAdminMeetings';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useAuth } from '../context/AuthContext';
 import ProfileEditForm from '../components/ProfileEditForm';
 import ChangePasswordForm from '../components/ChangePasswordForm';
 import CloudinaryImageUpload from '../components/CloudinaryImageUpload';
 import Modal from '../components/Modal';
+import SessionCalendar from '../components/SessionCalendar';
 
 function AdminStatsTab() {
   const { stats, loading, error } = useAdminStats();
@@ -3016,6 +3018,7 @@ export default function AdminDashboard() {
   const { deleteCourse, loading: deleteCourseLoading, error: deleteCourseError } = useAdminDeleteCourse();
   const { publishCourse, loading: publishLoading, error: publishError } = usePublishCourse();
   const { user, logout } = useAuth();
+  const { meetings, loading: meetingsLoading, fetchMeetings, deleteMeeting: adminDeleteMeeting, updateMeeting: adminUpdateMeeting } = useAdminMeetings();
 
   const flatCategories = useMemo(() => flattenCategories(categories), [categories]);
 
@@ -3500,6 +3503,29 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleAdminMeetingEdit = async (meetingId, { title, meetingDate }) => {
+    try {
+      await adminUpdateMeeting(meetingId, { title, meetingDate });
+    } catch (err) {
+      console.error('Failed to update meeting:', err);
+    }
+  };
+
+  const handleAdminMeetingDelete = async (meetingId) => {
+    try {
+      await adminDeleteMeeting(meetingId);
+    } catch (err) {
+      console.error('Failed to delete meeting:', err);
+    }
+  };
+
+  // Fetch meetings when meetings tab is active
+  useEffect(() => {
+    if (activeTab === 'meetings') {
+      fetchMeetings();
+    }
+  }, [activeTab, fetchMeetings]);
+
   const handlePublishCourse = async (courseId) => {
     setCourseActionSuccess('');
     try {
@@ -3549,6 +3575,14 @@ export default function AdminDashboard() {
             >
               <Folder size={18} />
               <span>Categories</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('meetings')}
+              className={`sidebar-menu-btn ${activeTab === 'meetings' ? 'active' : ''}`}
+              title="Sessions"
+            >
+              <Video size={18} />
+              <span>Sessions</span>
             </button>
             <button
               onClick={() => setActiveTab('stats')}
@@ -4201,6 +4235,33 @@ export default function AdminDashboard() {
                         />
                       ))}
                     </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'meetings' && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', gap: '1rem', flexWrap: 'wrap' }}>
+                    <div>
+                      <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Gestion des Sessions</h2>
+                      <p style={{ color: 'var(--secondary)', marginTop: '0.35rem', fontSize: '0.9rem' }}>
+                        Vue calendrier de toutes les sessions virtuelles sur la plateforme.
+                      </p>
+                    </div>
+                  </div>
+
+                  {meetingsLoading && <LoadingSpinner />}
+                  {!meetingsLoading && (
+                    <SessionCalendar
+                      meetings={meetings}
+                      onMeetingClick={(meeting) => {
+                        // Handle meeting clicks - could show details or join
+                        console.log('Meeting clicked:', meeting);
+                      }}
+                      onEditMeeting={handleAdminMeetingEdit}
+                      onDeleteMeeting={handleAdminMeetingDelete}
+                      readOnly={false}
+                    />
                   )}
                 </div>
               )}
