@@ -26,8 +26,16 @@ export default function Login() {
   const otpRefs = useRef([]);
   const timerRef = useRef(null);
 
-  const { login, loginWithToken } = useAuth();
+  const { login, loginWithToken, user } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      const dashboardPath = getDashboardPath(user.role);
+      navigate(dashboardPath, { replace: true });
+    }
+  }, [user, navigate]);
 
   // Countdown timer for OTP
   useEffect(() => {

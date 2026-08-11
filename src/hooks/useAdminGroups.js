@@ -10,8 +10,8 @@ export function useAdminGroups() {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.get('/admin/groups');
-      setGroups(response.data?.data || response.data || []);
+      const response = await api.get('/groups');
+      setGroups(response.data?.data?.groups || response.data?.groups || []);
     } catch (err) {
       setError('Failed to load groups');
       console.error('Groups error:', err);
@@ -21,31 +21,31 @@ export function useAdminGroups() {
   };
 
   const createGroup = async (groupData) => {
-    const response = await api.post('/admin/groups', groupData);
+    const response = await api.post('/groups', groupData);
     await fetchGroups();
     return response.data;
   };
 
   const updateGroup = async (groupId, groupData) => {
-    const response = await api.patch(`/admin/groups/${groupId}`, groupData);
+    const response = await api.patch(`/groups/${groupId}`, groupData);
     await fetchGroups();
     return response.data;
   };
 
   const assignFormateur = async (groupId, formateurId) => {
-    const response = await api.patch(`/admin/groups/${groupId}/formateur`, { formateurId });
+    const response = await api.patch(`/groups/${groupId}`, { formateurId });
     await fetchGroups();
     return response.data;
   };
 
-  const addStudentToGroup = async (groupId, studentId) => {
-    const response = await api.post(`/admin/groups/${groupId}/students`, { studentId });
+  const addStudentToGroup = async (groupId, userId) => {
+    const response = await api.post(`/groups/${groupId}/students`, { userId });
     await fetchGroups();
     return response.data;
   };
 
-  const removeStudentFromGroup = async (groupId, studentId) => {
-    const response = await api.delete(`/admin/groups/${groupId}/students/${studentId}`);
+  const removeStudentFromGroup = async (groupId, userId) => {
+    const response = await api.delete(`/groups/${groupId}/students/${userId}`);
     await fetchGroups();
     return response.data;
   };

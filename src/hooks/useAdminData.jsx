@@ -157,6 +157,7 @@ export function useAdminInstructors() {
 
 export function useAdminCourses() {
   const [courses, setCourses] = useState([]);
+  const [enrollments, setEnrollments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -164,9 +165,10 @@ export function useAdminCourses() {
     setLoading(true);
     setError(null);
     try {
-      const [allCoursesResponse, draftCoursesResponse] = await Promise.allSettled([
+      const [allCoursesResponse, draftCoursesResponse, enrollmentsResponse] = await Promise.allSettled([
         api.get('/courses', { params: { limit: 100 } }),
         api.get('/courses', { params: { limit: 100, status: 'draft' } }),
+        api.get('/enrollments', { params: { limit: 500 } }),
       ]);
 
       const allCourses =
@@ -188,6 +190,12 @@ export function useAdminCourses() {
 
       setCourses(mergedCourses);
 
+      const enrollmentsData =
+        enrollmentsResponse.status === 'fulfilled'
+          ? enrollmentsResponse.value.data?.data?.enrollments || enrollmentsResponse.value.data?.enrollments || []
+          : [];
+      setEnrollments(enrollmentsData);
+
       if (allCoursesResponse.status === 'rejected' && draftCoursesResponse.status === 'rejected') {
         throw allCoursesResponse.reason || draftCoursesResponse.reason;
       }
@@ -195,6 +203,7 @@ export function useAdminCourses() {
       console.error('Failed to fetch courses:', err);
       setError('Impossible de charger les cours.');
       setCourses([]);
+      setEnrollments([]);
     } finally {
       setLoading(false);
     }
@@ -204,7 +213,7 @@ export function useAdminCourses() {
     fetchCourses();
   }, [fetchCourses]);
 
-  return { courses, loading, error, refreshCourses: fetchCourses };
+  return { courses, enrollments, loading, error, refreshCourses: fetchCourses };
 }
 
 export function useAssignFormateur() {

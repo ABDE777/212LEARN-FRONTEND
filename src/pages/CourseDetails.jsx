@@ -178,7 +178,7 @@ export default function CourseDetails() {
             {course.instructors?.length > 0 && (
               <Card variant="default" padding="2rem">
                 <h2 style={{ marginBottom: '1.5rem', color: 'var(--secondary)' }}>
-                  Votre instructeur
+                  {course.instructors.length === 1 ? 'Votre instructeur' : 'Vos instructeurs'}
                 </h2>
                 {course.instructors.map((instructorData) => {
                   const instructor = instructorData.user;

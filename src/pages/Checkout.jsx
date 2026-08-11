@@ -1,10 +1,10 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { CreditCard, Lock, CheckCircle, Wallet, FileText, Upload, AlertCircle, Building2 } from 'lucide-react';
+import { Lock, CheckCircle, Wallet, Upload, AlertCircle, Tag, Building2 } from 'lucide-react';
 import { useCourse } from '../hooks/useCourses';
-import { useCheckout } from '../hooks/usePayments';
 import { useWafacash } from '../hooks/useWafacash';
 import { useTransfer } from '../hooks/useTransfer';
+import { useCoupons } from '../hooks/useCoupons';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -20,11 +20,11 @@ export default function Checkout() {
   const { clearCart } = useCartContext();
 
   const { course, loading: courseLoading, error: courseError } = useCourse(id);
-  const { createCheckoutSession, loading: stripeLoading, error: stripeError } = useCheckout();
   const { requestPayment: requestWafaPayment, submitProof, loading: wafaLoading, error: wafaError } = useWafacash();
   const { requestPayment: requestTransferPayment, submitTransferDetails, loading: transferLoading, error: transferError } = useTransfer();
+  const { validateCoupon } = useCoupons();
 
-  const [paymentMethod, setPaymentMethod] = useState('card');
+  const [paymentMethod, setPaymentMethod] = useState('wafacash');
   const [wafaStep, setWafaStep] = useState(1);
   const [transferStep, setTransferStep] = useState(1);
   const [paymentData, setPaymentData] = useState(null);
@@ -33,27 +33,16 @@ export default function Checkout() {
   const [receiptFile, setReceiptFile] = useState(null);
   const [transferReceiptFile, setTransferReceiptFile] = useState(null);
   const [localError, setLocalError] = useState('');
+  const [couponCode, setCouponCode] = useState('');
+  const [discount, setDiscount] = useState(0);
+  const [couponError, setCouponError] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
       navigate(`/login?redirect=/courses/${id}/checkout`);
     }
   }, [isAuthenticated, navigate, id]);
-
-  const handleStripeCheckout = async () => {
-    if (!course || course.price === 0) {
-      await clearCart();
-      navigate(`/learn/${id}/lesson/intro`);
-      return;
-    }
-    try {
-      const { checkoutUrl } = await createCheckoutSession(id);
-      await clearCart();
-      if (checkoutUrl) window.location.href = checkoutUrl;
-    } catch (error) {
-      console.error('Checkout failed:', error);
-    }
-  };
 
   const handleWafaRequest = async () => {
     try {
@@ -73,6 +62,33 @@ export default function Checkout() {
     } catch (error) {
       console.error('Transfer request failed:', error);
     }
+  };
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      setCouponError('Veuillez entrer un code de coupon.');
+      return;
+    }
+
+    try {
+      const response = await validateCoupon(couponCode.trim());
+      const couponData = response.data?.data || response;
+      
+      setDiscount(course.price * (couponData.discountPercent / 100));
+      setAppliedCoupon(couponData.code);
+      setCouponError('');
+    } catch (error) {
+      setCouponError(error.response?.data?.message || error.message || 'Code de coupon invalide.');
+      setDiscount(0);
+      setAppliedCoupon(null);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setCouponCode('');
+    setDiscount(0);
+    setAppliedCoupon(null);
+    setCouponError('');
   };
 
   const handleWafaSubmit = async (e) => {
@@ -138,9 +154,9 @@ export default function Checkout() {
             <Card variant="default" padding="2rem" style={{ marginBottom: '2rem' }}>
               <h2 style={{ marginBottom: '1.5rem', color: 'var(--secondary)' }}>Informations de paiement</h2>
 
-              {(stripeError || wafaError || transferError || localError) && (
+              {(wafaError || transferError || localError) && (
                 <div style={{ background: '#fee', border: '1px solid #fcc', borderRadius: '8px', padding: '1rem', marginBottom: '1.5rem', color: '#c33' }}>
-                  {stripeError || wafaError || transferError || localError}
+                  {wafaError || transferError || localError}
                 </div>
               )}
 
@@ -148,7 +164,7 @@ export default function Checkout() {
                 <div style={{ textAlign: 'center', padding: '2rem' }}>
                   <CheckCircle size={64} color="var(--success-color)" style={{ marginBottom: '1rem' }} />
                   <h3 style={{ marginBottom: '1rem', color: 'var(--text-color)' }}>Ce cours est gratuit !</h3>
-                  <Button variant="primary" size="large" onClick={handleStripeCheckout} loading={stripeLoading}>
+                  <Button variant="primary" size="large" onClick={() => { clearCart(); navigate(`/learn/${id}/lesson/intro`); }}>
                     Commencer le cours
                   </Button>
                 </div>
@@ -156,16 +172,6 @@ export default function Checkout() {
                 <div>
                   {/* Payment Method Selector */}
                   <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
-                    <div 
-                      onClick={() => { setPaymentMethod('card'); setWafaStep(1); setTransferStep(1); }}
-                      style={{ 
-                        flex: 1, padding: '1rem', border: `2px solid ${paymentMethod === 'card' ? 'var(--primary)' : 'var(--border-color)'}`,
-                        borderRadius: '8px', cursor: 'pointer', textAlign: 'center', background: paymentMethod === 'card' ? 'var(--bg-color)' : 'transparent'
-                      }}
-                    >
-                      <CreditCard size={24} color={paymentMethod === 'card' ? 'var(--primary)' : 'var(--secondary)'} style={{ marginBottom: '0.5rem' }} />
-                      <div style={{ fontWeight: 600, color: paymentMethod === 'card' ? 'var(--primary)' : 'var(--secondary)' }}>Carte Bancaire</div>
-                    </div>
                     <div 
                       onClick={() => { setPaymentMethod('wafacash'); setTransferStep(1); }}
                       style={{ 
@@ -187,18 +193,6 @@ export default function Checkout() {
                       <div style={{ fontWeight: 600, color: paymentMethod === 'transfer' ? 'var(--primary)' : 'var(--secondary)' }}>Virement Bancaire</div>
                     </div>
                   </div>
-
-                  {paymentMethod === 'card' && (
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem', color: 'var(--secondary)' }}>
-                        <Lock size={16} />
-                        <span style={{ fontSize: '0.9rem' }}>Transaction sécurisée avec chiffrement SSL (Stripe)</span>
-                      </div>
-                      <Button variant="primary" size="large" style={{ width: '100%' }} onClick={handleStripeCheckout} loading={stripeLoading}>
-                        Payer {course.price}€ par carte
-                      </Button>
-                    </div>
-                  )}
 
                   {paymentMethod === 'wafacash' && (
                     <div>
@@ -392,19 +386,94 @@ export default function Checkout() {
                   </div>
                 </div>
               </div>
+
+              {/* Coupon Code Section */}
+              {!appliedCoupon && (
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', fontWeight: 500, color: 'var(--secondary)' }}>
+                    <Tag size={16} />
+                    Code de réduction
+                  </label>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <input
+                      type="text"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value)}
+                      placeholder="Entrez votre code"
+                      style={{
+                        flex: 1,
+                        padding: '10px 12px',
+                        border: `1px solid ${couponError ? 'var(--error-color)' : 'var(--border-color)'}`,
+                        borderRadius: '6px',
+                        background: 'var(--bg-color)',
+                        color: 'var(--text-color)',
+                        fontSize: '0.9rem',
+                      }}
+                    />
+                    <Button
+                      variant="outline"
+                      size="small"
+                      onClick={handleApplyCoupon}
+                      style={{ padding: '0.5rem 1rem' }}
+                    >
+                      Appliquer
+                    </Button>
+                  </div>
+                  {couponError && (
+                    <p style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.5rem', margin: '0.5rem 0 0 0' }}>
+                      {couponError}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {appliedCoupon && (
+                <div style={{ marginBottom: '1.5rem', background: '#e8f5e9', border: '1px solid #4caf50', borderRadius: '6px', padding: '0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <span style={{ color: '#2e7d32', fontWeight: 500, fontSize: '0.9rem' }}>
+                      ✓ Coupon appliqué: {appliedCoupon}
+                    </span>
+                    <button
+                      onClick={handleRemoveCoupon}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#2e7d32',
+                        cursor: 'pointer',
+                        fontSize: '0.85rem',
+                        textDecoration: 'underline',
+                      }}
+                    >
+                      Supprimer
+                    </button>
+                  </div>
+                  <div style={{ color: '#2e7d32', fontSize: '0.85rem' }}>
+                    Réduction: -{discount.toFixed(2)}€
+                  </div>
+                </div>
+              )}
+
               <div style={{ marginBottom: '1.5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', color: 'var(--secondary)' }}>
                   <span>Sous-total</span>
                   <span>{course.price === 0 ? 'Gratuit' : `${course.price}€`}</span>
                 </div>
+                {discount > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', color: '#4caf50' }}>
+                    <span>Réduction</span>
+                    <span>-{discount.toFixed(2)}€</span>
+                  </div>
+                )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', color: 'var(--secondary)' }}>
                   <span>TVA (20%)</span>
-                  <span>{course.price === 0 ? '0€' : `${(course.price * 0.2).toFixed(2)}€`}</span>
+                  <span>{course.price === 0 ? '0€' : `${((course.price - discount) * 0.2).toFixed(2)}€`}</span>
                 </div>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '1rem', borderTop: '2px solid var(--border-color)', marginBottom: '1.5rem' }}>
                 <span style={{ fontWeight: 700, fontSize: '1.2rem', color: 'var(--text-color)' }}>Total</span>
-                <span style={{ fontWeight: 700, fontSize: '1.2rem', color: 'var(--primary)' }}>{course.price === 0 ? 'Gratuit' : `${(course.price * 1.2).toFixed(2)}€`}</span>
+                <span style={{ fontWeight: 700, fontSize: '1.2rem', color: 'var(--primary)' }}>
+                  {course.price === 0 ? 'Gratuit' : `${((course.price - discount) * 1.2).toFixed(2)}€`}
+                </span>
               </div>
             </Card>
           </div>

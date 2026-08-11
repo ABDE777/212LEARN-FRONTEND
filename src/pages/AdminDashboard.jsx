@@ -21,6 +21,7 @@ import { useAdminAuditLogs, useSystemDiagnostics } from '../hooks/useAdminAudit'
 import { useAdminMeetings } from '../hooks/useAdminMeetings';
 import { useAdminGroups } from '../hooks/useAdminGroups';
 import { useCoupons } from '../hooks/useCoupons';
+import { useGroups } from '../hooks/useGroups';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useAuth } from '../context/AuthContext';
 import ProfileEditForm from '../components/ProfileEditForm';
@@ -28,6 +29,7 @@ import ChangePasswordForm from '../components/ChangePasswordForm';
 import CloudinaryImageUpload from '../components/CloudinaryImageUpload';
 import Modal from '../components/Modal';
 import SessionCalendar from '../components/SessionCalendar';
+import api from '../services/api';
 
 function AdminStatsTab() {
   const { stats, loading, error } = useAdminStats();
@@ -1648,9 +1650,19 @@ function AdminCourseCard({
           >
             <User size={14} />
           </div>
-          <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {getCourseInstructorLabel(course)}
-          </span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
+            <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {course.instructors && course.instructors.length > 1 
+                ? `${course.instructors.length} instructeurs`
+                : getCourseInstructorLabel(course)
+              }
+            </span>
+            {course.instructors && course.instructors.length > 1 && (
+              <span style={{ fontSize: '0.7rem', color: 'var(--secondary)', opacity: 0.7, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {course.instructors.map(i => i.user ? `${i.user.firstName} ${i.user.lastName}` : 'Inconnu').join(', ')}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Action Buttons Toolbar */}
@@ -2285,6 +2297,25 @@ function WafacashTab() {
                   ))}
                 </div>
 
+                {/* Coupon Info */}
+                {p.coupon && (
+                  <div style={{ marginBottom: '1.5rem', background: '#e8f5e9', border: '1px solid #4caf50', borderRadius: '10px', padding: '1rem' }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#2e7d32', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
+                      🎟️ Coupon de réduction utilisé
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                      <div>
+                        <div style={{ fontSize: '0.75rem', color: '#2e7d32', marginBottom: '0.25rem' }}>Code</div>
+                        <div style={{ fontWeight: 600, color: '#1b5e20', fontFamily: 'monospace' }}>{p.coupon.code}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.75rem', color: '#2e7d32', marginBottom: '0.25rem' }}>Réduction</div>
+                        <div style={{ fontWeight: 600, color: '#1b5e20' }}>{p.coupon.discount}%</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Documents & Downloads Section */}
                 <div style={{ marginBottom: '1.5rem', background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1rem' }}>
                   <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.75rem' }}>
@@ -2728,6 +2759,25 @@ function TransferTab() {
                     </div>
                   ))}
                 </div>
+
+                {/* Coupon Info */}
+                {p.coupon && (
+                  <div style={{ marginBottom: '1.5rem', background: '#e8f5e9', border: '1px solid #4caf50', borderRadius: '10px', padding: '1rem' }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#2e7d32', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
+                      🎟️ Coupon de réduction utilisé
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                      <div>
+                        <div style={{ fontSize: '0.75rem', color: '#2e7d32', marginBottom: '0.25rem' }}>Code</div>
+                        <div style={{ fontWeight: 600, color: '#1b5e20', fontFamily: 'monospace' }}>{p.coupon.code}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.75rem', color: '#2e7d32', marginBottom: '0.25rem' }}>Réduction</div>
+                        <div style={{ fontWeight: 600, color: '#1b5e20' }}>{p.coupon.discount}%</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Documents & Downloads Section */}
                 <div style={{ marginBottom: '1.5rem', background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1rem' }}>
@@ -3437,7 +3487,7 @@ export default function AdminDashboard() {
     error: pendingKycError,
     refreshPendingKyc,
   } = usePendingKyc();
-  const { courses, loading: coursesLoading, error: coursesError, refreshCourses } = useAdminCourses();
+  const { courses, enrollments, loading: coursesLoading, error: coursesError, refreshCourses } = useAdminCourses();
   const { instructors, loading: instructorsLoading, error: instructorsError } = useAdminInstructors();
   const {
     categories,
@@ -3583,6 +3633,257 @@ export default function AdminDashboard() {
   });
   const [userFormLoading, setUserFormLoading] = useState(false);
   const [userFormError, setUserFormError] = useState(null);
+
+  const [selectedCouponForUsage, setSelectedCouponForUsage] = useState(null);
+  const [couponUsageLoading, setCouponUsageLoading] = useState(false);
+  const [couponUsageData, setCouponUsageData] = useState([]);
+
+  const [showGroupForm, setShowGroupForm] = useState(false);
+  const [editingGroup, setEditingGroup] = useState(null);
+  const [groupFormData, setGroupFormData] = useState({
+    name: '',
+    description: '',
+    courseId: '',
+    formateurId: '',
+  });
+  const [groupFormLoading, setGroupFormLoading] = useState(false);
+  const [groupFormError, setGroupFormError] = useState(null);
+
+  const [showGroupStudentsModal, setShowGroupStudentsModal] = useState(false);
+  const [selectedGroupForStudents, setSelectedGroupForStudents] = useState(null);
+  const [groupStudentsLoading, setGroupStudentsLoading] = useState(false);
+
+  const [showCouponForm, setShowCouponForm] = useState(false);
+  const [editingCoupon, setEditingCoupon] = useState(null);
+  const [couponFormData, setCouponFormData] = useState({
+    code: '',
+    discount: '',
+    expirationDate: '',
+    maxUsage: 100,
+    isActive: true,
+  });
+  const [couponFormLoading, setCouponFormLoading] = useState(false);
+  const [couponFormError, setCouponFormError] = useState(null);
+
+  const handleLoadCouponUsage = async (coupon) => {
+    setSelectedCouponForUsage(coupon);
+    setCouponUsageLoading(true);
+    setCouponUsageData([]);
+    try {
+      const response = await api.get(`/coupons/${coupon.id}/usage`);
+      const payments = response.data?.data?.payments || response.data?.payments || response.data || [];
+      setCouponUsageData(Array.isArray(payments) ? payments : []);
+    } catch (err) {
+      console.error('Failed to load coupon usage:', err);
+      setCouponUsageData([]);
+    } finally {
+      setCouponUsageLoading(false);
+    }
+  };
+
+  const handleCreateGroupClick = () => {
+    setEditingGroup(null);
+    setGroupFormData({ name: '', description: '', courseId: '', formateurId: '' });
+    setGroupFormError(null);
+    setShowGroupForm(true);
+  };
+
+  const handleEditGroupClick = (group) => {
+    setEditingGroup(group);
+    setGroupFormData({
+      name: group.name || '',
+      description: group.description || '',
+      courseId: group.courseId || '',
+      formateurId: group.formateurId || '',
+    });
+    setGroupFormError(null);
+    setShowGroupForm(true);
+  };
+
+  const handleGroupFormSubmit = async (e) => {
+    e.preventDefault();
+    setGroupFormLoading(true);
+    setGroupFormError(null);
+    try {
+      const payload = {
+        name: groupFormData.name.trim(),
+        description: groupFormData.description.trim(),
+        ...(groupFormData.courseId && { courseId: groupFormData.courseId }),
+        formateurId: groupFormData.formateurId,
+      };
+
+      if (editingGroup) {
+        await updateGroup(editingGroup.id, payload);
+        setUserActionMsg({ type: 'success', text: 'Groupe mis à jour avec succès.' });
+      } else {
+        await createGroup(payload);
+        setUserActionMsg({ type: 'success', text: 'Groupe créé avec succès.' });
+      }
+      await refetchGroups();
+      setShowGroupForm(false);
+    } catch (err) {
+      const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Erreur lors de l\'enregistrement du groupe.';
+      setGroupFormError(msg);
+    } finally {
+      setGroupFormLoading(false);
+    }
+  };
+
+  const handleAddStudentToGroup = async (groupId, userId) => {
+    try {
+      await addStudentToGroup(groupId, userId);
+      setUserActionMsg({ type: 'success', text: 'Étudiant ajouté au groupe avec succès.' });
+      await refetchGroups();
+    } catch (err) {
+      const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Impossible d\'ajouter l\'étudiant au groupe.';
+      setUserActionMsg({ type: 'error', text: msg });
+    }
+  };
+
+  const handleRemoveStudentFromGroup = async (groupId, userId) => {
+    try {
+      await removeStudentFromGroup(groupId, userId);
+      setUserActionMsg({ type: 'success', text: 'Étudiant retiré du groupe avec succès.' });
+      await refetchGroups();
+    } catch (err) {
+      const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Impossible de retirer l\'étudiant du groupe.';
+      setUserActionMsg({ type: 'error', text: msg });
+    }
+  };
+
+  const handleManageGroupStudents = async (group) => {
+    setSelectedGroupForStudents(group);
+    setGroupStudentsLoading(true);
+    try {
+      const response = await api.get(`/groups/${group.id}`);
+      setSelectedGroupForStudents(response.data?.data?.group || response.data?.group || group);
+    } catch (err) {
+      console.error('Failed to load group students:', err);
+    } finally {
+      setGroupStudentsLoading(false);
+    }
+    setShowGroupStudentsModal(true);
+  };
+
+  const getAvailableStudentsForGroup = () => {
+    if (!selectedGroupForStudents) return [];
+    
+    const allStudents = activeUsers.filter(u => u.role === 'student' || u.role === 'employee');
+    
+    // If group has a courseId, only show students enrolled in that course
+    if (selectedGroupForStudents.courseId) {
+      return allStudents.filter(student => {
+        return enrollments.some(enrollment =>
+          enrollment.userId === student.id && enrollment.courseId === selectedGroupForStudents.courseId
+        );
+      });
+    }
+    
+    // If no courseId, show all students
+    return allStudents;
+  };
+
+  const handleDeleteGroup = (groupId, groupName) => {
+    setAdminConfirmModal({
+      type: 'delete',
+      title: 'Supprimer le groupe',
+      description: `Êtes-vous sûr de vouloir supprimer le groupe "${groupName}" ? Cette action est irréversible.`,
+      icon: <Trash2 size={24} color="#dc2626" />,
+      btnColor: '#dc2626',
+      btnText: 'Oui, supprimer',
+      onConfirm: async () => {
+        setUserActionLoading(groupId);
+        setUserActionMsg(null);
+        try {
+          await deleteGroup(groupId);
+          setUserActionMsg({ type: 'success', text: `Le groupe "${groupName}" a été supprimé avec succès.` });
+          await refetchGroups();
+        } catch (err) {
+          const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Impossible de supprimer ce groupe.';
+          setUserActionMsg({ type: 'error', text: msg });
+        } finally {
+          setUserActionLoading(null);
+          setAdminConfirmModal(null);
+        }
+      },
+    });
+  };
+
+  const handleCreateCouponClick = () => {
+    setEditingCoupon(null);
+    setCouponFormData({ code: '', discount: '', expirationDate: '', maxUsage: 100, isActive: true });
+    setCouponFormError(null);
+    setShowCouponForm(true);
+  };
+
+  const handleEditCouponClick = (coupon) => {
+    setEditingCoupon(coupon);
+    setCouponFormData({
+      code: coupon.code || '',
+      discount: coupon.discount || '',
+      expirationDate: coupon.expirationDate ? coupon.expirationDate.split('T')[0] : '',
+      maxUsage: coupon.maxUsage || 100,
+      isActive: coupon.isActive !== undefined ? coupon.isActive : true,
+    });
+    setCouponFormError(null);
+    setShowCouponForm(true);
+  };
+
+  const handleCouponFormSubmit = async (e) => {
+    e.preventDefault();
+    setCouponFormLoading(true);
+    setCouponFormError(null);
+    try {
+      const payload = {
+        code: couponFormData.code.trim().toUpperCase(),
+        discount: parseFloat(couponFormData.discount),
+        expirationDate: new Date(couponFormData.expirationDate).toISOString(),
+        maxUsage: parseInt(couponFormData.maxUsage),
+        isActive: couponFormData.isActive,
+      };
+
+      if (editingCoupon) {
+        await updateCoupon(editingCoupon.id, payload);
+        setUserActionMsg({ type: 'success', text: 'Coupon mis à jour avec succès.' });
+      } else {
+        await createCoupon(payload);
+        setUserActionMsg({ type: 'success', text: 'Coupon créé avec succès.' });
+      }
+      await refreshCoupons();
+      setShowCouponForm(false);
+    } catch (err) {
+      const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Erreur lors de l\'enregistrement du coupon.';
+      setCouponFormError(msg);
+    } finally {
+      setCouponFormLoading(false);
+    }
+  };
+
+  const handleDeleteCoupon = (couponId, couponCode) => {
+    setAdminConfirmModal({
+      type: 'delete',
+      title: 'Supprimer le coupon',
+      description: `Êtes-vous sûr de vouloir supprimer le coupon "${couponCode}" ? Cette action est irréversible.`,
+      icon: <Trash2 size={24} color="#dc2626" />,
+      btnColor: '#dc2626',
+      btnText: 'Oui, supprimer',
+      onConfirm: async () => {
+        setUserActionLoading(couponId);
+        setUserActionMsg(null);
+        try {
+          await deleteCoupon(couponId);
+          setUserActionMsg({ type: 'success', text: `Le coupon "${couponCode}" a été supprimé avec succès.` });
+          await refreshCoupons();
+        } catch (err) {
+          const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Impossible de supprimer ce coupon.';
+          setUserActionMsg({ type: 'error', text: msg });
+        } finally {
+          setUserActionLoading(null);
+          setAdminConfirmModal(null);
+        }
+      },
+    });
+  };
 
   const handleVerifyUser = async (userId, role, isVerified = true) => {
     setUserActionLoading(userId);
@@ -3806,21 +4107,33 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteCategory = async (categoryId, categoryName) => {
-    const confirmed = window.confirm(`Supprimer la catégorie "${categoryName}" ?`);
-    if (!confirmed) return;
-
-    setCategoryActionError(null);
-    setCategorySuccess('');
-    try {
-      await deleteCategory(categoryId);
-      setCategorySuccess('Catégorie supprimée avec succès.');
-    } catch (err) {
-      setCategoryActionError(
-        err.response?.data?.error?.message ||
-          err.response?.data?.message ||
-          'Erreur lors de la suppression de la catégorie.'
-      );
-    }
+    setAdminConfirmModal({
+      type: 'delete',
+      title: 'Supprimer la catégorie',
+      description: `Êtes-vous sûr de vouloir supprimer la catégorie "${categoryName}" ? Cette action est irréversible et pourrait affecter les cours associés.`,
+      icon: <Trash2 size={24} color="#dc2626" />,
+      btnColor: '#dc2626',
+      btnText: 'Oui, supprimer',
+      onConfirm: async () => {
+        setUserActionLoading(categoryId);
+        setCategoryActionError(null);
+        setCategorySuccess('');
+        try {
+          await deleteCategory(categoryId);
+          setCategorySuccess('Catégorie supprimée avec succès.');
+          await refreshCategories();
+        } catch (err) {
+          setCategoryActionError(
+            err.response?.data?.error?.message ||
+              err.response?.data?.message ||
+              'Erreur lors de la suppression de la catégorie.'
+          );
+        } finally {
+          setUserActionLoading(null);
+          setAdminConfirmModal(null);
+        }
+      },
+    });
   };
 
   const handleOpenCreateCategoryDrawer = () => {
@@ -4773,7 +5086,7 @@ export default function AdminDashboard() {
                       </p>
                     </div>
                     <button
-                      onClick={() => {/* TODO: Open create group modal */}}
+                      onClick={handleCreateGroupClick}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -4824,12 +5137,14 @@ export default function AdminDashboard() {
                             </h3>
                             <div style={{ display: 'flex', gap: '0.35rem' }}>
                               <button
+                                onClick={() => handleEditGroupClick(group)}
                                 style={{ padding: '0.4rem', border: '1px solid var(--border-color)', borderRadius: '6px', background: '#fff', cursor: 'pointer' }}
                                 title="Modifier"
                               >
                                 <Pencil size={14} />
                               </button>
                               <button
+                                onClick={() => handleDeleteGroup(group.id, group.name)}
                                 style={{ padding: '0.4rem', border: '1px solid #f5c6cb', borderRadius: '6px', background: '#fff', color: 'var(--error-color)', cursor: 'pointer' }}
                                 title="Supprimer"
                               >
@@ -4842,7 +5157,7 @@ export default function AdminDashboard() {
                               {group.description}
                             </p>
                           )}
-                          <div style={{ display: 'flex', gap: '1rem', fontSize: '0.85rem', color: 'var(--secondary)' }}>
+                          <div style={{ display: 'flex', gap: '1rem', fontSize: '0.85rem', color: 'var(--secondary)', marginBottom: '0.75rem' }}>
                             <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                               <Users size={14} />
                               {group.studentCount || 0} étudiants
@@ -4854,6 +5169,22 @@ export default function AdminDashboard() {
                               </span>
                             )}
                           </div>
+                          <button
+                            onClick={() => handleManageGroupStudents(group)}
+                            style={{
+                              width: '100%',
+                              padding: '0.5rem',
+                              border: '1px solid var(--border-color)',
+                              borderRadius: '6px',
+                              background: '#fff',
+                              cursor: 'pointer',
+                              fontSize: '0.85rem',
+                              fontWeight: 600,
+                              color: 'var(--primary)',
+                            }}
+                          >
+                            Gérer les étudiants
+                          </button>
                         </div>
                       ))}
                     </div>
@@ -4871,7 +5202,7 @@ export default function AdminDashboard() {
                       </p>
                     </div>
                     <button
-                      onClick={() => {/* TODO: Open create coupon modal */}}
+                      onClick={handleCreateCouponClick}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -4922,17 +5253,19 @@ export default function AdminDashboard() {
                                 {coupon.code}
                               </h3>
                               <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--primary)' }}>
-                                {coupon.discountType === 'percentage' ? `${coupon.discountValue}%` : `${coupon.discountValue} MAD`}
+                                {coupon.discount}% de réduction
                               </span>
                             </div>
                             <div style={{ display: 'flex', gap: '0.35rem' }}>
                               <button
+                                onClick={() => handleEditCouponClick(coupon)}
                                 style={{ padding: '0.4rem', border: '1px solid var(--border-color)', borderRadius: '6px', background: '#fff', cursor: 'pointer' }}
                                 title="Modifier"
                               >
                                 <Pencil size={14} />
                               </button>
                               <button
+                                onClick={() => handleDeleteCoupon(coupon.id, coupon.code)}
                                 style={{ padding: '0.4rem', border: '1px solid #f5c6cb', borderRadius: '6px', background: '#fff', color: 'var(--error-color)', cursor: 'pointer' }}
                                 title="Supprimer"
                               >
@@ -4940,12 +5273,33 @@ export default function AdminDashboard() {
                               </button>
                             </div>
                           </div>
-                          <div style={{ display: 'flex', gap: '1rem', fontSize: '0.85rem', color: 'var(--secondary)' }}>
-                            <span>Utilisations: {coupon.usedCount || 0}/{coupon.maxUses || '∞'}</span>
-                            {coupon.expiresAt && (
-                              <span>Expire: {new Date(coupon.expiresAt).toLocaleDateString('fr-FR')}</span>
-                            )}
+                          <div style={{ display: 'flex', gap: '1rem', fontSize: '0.85rem', color: 'var(--secondary)', marginBottom: '0.75rem' }}>
+                            <span>Utilisations: {coupon.currentUsage || 0}/{coupon.maxUsage || '∞'}</span>
+                            <span>Expire: {new Date(coupon.expirationDate).toLocaleDateString('fr-FR')}</span>
                           </div>
+                          {(coupon.currentUsage || 0) > 0 && (
+                            <button
+                              onClick={() => handleLoadCouponUsage(coupon)}
+                              style={{
+                                width: '100%',
+                                padding: '0.5rem',
+                                background: '#e8f5e9',
+                                color: '#2e7d32',
+                                border: '1px solid #c8e6c9',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                fontWeight: 600,
+                                fontSize: '0.85rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.35rem',
+                              }}
+                            >
+                              <Users size={14} />
+                              Voir les utilisateurs ({coupon.currentUsage || 0})
+                            </button>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -5087,6 +5441,554 @@ export default function AdminDashboard() {
         saveLoading={categoryDrawerLoading}
         saveError={categoryDrawerError}
       />
+
+      {/* Create / Edit Group Modal */}
+      {showGroupForm && createPortal(
+        <div
+          onClick={() => setShowGroupForm(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.55)',
+            backdropFilter: 'blur(6px)',
+            zIndex: 99999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.5rem',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#fff',
+              borderRadius: '16px',
+              maxWidth: '500px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.35)',
+            }}
+          >
+            <div
+              style={{
+                padding: '1.5rem',
+                borderBottom: '1px solid var(--border-color)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <h3 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700 }}>
+                {editingGroup ? 'Modifier le groupe' : 'Nouveau groupe'}
+              </h3>
+              <button
+                onClick={() => setShowGroupForm(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--secondary)' }}
+              >
+                <X size={22} />
+              </button>
+            </div>
+
+            <form onSubmit={handleGroupFormSubmit} style={{ padding: '1.5rem', overflowY: 'auto', flex: 1 }}>
+              {groupFormError && (
+                <div style={{ color: '#721c24', background: '#f8d7da', border: '1px solid #f5c6cb', padding: '0.75rem 1rem', borderRadius: '8px', marginBottom: '1rem' }}>
+                  {groupFormError}
+                </div>
+              )}
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.4rem' }}>
+                  Nom du groupe *
+                </label>
+                <input
+                  type="text"
+                  value={groupFormData.name}
+                  onChange={(e) => setGroupFormData({ ...groupFormData, name: e.target.value })}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem 0.8rem',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                    fontSize: '0.9rem',
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.4rem' }}>
+                  Description
+                </label>
+                <textarea
+                  value={groupFormData.description}
+                  onChange={(e) => setGroupFormData({ ...groupFormData, description: e.target.value })}
+                  rows={3}
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem 0.8rem',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                    fontSize: '0.9rem',
+                    resize: 'vertical',
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.4rem' }}>
+                  Formateur *
+                </label>
+                <select
+                  value={groupFormData.formateurId}
+                  onChange={(e) => setGroupFormData({ ...groupFormData, formateurId: e.target.value })}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem 0.8rem',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                    fontSize: '0.9rem',
+                  }}
+                >
+                  <option value="">Sélectionner un formateur</option>
+                  {instructors.map((instructor) => (
+                    <option key={instructor.id} value={instructor.id}>
+                      {instructor.firstName} {instructor.lastName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.4rem' }}>
+                  Cours (optionnel)
+                </label>
+                <select
+                  value={groupFormData.courseId}
+                  onChange={(e) => setGroupFormData({ ...groupFormData, courseId: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem 0.8rem',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                    fontSize: '0.9rem',
+                  }}
+                >
+                  <option value="">Sélectionner un cours</option>
+                  {courses.map((course) => (
+                    <option key={course.id} value={course.id}>
+                      {course.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowGroupForm(false)}
+                  style={{
+                    padding: '0.6rem 1.2rem',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                    background: '#fff',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    color: 'var(--secondary)',
+                  }}
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={groupFormLoading}
+                  style={{
+                    padding: '0.6rem 1.2rem',
+                    border: 'none',
+                    borderRadius: '8px',
+                    background: 'var(--primary)',
+                    color: '#fff',
+                    cursor: groupFormLoading ? 'not-allowed' : 'pointer',
+                    fontWeight: 600,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                  }}
+                >
+                  {groupFormLoading && <Loader size={16} className="spin" />}
+                  {groupFormLoading ? 'Enregistrement...' : editingGroup ? 'Mettre à jour' : 'Créer'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Create / Edit Coupon Modal */}
+      {showCouponForm && createPortal(
+        <div
+          onClick={() => setShowCouponForm(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.55)',
+            backdropFilter: 'blur(6px)',
+            zIndex: 99999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.5rem',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#fff',
+              borderRadius: '16px',
+              maxWidth: '500px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.35)',
+            }}
+          >
+            <div
+              style={{
+                padding: '1.5rem',
+                borderBottom: '1px solid var(--border-color)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <h3 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700 }}>
+                {editingCoupon ? 'Modifier le coupon' : 'Nouveau coupon'}
+              </h3>
+              <button
+                onClick={() => setShowCouponForm(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--secondary)' }}
+              >
+                <X size={22} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCouponFormSubmit} style={{ padding: '1.5rem', overflowY: 'auto', flex: 1 }}>
+              {couponFormError && (
+                <div style={{ color: '#721c24', background: '#f8d7da', border: '1px solid #f5c6cb', padding: '0.75rem 1rem', borderRadius: '8px', marginBottom: '1rem' }}>
+                  {couponFormError}
+                </div>
+              )}
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.4rem' }}>
+                  Code du coupon *
+                </label>
+                <input
+                  type="text"
+                  value={couponFormData.code}
+                  onChange={(e) => setCouponFormData({ ...couponFormData, code: e.target.value.toUpperCase() })}
+                  required
+                  placeholder="EX: PROMO20"
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem 0.8rem',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                    fontSize: '0.9rem',
+                    textTransform: 'uppercase',
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.4rem' }}>
+                  Réduction (%) *
+                </label>
+                <input
+                  type="number"
+                  value={couponFormData.discount}
+                  onChange={(e) => setCouponFormData({ ...couponFormData, discount: e.target.value })}
+                  required
+                  min="1"
+                  max="100"
+                  placeholder="EX: 20"
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem 0.8rem',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                    fontSize: '0.9rem',
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.4rem' }}>
+                  Date d'expiration *
+                </label>
+                <input
+                  type="date"
+                  value={couponFormData.expirationDate}
+                  onChange={(e) => setCouponFormData({ ...couponFormData, expirationDate: e.target.value })}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem 0.8rem',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                    fontSize: '0.9rem',
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.4rem' }}>
+                  Utilisations maximales
+                </label>
+                <input
+                  type="number"
+                  value={couponFormData.maxUsage}
+                  onChange={(e) => setCouponFormData({ ...couponFormData, maxUsage: e.target.value })}
+                  min="1"
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem 0.8rem',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                    fontSize: '0.9rem',
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.4rem' }}>
+                  <input
+                    type="checkbox"
+                    checked={couponFormData.isActive}
+                    onChange={(e) => setCouponFormData({ ...couponFormData, isActive: e.target.checked })}
+                    style={{ width: '16px', height: '16px' }}
+                  />
+                  Coupon actif
+                </label>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowCouponForm(false)}
+                  style={{
+                    padding: '0.6rem 1.2rem',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                    background: '#fff',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    color: 'var(--secondary)',
+                  }}
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={couponFormLoading}
+                  style={{
+                    padding: '0.6rem 1.2rem',
+                    border: 'none',
+                    borderRadius: '8px',
+                    background: 'var(--primary)',
+                    color: '#fff',
+                    cursor: couponFormLoading ? 'not-allowed' : 'pointer',
+                    fontWeight: 600,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                  }}
+                >
+                  {couponFormLoading && <Loader size={16} className="spin" />}
+                  {couponFormLoading ? 'Enregistrement...' : editingCoupon ? 'Mettre à jour' : 'Créer'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Manage Group Students Modal */}
+      {showGroupStudentsModal && selectedGroupForStudents && createPortal(
+        <div
+          onClick={() => setShowGroupStudentsModal(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.55)',
+            backdropFilter: 'blur(6px)',
+            zIndex: 99999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.5rem',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#fff',
+              borderRadius: '16px',
+              maxWidth: '600px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.35)',
+            }}
+          >
+            <div
+              style={{
+                padding: '1.5rem',
+                borderBottom: '1px solid var(--border-color)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <h3 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700 }}>
+                Étudiants du groupe "{selectedGroupForStudents.name}"
+              </h3>
+              <button
+                onClick={() => setShowGroupStudentsModal(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--secondary)' }}
+              >
+                <X size={22} />
+              </button>
+            </div>
+
+            <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1 }}>
+              {groupStudentsLoading ? (
+                <LoadingSpinner />
+              ) : (
+                <>
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.4rem' }}>
+                      Ajouter un étudiant
+                      {selectedGroupForStudents.course && (
+                        <span style={{ fontWeight: 400, color: 'var(--secondary)', marginLeft: '0.5rem' }}>
+                          (inscrits au cours "{selectedGroupForStudents.course.title}")
+                        </span>
+                      )}
+                    </label>
+                    <select
+                      id="add-student-select"
+                      style={{
+                        width: '100%',
+                        padding: '0.6rem 0.8rem',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '8px',
+                        fontSize: '0.9rem',
+                        marginBottom: '0.5rem',
+                      }}
+                    >
+                      <option value="">Sélectionner un étudiant</option>
+                      {getAvailableStudentsForGroup().map((user) => (
+                        <option key={user.id} value={user.id}>
+                          {user.firstName} {user.lastName} ({user.email})
+                        </option>
+                      ))}
+                    </select>
+                    {selectedGroupForStudents.course && getAvailableStudentsForGroup().length === 0 && (
+                      <p style={{ fontSize: '0.8rem', color: 'var(--secondary)', marginTop: '0.5rem' }}>
+                        Aucun étudiant inscrit à ce cours disponible
+                      </p>
+                    )}
+                    <button
+                      onClick={() => {
+                        const select = document.getElementById('add-student-select');
+                        const userId = select?.value;
+                        if (userId) {
+                          handleAddStudentToGroup(selectedGroupForStudents.id, userId);
+                          select.value = '';
+                        }
+                      }}
+                      style={{
+                        padding: '0.5rem 1rem',
+                        border: 'none',
+                        borderRadius: '6px',
+                        background: 'var(--primary)',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        fontWeight: 600,
+                        fontSize: '0.85rem',
+                      }}
+                    >
+                      Ajouter
+                    </button>
+                  </div>
+
+                  <div>
+                    <h4 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>
+                      Étudiants dans le groupe ({selectedGroupForStudents.students?.length || 0})
+                    </h4>
+                    {selectedGroupForStudents.students && selectedGroupForStudents.students.length > 0 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        {selectedGroupForStudents.students.map((membership) => (
+                          <div
+                            key={membership.id}
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              padding: '0.75rem 1rem',
+                              border: '1px solid var(--border-color)',
+                              borderRadius: '8px',
+                              background: '#fff',
+                            }}
+                          >
+                            <div>
+                              <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                                {membership.user.firstName} {membership.user.lastName}
+                              </div>
+                              <div style={{ fontSize: '0.8rem', color: 'var(--secondary)' }}>
+                                {membership.user.email}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => handleRemoveStudentFromGroup(selectedGroupForStudents.id, membership.user.id)}
+                              style={{
+                                padding: '0.4rem 0.8rem',
+                                border: '1px solid #f5c6cb',
+                                borderRadius: '6px',
+                                background: '#fff',
+                                color: 'var(--error-color)',
+                                cursor: 'pointer',
+                                fontSize: '0.85rem',
+                                fontWeight: 600,
+                              }}
+                            >
+                              Retirer
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--secondary)' }}>
+                        Aucun étudiant dans ce groupe
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

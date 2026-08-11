@@ -11,7 +11,7 @@ export function useCoupons() {
     setError(null);
     try {
       const response = await api.get('/coupons');
-      setCoupons(response.data?.data || response.data || []);
+      setCoupons(response.data?.data?.coupons || response.data?.coupons || []);
     } catch (err) {
       setError('Failed to load coupons');
       console.error('Coupons error:', err);

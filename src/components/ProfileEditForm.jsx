@@ -15,12 +15,14 @@ export default function ProfileEditForm() {
     avatar: user?.avatar || '',
     bio: user?.bio || '',
     phone: user?.phone || '',
-    ...(user?.role === 'student' ? {
+    ...(user?.role === 'student' || user?.role === 'employee' ? {
       school: user?.studentProfile?.school || '',
       fieldOfStudy: user?.studentProfile?.fieldOfStudy || '',
       educationLevel: user?.studentProfile?.educationLevel || '',
       academicYear: user?.studentProfile?.academicYear || '',
       group: user?.studentProfile?.group || '',
+      isSelfDirected: user?.studentProfile?.isSelfDirected || false,
+      customEducationLevel: (!['Niveau lycée', 'Bac', 'Bac+1', 'Bac+2', 'Bac+3', 'Bac+4', 'Bac+5'].includes(user?.studentProfile?.educationLevel)) ? user?.studentProfile?.educationLevel || '' : '',
     } : user?.role === 'instructor' ? {
       specialization: user?.instructorProfile?.specialization || '',
       organization: user?.instructorProfile?.organization || '',
@@ -60,12 +62,14 @@ export default function ProfileEditForm() {
       avatar: user?.avatar || '',
       bio: user?.bio || '',
       phone: user?.phone || '',
-      ...(user?.role === 'student' ? {
+      ...(user?.role === 'student' || user?.role === 'employee' ? {
         school: user?.studentProfile?.school || '',
         fieldOfStudy: user?.studentProfile?.fieldOfStudy || '',
         educationLevel: user?.studentProfile?.educationLevel || '',
         academicYear: user?.studentProfile?.academicYear || '',
         group: user?.studentProfile?.group || '',
+        isSelfDirected: user?.studentProfile?.isSelfDirected || false,
+        customEducationLevel: (!['Niveau lycée', 'Bac', 'Bac+1', 'Bac+2', 'Bac+3', 'Bac+4', 'Bac+5'].includes(user?.studentProfile?.educationLevel)) ? user?.studentProfile?.educationLevel || '' : '',
       } : user?.role === 'instructor' ? {
         specialization: user?.instructorProfile?.specialization || '',
         organization: user?.instructorProfile?.organization || '',
@@ -205,12 +209,13 @@ export default function ProfileEditForm() {
         avatar: formData.avatar || null,
         bio: formData.bio || null,
         phone: formData.phone || null,
-        ...(user?.role === 'student' ? {
+        ...(user?.role === 'student' || user?.role === 'employee' ? {
           school: formData.school,
           fieldOfStudy: formData.fieldOfStudy,
-          educationLevel: formData.educationLevel,
+          educationLevel: formData.customEducationLevel || formData.educationLevel,
           academicYear: formData.academicYear,
           group: formData.group,
+          isSelfDirected: formData.isSelfDirected,
         } : user?.role === 'instructor' ? {
           specialization: formData.specialization,
           organization: formData.organization,
@@ -229,424 +234,282 @@ export default function ProfileEditForm() {
   };
 
   return (
-    <div
-      style={{
-        background: 'var(--surface-color, #ffffff)',
-        padding: '2.5rem',
-        borderRadius: '20px',
-        border: '1px solid var(--border-color, #e2e8f0)',
-        boxShadow: 'var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1))',
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-        <h2 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--text-color, #1e293b)', margin: 0 }}>
-          Détails personnels
-        </h2>
-        {!isEditing ? (
-          <button
-            onClick={handleEdit}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              padding: '0.6rem 1.2rem',
-              background: 'var(--primary, #4f46e5)',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '10px',
-              cursor: 'pointer',
-              fontWeight: 600,
-              fontSize: '0.9rem',
-            }}
-          >
-            <Edit2 size={16} />
-            Modifier
-          </button>
-        ) : (
-          <button
-            onClick={handleCancel}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              padding: '0.6rem 1.2rem',
-              background: 'transparent',
-              color: 'var(--secondary, #64748b)',
-              border: '1px solid var(--border-color, #cbd5e1)',
-              borderRadius: '10px',
-              cursor: 'pointer',
-              fontWeight: 600,
-              fontSize: '0.9rem',
-            }}
-          >
-            <X size={16} />
-            Annuler
-          </button>
-        )}
-      </div>
-      <p style={{ color: 'var(--secondary, #64748b)', marginBottom: '2rem', fontSize: '0.95rem' }}>
-        {isEditing ? 'Modifiez vos informations ci-dessous.' : 'Consultez vos informations personnelles.'}
-      </p>
-
-      <form onSubmit={handleSubmit} noValidate>
-        {/* Modern Image Upload Dropzone */}
-        <div style={{ marginBottom: '2.5rem' }}>
-          <label
-            style={{
-              display: 'block',
-              fontSize: '0.9rem',
-              fontWeight: 600,
-              color: 'var(--text-color, #1e293b)',
-              marginBottom: '0.75rem',
-            }}
-          >
-            Photo de profil
-          </label>
-
-          <div
-            onDragOver={(e) => {
-              e.preventDefault();
-              setIsDragOver(true);
-            }}
-            onDragLeave={() => setIsDragOver(false)}
-            onDrop={handleDrop}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '1.5rem',
-              padding: '1.5rem',
-              borderRadius: '16px',
-              border: `2px dashed ${isDragOver ? 'var(--primary, #4f46e5)' : 'var(--border-color, #cbd5e1)'}`,
-              background: isDragOver ? 'rgba(79, 70, 229, 0.05)' : 'var(--bg-color, #f8fafc)',
-              transition: 'all 0.2s ease',
-              flexWrap: 'wrap',
-            }}
-          >
-            {/* Avatar Preview */}
-            <div style={{ position: 'relative', flexShrink: 0 }}>
+    <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+      {/* Header with Avatar and Basic Info */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, var(--primary, #4f46e5) 0%, var(--accent, #818cf8) 100%)',
+          borderRadius: '20px',
+          padding: '2.5rem',
+          marginBottom: '2rem',
+          color: '#ffffff',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: 1 }}>
+            <div style={{ position: 'relative' }}>
               {formData.avatar ? (
                 <img
                   src={formData.avatar}
                   alt={`Photo de profil de ${formData.firstName}`}
                   style={{
-                    width: '96px',
-                    height: '96px',
+                    width: '100px',
+                    height: '100px',
                     borderRadius: '50%',
                     objectFit: 'cover',
-                    border: '3px solid var(--surface-color, #ffffff)',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                    border: '4px solid rgba(255,255,255,0.3)',
                   }}
                   onError={(e) => {
-                    e.currentTarget.src =
-                      'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
+                    e.currentTarget.src = 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
                   }}
                 />
               ) : (
                 <div
                   style={{
-                    width: '96px',
-                    height: '96px',
+                    width: '100px',
+                    height: '100px',
                     borderRadius: '50%',
-                    background: 'linear-gradient(135deg, var(--primary, #4f46e5) 0%, var(--accent, #818cf8) 100%)',
+                    background: 'rgba(255,255,255,0.2)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#ffffff',
-                    fontSize: '2.25rem',
+                    fontSize: '2.5rem',
                     fontWeight: 700,
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                    border: '4px solid rgba(255,255,255,0.3)',
                   }}
                 >
                   {formData.firstName ? formData.firstName.charAt(0).toUpperCase() : '?'}
                 </div>
               )}
-
-              {uploading && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    borderRadius: '50%',
-                    background: 'rgba(15, 23, 42, 0.7)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#fff',
-                    fontWeight: 700,
-                    fontSize: '0.85rem',
-                  }}
-                >
-                  {uploadProgress}%
-                </div>
-              )}
-            </div>
-
-            {/* Dropzone Instructions & File Trigger Button */}
-            <div style={{ flex: 1, minWidth: '220px' }}>
-              <h4 style={{ margin: '0 0 0.25rem 0', fontSize: '1rem', fontWeight: 600, color: 'var(--text-color, #1e293b)' }}>
-                Importer une nouvelle photo
-              </h4>
-              <p style={{ margin: '0 0 1rem 0', fontSize: '0.85rem', color: 'var(--secondary, #64748b)' }}>
-                Glissez-déposez une image ici ou cliquez pour choisir un fichier. PNG, JPG, GIF jusqu'à 5MB.
-              </p>
-
-              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                <input
-                  ref={fileInputRef}
-                  id="avatar-file-input"
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleFileUpload(e.target.files?.[0])}
-                  disabled={uploading}
-                  style={{ display: 'none' }}
-                />
-
+              {isEditing && (
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
                   style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    padding: '0.6rem 1.2rem',
-                    borderRadius: '10px',
-                    background: 'var(--primary, #4f46e5)',
-                    color: '#ffffff',
+                    position: 'absolute',
+                    bottom: '0',
+                    right: '0',
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    background: '#ffffff',
                     border: 'none',
-                    fontWeight: 600,
-                    fontSize: '0.88rem',
                     cursor: 'pointer',
-                    transition: 'opacity 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
                   }}
                 >
-                  <UploadCloud size={18} />
-                  {uploading ? 'Téléversement...' : 'Uploader une photo'}
+                  <Camera size={16} style={{ color: 'var(--primary)' }} />
                 </button>
-
-                {formData.avatar && (
-                  <button
-                    type="button"
-                    onClick={() => setFormData((prev) => ({ ...prev, avatar: '' }))}
-                    disabled={uploading}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.4rem',
-                      padding: '0.6rem 1rem',
-                      borderRadius: '10px',
-                      background: 'transparent',
-                      color: 'var(--error-color, #ef4444)',
-                      border: '1px solid var(--error-color, #ef4444)',
-                      fontWeight: 500,
-                      fontSize: '0.88rem',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <Trash2 size={16} />
-                    Supprimer
-                  </button>
-                )}
-              </div>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleFileUpload(e.target.files?.[0])}
+                disabled={uploading}
+                style={{ display: 'none' }}
+              />
+            </div>
+            <div>
+              <h1 style={{ fontSize: '2rem', fontWeight: 700, margin: '0 0 0.5rem 0' }}>
+                {formData.firstName} {formData.lastName}
+              </h1>
+              <p style={{ margin: 0, opacity: 0.9, fontSize: '1rem' }}>
+                {user?.role === 'student' ? '🎓 Étudiant' : user?.role === 'instructor' ? '👨‍🏫 Instructeur' : user?.role === 'employee' ? '💼 Employé' : 'Utilisateur'}
+              </p>
+              <p style={{ margin: '0.25rem 0 0 0', opacity: 0.8, fontSize: '0.9rem' }}>
+                {user?.email}
+              </p>
             </div>
           </div>
-        </div>
-
-        {/* Inputs Form */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
-          {/* Prénom */}
-          <div>
-            <label
-              htmlFor="profile-firstName"
-              style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}
+          {!isEditing ? (
+            <button
+              onClick={handleEdit}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.75rem 1.5rem',
+                background: 'rgba(255,255,255,0.2)',
+                color: '#ffffff',
+                border: '1px solid rgba(255,255,255,0.3)',
+                borderRadius: '10px',
+                cursor: 'pointer',
+                fontWeight: 600,
+                fontSize: '0.9rem',
+                backdropFilter: 'blur(10px)',
+              }}
             >
-              Prénom <span style={{ color: 'var(--error-color)' }}>*</span>
-            </label>
-            <div style={{ position: 'relative' }}>
-              <User
-                size={18}
+              <Edit2 size={16} />
+              Modifier le profil
+            </button>
+          ) : (
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                onClick={handleCancel}
                 style={{
-                  position: 'absolute',
-                  left: '14px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: errors.firstName ? 'var(--error-color)' : 'var(--secondary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.75rem 1.5rem',
+                  background: 'rgba(255,255,255,0.1)',
+                  color: '#ffffff',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '0.9rem',
                 }}
-              />
+              >
+                <X size={16} />
+                Annuler
+              </button>
+              <button
+                type="submit"
+                form="profile-form"
+                disabled={loading}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.75rem 1.5rem',
+                  background: '#ffffff',
+                  color: 'var(--primary)',
+                  border: 'none',
+                  borderRadius: '10px',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  fontWeight: 600,
+                  fontSize: '0.9rem',
+                }}
+              >
+                <Save size={16} />
+                {loading ? 'Enregistrement...' : 'Enregistrer'}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} noValidate id="profile-form">
+        {/* Personal Information Card */}
+        <div
+          style={{
+            background: 'var(--surface-color, #ffffff)',
+            borderRadius: '16px',
+            padding: '2rem',
+            marginBottom: '1.5rem',
+            border: '1px solid var(--border-color, #e2e8f0)',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+          }}
+        >
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <User size={20} style={{ color: 'var(--primary)' }} />
+            Informations personnelles
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
+                Prénom
+              </label>
               <input
                 type="text"
-                id="profile-firstName"
                 name="firstName"
                 value={formData.firstName}
                 onChange={handleChange}
-                onBlur={(e) => validateField('firstName', e.target.value)}
-                placeholder="Votre prénom"
                 disabled={!isEditing}
                 style={{
                   width: '100%',
-                  padding: '12px 14px 12px 42px',
-                  borderRadius: '10px',
-                  border: `1px solid ${errors.firstName ? 'var(--error-color, #ef4444)' : 'var(--border-color, #cbd5e1)'}`,
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  border: `1px solid ${errors.firstName ? 'var(--error-color)' : 'var(--border-color, #e2e8f0)'}`,
                   outline: 'none',
-                  background: isEditing ? 'var(--bg-color, #f8fafc)' : 'var(--bg-color, #f1f5f9)',
+                  background: isEditing ? '#ffffff' : 'var(--bg-color, #f8fafc)',
                   fontSize: '0.95rem',
                   color: 'var(--text-color)',
                   cursor: isEditing ? 'text' : 'not-allowed',
                 }}
               />
+              {errors.firstName && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', color: 'var(--error-color)', marginTop: '0.35rem' }}>
+                  <AlertCircle size={14} /> {errors.firstName}
+                </span>
+              )}
             </div>
-            {errors.firstName && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', color: 'var(--error-color)', marginTop: '0.35rem' }}>
-                <AlertCircle size={14} /> {errors.firstName}
-              </span>
-            )}
-          </div>
-
-          {/* Nom */}
-          <div>
-            <label
-              htmlFor="profile-lastName"
-              style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}
-            >
-              Nom <span style={{ color: 'var(--error-color)' }}>*</span>
-            </label>
-            <div style={{ position: 'relative' }}>
-              <User
-                size={18}
-                style={{
-                  position: 'absolute',
-                  left: '14px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: errors.lastName ? 'var(--error-color)' : 'var(--secondary)',
-                }}
-              />
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
+                Nom
+              </label>
               <input
                 type="text"
-                id="profile-lastName"
                 name="lastName"
                 value={formData.lastName}
                 onChange={handleChange}
-                onBlur={(e) => validateField('lastName', e.target.value)}
-                placeholder="Votre nom"
                 disabled={!isEditing}
                 style={{
                   width: '100%',
-                  padding: '12px 14px 12px 42px',
-                  borderRadius: '10px',
-                  border: `1px solid ${errors.lastName ? 'var(--error-color, #ef4444)' : 'var(--border-color, #cbd5e1)'}`,
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  border: `1px solid ${errors.lastName ? 'var(--error-color)' : 'var(--border-color, #e2e8f0)'}`,
                   outline: 'none',
-                  background: isEditing ? 'var(--bg-color, #f8fafc)' : 'var(--bg-color, #f1f5f9)',
+                  background: isEditing ? '#ffffff' : 'var(--bg-color, #f8fafc)',
+                  fontSize: '0.95rem',
+                  color: 'var(--text-color)',
+                  cursor: isEditing ? 'text' : 'not-allowed',
+                }}
+              />
+              {errors.lastName && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', color: 'var(--error-color)', marginTop: '0.35rem' }}>
+                  <AlertCircle size={14} /> {errors.lastName}
+                </span>
+              )}
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
+                Téléphone
+              </label>
+              <input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="+212 6XX XXX XXX"
+                disabled={!isEditing}
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color, #e2e8f0)',
+                  outline: 'none',
+                  background: isEditing ? '#ffffff' : 'var(--bg-color, #f8fafc)',
                   fontSize: '0.95rem',
                   color: 'var(--text-color)',
                   cursor: isEditing ? 'text' : 'not-allowed',
                 }}
               />
             </div>
-            {errors.lastName && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', color: 'var(--error-color)', marginTop: '0.35rem' }}>
-                <AlertCircle size={14} /> {errors.lastName}
-              </span>
-            )}
           </div>
-        </div>
 
-        {/* Email */}
-        <div style={{ marginTop: '1.5rem' }}>
-          <label
-            htmlFor="profile-email"
-            style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}
-          >
-            Adresse Email (Non modifiable)
-          </label>
-          <div style={{ position: 'relative' }}>
-            <Mail
-              size={18}
-              style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--secondary)' }}
-            />
-            <input
-              type="email"
-              id="profile-email"
-              value={user?.email || ''}
-              disabled
-              style={{
-                width: '100%',
-                padding: '12px 14px 12px 42px',
-                borderRadius: '10px',
-                border: '1px solid var(--border-color, #e2e8f0)',
-                background: 'var(--bg-color, #f1f5f9)',
-                color: 'var(--secondary, #64748b)',
-                fontSize: '0.95rem',
-                cursor: 'not-allowed',
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Phone */}
-        <div style={{ marginTop: '1.5rem' }}>
-          <label
-            htmlFor="profile-phone"
-            style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}
-          >
-            Téléphone
-          </label>
-          <div style={{ position: 'relative' }}>
-            <Phone
-              size={18}
-              style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--secondary)' }}
-            />
-            <input
-              type="tel"
-              id="profile-phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              placeholder="+212 6XX XXX XXX"
-              disabled={!isEditing}
-              style={{
-                width: '100%',
-                padding: '12px 14px 12px 42px',
-                borderRadius: '10px',
-                border: '1px solid var(--border-color, #cbd5e1)',
-                outline: 'none',
-                background: isEditing ? 'var(--bg-color, #f8fafc)' : 'var(--bg-color, #f1f5f9)',
-                fontSize: '0.95rem',
-                color: 'var(--text-color)',
-                cursor: isEditing ? 'text' : 'not-allowed',
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Bio */}
-        <div style={{ marginTop: '1.5rem' }}>
-          <label
-            htmlFor="profile-bio"
-            style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}
-          >
-            Biographie
-          </label>
-          <div style={{ position: 'relative' }}>
-            <FileText
-              size={18}
-              style={{ position: 'absolute', left: '14px', top: '16px', color: 'var(--secondary)' }}
-            />
+          <div style={{ marginTop: '1.5rem' }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
+              Biographie
+            </label>
             <textarea
-              id="profile-bio"
               name="bio"
               value={formData.bio}
               onChange={handleChange}
-              rows={4}
+              rows={3}
               placeholder="Racontez-nous brièvement votre parcours..."
               disabled={!isEditing}
               style={{
                 width: '100%',
-                padding: '12px 14px 12px 42px',
-                borderRadius: '10px',
-                border: '1px solid var(--border-color, #cbd5e1)',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color, #e2e8f0)',
                 outline: 'none',
-                background: isEditing ? 'var(--bg-color, #f8fafc)' : 'var(--bg-color, #f1f5f9)',
+                background: isEditing ? '#ffffff' : 'var(--bg-color, #f8fafc)',
                 fontSize: '0.95rem',
                 color: 'var(--text-color)',
                 resize: 'vertical',
@@ -657,13 +520,22 @@ export default function ProfileEditForm() {
         </div>
 
         {/* Role-specific fields */}
-        {user?.role === 'student' && (
-          <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'var(--bg-color, #f8fafc)', borderRadius: '12px', border: '1px solid var(--border-color, #e2e8f0)' }}>
-            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem', fontWeight: 700, color: 'var(--text-color)', marginBottom: '1.5rem' }}>
-              <GraduationCap size={20} />
+        {(user?.role === 'student' || user?.role === 'employee') && (
+          <div
+            style={{
+              background: 'var(--surface-color, #ffffff)',
+              borderRadius: '16px',
+              padding: '2rem',
+              marginBottom: '1.5rem',
+              border: '1px solid var(--border-color, #e2e8f0)',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+            }}
+          >
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <GraduationCap size={20} style={{ color: 'var(--primary)' }} />
               Informations académiques
             </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
                   École / Université
@@ -677,12 +549,12 @@ export default function ProfileEditForm() {
                   disabled={!isEditing}
                   style={{
                     width: '100%',
-                    padding: '10px 12px',
+                    padding: '10px 14px',
                     borderRadius: '8px',
-                    border: '1px solid var(--border-color, #cbd5e1)',
+                    border: '1px solid var(--border-color, #e2e8f0)',
                     outline: 'none',
-                    background: isEditing ? '#fff' : 'var(--bg-color, #f1f5f9)',
-                    fontSize: '0.9rem',
+                    background: isEditing ? '#ffffff' : 'var(--bg-color, #f8fafc)',
+                    fontSize: '0.95rem',
                     color: 'var(--text-color)',
                     cursor: isEditing ? 'text' : 'not-allowed',
                   }}
@@ -701,12 +573,12 @@ export default function ProfileEditForm() {
                   disabled={!isEditing}
                   style={{
                     width: '100%',
-                    padding: '10px 12px',
+                    padding: '10px 14px',
                     borderRadius: '8px',
-                    border: '1px solid var(--border-color, #cbd5e1)',
+                    border: '1px solid var(--border-color, #e2e8f0)',
                     outline: 'none',
-                    background: isEditing ? '#fff' : 'var(--bg-color, #f1f5f9)',
-                    fontSize: '0.9rem',
+                    background: isEditing ? '#ffffff' : 'var(--bg-color, #f8fafc)',
+                    fontSize: '0.95rem',
                     color: 'var(--text-color)',
                     cursor: isEditing ? 'text' : 'not-allowed',
                   }}
@@ -723,24 +595,53 @@ export default function ProfileEditForm() {
                   disabled={!isEditing}
                   style={{
                     width: '100%',
-                    padding: '10px 12px',
+                    padding: '10px 14px',
                     borderRadius: '8px',
-                    border: '1px solid var(--border-color, #cbd5e1)',
+                    border: '1px solid var(--border-color, #e2e8f0)',
                     outline: 'none',
-                    background: isEditing ? '#fff' : 'var(--bg-color, #f1f5f9)',
-                    fontSize: '0.9rem',
+                    background: isEditing ? '#ffffff' : 'var(--bg-color, #f8fafc)',
+                    fontSize: '0.95rem',
                     color: 'var(--text-color)',
                     cursor: isEditing ? 'pointer' : 'not-allowed',
                   }}
                 >
-                  <option value="">Sélectionner...</option>
-                  <option value="bac">Baccalauréat</option>
-                  <option value="licence">Licence</option>
-                  <option value="master">Master</option>
-                  <option value="doctorat">Doctorat</option>
-                  <option value="autre">Autre</option>
+                  <option value="">Sélectionnez votre niveau</option>
+                  <option value="Niveau lycée">Niveau lycée</option>
+                  <option value="Bac">Bac</option>
+                  <option value="Bac+1">Bac+1</option>
+                  <option value="Bac+2">Bac+2</option>
+                  <option value="Bac+3">Bac+3</option>
+                  <option value="Bac+4">Bac+4</option>
+                  <option value="Bac+5">Bac+5</option>
+                  <option value="Autre">Autre (préciser)</option>
                 </select>
               </div>
+              {formData.educationLevel === 'Autre' && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
+                    Précisez votre niveau
+                  </label>
+                  <input
+                    type="text"
+                    name="customEducationLevel"
+                    value={formData.customEducationLevel}
+                    onChange={handleChange}
+                    placeholder="Ex: Doctorat, Formation professionnelle..."
+                    disabled={!isEditing}
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      borderRadius: '8px',
+                      border: '1px solid var(--border-color, #e2e8f0)',
+                      outline: 'none',
+                      background: isEditing ? '#ffffff' : 'var(--bg-color, #f8fafc)',
+                      fontSize: '0.95rem',
+                      color: 'var(--text-color)',
+                      cursor: isEditing ? 'text' : 'not-allowed',
+                    }}
+                  />
+                </div>
+              )}
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
                   Année académique
@@ -754,12 +655,12 @@ export default function ProfileEditForm() {
                   disabled={!isEditing}
                   style={{
                     width: '100%',
-                    padding: '10px 12px',
+                    padding: '10px 14px',
                     borderRadius: '8px',
-                    border: '1px solid var(--border-color, #cbd5e1)',
+                    border: '1px solid var(--border-color, #e2e8f0)',
                     outline: 'none',
-                    background: isEditing ? '#fff' : 'var(--bg-color, #f1f5f9)',
-                    fontSize: '0.9rem',
+                    background: isEditing ? '#ffffff' : 'var(--bg-color, #f8fafc)',
+                    fontSize: '0.95rem',
                     color: 'var(--text-color)',
                     cursor: isEditing ? 'text' : 'not-allowed',
                   }}
@@ -778,28 +679,50 @@ export default function ProfileEditForm() {
                   disabled={!isEditing}
                   style={{
                     width: '100%',
-                    padding: '10px 12px',
+                    padding: '10px 14px',
                     borderRadius: '8px',
-                    border: '1px solid var(--border-color, #cbd5e1)',
+                    border: '1px solid var(--border-color, #e2e8f0)',
                     outline: 'none',
-                    background: isEditing ? '#fff' : 'var(--bg-color, #f1f5f9)',
-                    fontSize: '0.9rem',
+                    background: isEditing ? '#ffffff' : 'var(--bg-color, #f8fafc)',
+                    fontSize: '0.95rem',
                     color: 'var(--text-color)',
                     cursor: isEditing ? 'text' : 'not-allowed',
                   }}
                 />
+              </div>
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: isEditing ? 'pointer' : 'not-allowed' }}>
+                  <input
+                    type="checkbox"
+                    name="isSelfDirected"
+                    checked={formData.isSelfDirected}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                    style={{ width: '18px', height: '18px', cursor: isEditing ? 'pointer' : 'not-allowed' }}
+                  />
+                  <span>Auto-formation (apprentissage en autonomie)</span>
+                </label>
               </div>
             </div>
           </div>
         )}
 
         {user?.role === 'instructor' && (
-          <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'var(--bg-color, #f8fafc)', borderRadius: '12px', border: '1px solid var(--border-color, #e2e8f0)' }}>
-            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem', fontWeight: 700, color: 'var(--text-color)', marginBottom: '1.5rem' }}>
-              <Briefcase size={20} />
+          <div
+            style={{
+              background: 'var(--surface-color, #ffffff)',
+              borderRadius: '16px',
+              padding: '2rem',
+              marginBottom: '1.5rem',
+              border: '1px solid var(--border-color, #e2e8f0)',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+            }}
+          >
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Briefcase size={20} style={{ color: 'var(--primary)' }} />
               Informations professionnelles
             </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
                   Spécialisation
@@ -813,12 +736,12 @@ export default function ProfileEditForm() {
                   disabled={!isEditing}
                   style={{
                     width: '100%',
-                    padding: '10px 12px',
+                    padding: '10px 14px',
                     borderRadius: '8px',
-                    border: '1px solid var(--border-color, #cbd5e1)',
+                    border: '1px solid var(--border-color, #e2e8f0)',
                     outline: 'none',
-                    background: isEditing ? '#fff' : 'var(--bg-color, #f1f5f9)',
-                    fontSize: '0.9rem',
+                    background: isEditing ? '#ffffff' : 'var(--bg-color, #f8fafc)',
+                    fontSize: '0.95rem',
                     color: 'var(--text-color)',
                     cursor: isEditing ? 'text' : 'not-allowed',
                   }}
@@ -837,12 +760,12 @@ export default function ProfileEditForm() {
                   disabled={!isEditing}
                   style={{
                     width: '100%',
-                    padding: '10px 12px',
+                    padding: '10px 14px',
                     borderRadius: '8px',
-                    border: '1px solid var(--border-color, #cbd5e1)',
+                    border: '1px solid var(--border-color, #e2e8f0)',
                     outline: 'none',
-                    background: isEditing ? '#fff' : 'var(--bg-color, #f1f5f9)',
-                    fontSize: '0.9rem',
+                    background: isEditing ? '#ffffff' : 'var(--bg-color, #f8fafc)',
+                    fontSize: '0.95rem',
                     color: 'var(--text-color)',
                     cursor: isEditing ? 'text' : 'not-allowed',
                   }}
@@ -852,26 +775,30 @@ export default function ProfileEditForm() {
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
                   Années d'expérience
                 </label>
-                <input
-                  type="number"
+                <select
                   name="experienceYears"
                   value={formData.experienceYears}
                   onChange={handleChange}
-                  placeholder="ex: 5"
-                  min="0"
                   disabled={!isEditing}
                   style={{
                     width: '100%',
-                    padding: '10px 12px',
+                    padding: '10px 14px',
                     borderRadius: '8px',
-                    border: '1px solid var(--border-color, #cbd5e1)',
+                    border: '1px solid var(--border-color, #e2e8f0)',
                     outline: 'none',
-                    background: isEditing ? '#fff' : 'var(--bg-color, #f1f5f9)',
-                    fontSize: '0.9rem',
+                    background: isEditing ? '#ffffff' : 'var(--bg-color, #f8fafc)',
+                    fontSize: '0.95rem',
                     color: 'var(--text-color)',
-                    cursor: isEditing ? 'text' : 'not-allowed',
+                    cursor: isEditing ? 'pointer' : 'not-allowed',
                   }}
-                />
+                >
+                  <option value="">Sélectionnez votre expérience</option>
+                  <option value="1">0–1 an</option>
+                  <option value="2">2–3 ans</option>
+                  <option value="4">4–5 ans</option>
+                  <option value="8">6–10 ans</option>
+                  <option value="11">10+ ans</option>
+                </select>
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
@@ -884,46 +811,23 @@ export default function ProfileEditForm() {
                   disabled={!isEditing}
                   style={{
                     width: '100%',
-                    padding: '10px 12px',
+                    padding: '10px 14px',
                     borderRadius: '8px',
-                    border: '1px solid var(--border-color, #cbd5e1)',
+                    border: '1px solid var(--border-color, #e2e8f0)',
                     outline: 'none',
-                    background: isEditing ? '#fff' : 'var(--bg-color, #f1f5f9)',
-                    fontSize: '0.9rem',
+                    background: isEditing ? '#ffffff' : 'var(--bg-color, #f8fafc)',
+                    fontSize: '0.95rem',
                     color: 'var(--text-color)',
                     cursor: isEditing ? 'pointer' : 'not-allowed',
                   }}
                 >
-                  <option value="">Sélectionner...</option>
-                  <option value="presentiel">Présentiel</option>
-                  <option value="en_ligne">En ligne</option>
-                  <option value="hybride">Hybride</option>
+                  <option value="">Sélectionnez le mode</option>
+                  <option value="online">En ligne</option>
+                  <option value="in-person">Présentiel</option>
+                  <option value="hybrid">Les deux</option>
                 </select>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Submit */}
-        {isEditing && (
-          <div style={{ marginTop: '2.5rem', display: 'flex', justifyContent: 'flex-end' }}>
-            <button
-              type="submit"
-              disabled={loading || uploading}
-              className="btn-primary"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.6rem',
-                padding: '12px 32px',
-                fontSize: '1rem',
-                fontWeight: 600,
-                borderRadius: '10px',
-              }}
-            >
-              <Save size={18} />
-              {loading ? 'Enregistrement...' : 'Enregistrer les modifications'}
-            </button>
           </div>
         )}
       </form>
