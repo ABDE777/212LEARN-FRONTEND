@@ -19,11 +19,12 @@ export default function ProfileEditForm() {
       school: user?.studentProfile?.school || '',
       fieldOfStudy: user?.studentProfile?.fieldOfStudy || '',
       educationLevel: user?.studentProfile?.educationLevel || '',
-      academicYear: user?.studentProfile?.academicYear || '',
-      group: user?.studentProfile?.group || '',
+      academicYearStart: user?.studentProfile?.academicYearStart ? String(user.studentProfile.academicYearStart).slice(0, 10) : '',
+      academicYearEnd: user?.studentProfile?.academicYearEnd ? String(user.studentProfile.academicYearEnd).slice(0, 10) : '',
+      currentLevel: user?.studentProfile?.currentLevel || '',
       isSelfDirected: user?.studentProfile?.isSelfDirected || false,
-      customEducationLevel: (!['Niveau lycée', 'Bac', 'Bac+1', 'Bac+2', 'Bac+3', 'Bac+4', 'Bac+5'].includes(user?.studentProfile?.educationLevel)) ? user?.studentProfile?.educationLevel || '' : '',
     } : user?.role === 'instructor' ? {
+      expertiseDomain: user?.instructorProfile?.expertiseDomain || '',
       specialization: user?.instructorProfile?.specialization || '',
       organization: user?.instructorProfile?.organization || '',
       experienceYears: user?.instructorProfile?.experienceYears || '',
@@ -66,11 +67,12 @@ export default function ProfileEditForm() {
         school: user?.studentProfile?.school || '',
         fieldOfStudy: user?.studentProfile?.fieldOfStudy || '',
         educationLevel: user?.studentProfile?.educationLevel || '',
-        academicYear: user?.studentProfile?.academicYear || '',
-        group: user?.studentProfile?.group || '',
+        academicYearStart: user?.studentProfile?.academicYearStart ? String(user.studentProfile.academicYearStart).slice(0, 10) : '',
+        academicYearEnd: user?.studentProfile?.academicYearEnd ? String(user.studentProfile.academicYearEnd).slice(0, 10) : '',
+        currentLevel: user?.studentProfile?.currentLevel || '',
         isSelfDirected: user?.studentProfile?.isSelfDirected || false,
-        customEducationLevel: (!['Niveau lycée', 'Bac', 'Bac+1', 'Bac+2', 'Bac+3', 'Bac+4', 'Bac+5'].includes(user?.studentProfile?.educationLevel)) ? user?.studentProfile?.educationLevel || '' : '',
       } : user?.role === 'instructor' ? {
+        expertiseDomain: user?.instructorProfile?.expertiseDomain || '',
         specialization: user?.instructorProfile?.specialization || '',
         organization: user?.instructorProfile?.organization || '',
         experienceYears: user?.instructorProfile?.experienceYears || '',
@@ -212,11 +214,13 @@ export default function ProfileEditForm() {
         ...(user?.role === 'student' || user?.role === 'employee' ? {
           school: formData.school,
           fieldOfStudy: formData.fieldOfStudy,
-          educationLevel: formData.customEducationLevel || formData.educationLevel,
-          academicYear: formData.academicYear,
-          group: formData.group,
+          educationLevel: formData.educationLevel,
+          academicYearStart: formData.academicYearStart || undefined,
+          academicYearEnd: formData.academicYearEnd || undefined,
+          currentLevel: formData.currentLevel || undefined,
           isSelfDirected: formData.isSelfDirected,
         } : user?.role === 'instructor' ? {
+          expertiseDomain: formData.expertiseDomain,
           specialization: formData.specialization,
           organization: formData.organization,
           experienceYears: formData.experienceYears,
@@ -606,52 +610,53 @@ export default function ProfileEditForm() {
                   }}
                 >
                   <option value="">Sélectionnez votre niveau</option>
-                  <option value="Niveau lycée">Niveau lycée</option>
-                  <option value="Bac">Bac</option>
-                  <option value="Bac+1">Bac+1</option>
-                  <option value="Bac+2">Bac+2</option>
-                  <option value="Bac+3">Bac+3</option>
-                  <option value="Bac+4">Bac+4</option>
-                  <option value="Bac+5">Bac+5</option>
-                  <option value="Autre">Autre (préciser)</option>
+                  <option value="college">Collège</option>
+                  <option value="lycee">Lycée</option>
+                  <option value="bac">Bac</option>
+                  <option value="bac+1">Bac+1</option>
+                  <option value="bac+2">Bac+2</option>
+                  <option value="bac+3">Bac+3</option>
+                  <option value="bac+4">Bac+4</option>
+                  <option value="bac+5">Bac+5</option>
+                  <option value="autre">Autre</option>
                 </select>
               </div>
-              {formData.educationLevel === 'Autre' && (
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
-                    Précisez votre niveau
-                  </label>
-                  <input
-                    type="text"
-                    name="customEducationLevel"
-                    value={formData.customEducationLevel}
-                    onChange={handleChange}
-                    placeholder="Ex: Doctorat, Formation professionnelle..."
-                    disabled={!isEditing}
-                    style={{
-                      width: '100%',
-                      padding: '10px 14px',
-                      borderRadius: '8px',
-                      border: '1px solid var(--border-color, #e2e8f0)',
-                      outline: 'none',
-                      background: isEditing ? '#ffffff' : 'var(--bg-color, #f8fafc)',
-                      fontSize: '0.95rem',
-                      color: 'var(--text-color)',
-                      cursor: isEditing ? 'text' : 'not-allowed',
-                    }}
-                  />
-                </div>
-              )}
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
-                  Année académique
+                  Niveau
+                </label>
+                <select
+                  name="currentLevel"
+                  value={formData.currentLevel}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-color, #e2e8f0)',
+                    outline: 'none',
+                    background: isEditing ? '#ffffff' : 'var(--bg-color, #f8fafc)',
+                    fontSize: '0.95rem',
+                    color: 'var(--text-color)',
+                    cursor: isEditing ? 'pointer' : 'not-allowed',
+                  }}
+                >
+                  <option value="">Sélectionnez votre niveau</option>
+                  <option value="beginner">Débutant</option>
+                  <option value="intermediate">Intermédiaire</option>
+                  <option value="advanced">Avancé</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
+                  Date de début
                 </label>
                 <input
-                  type="text"
-                  name="academicYear"
-                  value={formData.academicYear}
+                  type="date"
+                  name="academicYearStart"
+                  value={formData.academicYearStart}
                   onChange={handleChange}
-                  placeholder="ex: 2024-2025"
                   disabled={!isEditing}
                   style={{
                     width: '100%',
@@ -668,14 +673,13 @@ export default function ProfileEditForm() {
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
-                  Groupe
+                  Date de fin
                 </label>
                 <input
-                  type="text"
-                  name="group"
-                  value={formData.group}
+                  type="date"
+                  name="academicYearEnd"
+                  value={formData.academicYearEnd}
                   onChange={handleChange}
-                  placeholder="ex: Groupe A"
                   disabled={!isEditing}
                   style={{
                     width: '100%',
@@ -687,6 +691,28 @@ export default function ProfileEditForm() {
                     fontSize: '0.95rem',
                     color: 'var(--text-color)',
                     cursor: isEditing ? 'text' : 'not-allowed',
+                  }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
+                  Groupe / Classe
+                </label>
+                <input
+                  type="text"
+                  value="Non attribué — assigné par un instructeur ou un administrateur"
+                  disabled
+                  readOnly
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-color, #e2e8f0)',
+                    outline: 'none',
+                    background: 'var(--bg-color, #f8fafc)',
+                    fontSize: '0.9rem',
+                    color: 'var(--secondary)',
+                    cursor: 'not-allowed',
                   }}
                 />
               </div>
@@ -725,14 +751,38 @@ export default function ProfileEditForm() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
-                  Spécialisation
+                  Domaine d'expertise
+                </label>
+                <input
+                  type="text"
+                  name="expertiseDomain"
+                  value={formData.expertiseDomain}
+                  onChange={handleChange}
+                  placeholder="ex: Développement Web"
+                  disabled={!isEditing}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-color, #e2e8f0)',
+                    outline: 'none',
+                    background: isEditing ? '#ffffff' : 'var(--bg-color, #f8fafc)',
+                    fontSize: '0.95rem',
+                    color: 'var(--text-color)',
+                    cursor: isEditing ? 'text' : 'not-allowed',
+                  }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
+                  Spécialité
                 </label>
                 <input
                   type="text"
                   name="specialization"
                   value={formData.specialization}
                   onChange={handleChange}
-                  placeholder="ex: Développement Web"
+                  placeholder="ex: React & Node.js"
                   disabled={!isEditing}
                   style={{
                     width: '100%',
@@ -793,11 +843,11 @@ export default function ProfileEditForm() {
                   }}
                 >
                   <option value="">Sélectionnez votre expérience</option>
-                  <option value="1">0–1 an</option>
-                  <option value="2">2–3 ans</option>
-                  <option value="4">4–5 ans</option>
-                  <option value="8">6–10 ans</option>
-                  <option value="11">10+ ans</option>
+                  <option value="<1">Moins d'un an</option>
+                  <option value="1-2">1–2 ans</option>
+                  <option value="3-5">3–5 ans</option>
+                  <option value="6-10">6–10 ans</option>
+                  <option value=">10">Plus de 10 ans</option>
                 </select>
               </div>
               <div>
@@ -823,7 +873,7 @@ export default function ProfileEditForm() {
                 >
                   <option value="">Sélectionnez le mode</option>
                   <option value="online">En ligne</option>
-                  <option value="in-person">Présentiel</option>
+                  <option value="onsite">Présentiel</option>
                   <option value="hybrid">Les deux</option>
                 </select>
               </div>

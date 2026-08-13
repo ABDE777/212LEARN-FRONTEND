@@ -706,7 +706,9 @@ export default function Profile() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                           <Calendar size={20} style={{ color: 'var(--primary)' }} />
                           <span style={{ fontSize: '1rem', color: 'var(--text-color)' }}>
-                            {profile.academicYear || '-'}
+                            {profile.academicYearStart
+                              ? `${String(profile.academicYearStart).slice(0, 10)}${profile.academicYearEnd ? ` → ${String(profile.academicYearEnd).slice(0, 10)}` : ''}`
+                              : '-'}
                           </span>
                         </div>
                       )}
@@ -828,7 +830,7 @@ export default function Profile() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                           <Calendar size={20} style={{ color: 'var(--primary)' }} />
                           <span style={{ fontSize: '1rem', color: 'var(--text-color)' }}>
-                            {profile.experienceYears ? `${profile.experienceYears} ans` : '-'}
+                            {{ '<1': "Moins d'un an", '1-2': '1–2 ans', '3-5': '3–5 ans', '6-10': '6–10 ans', '>10': 'Plus de 10 ans' }[profile.experienceYears] || (profile.experienceYears ? `${profile.experienceYears} ans` : '-')}
                           </span>
                         </div>
                       )}

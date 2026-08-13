@@ -55,6 +55,7 @@ export default function Signup() {
     // Instructor situation
     instructorSituation: null, // 'employed', 'freelance', 'unemployed'
     // Instructor fields
+    expertiseDomain: '',
     specialization: '',
     organization: '',
     teachingMode: '',
@@ -132,12 +133,18 @@ export default function Signup() {
       if (!formData.academicYearEnd) {
         errors.academicYearEnd = 'La date de fin est requise.';
       }
+      if (!formData.currentLevel) {
+        errors.currentLevel = 'Le niveau est requis.';
+      }
     }
 
     // Employee-specific validation
     if (formData.learnerSituation === 'employee' || formData.learnerSituation === 'both') {
       if (!formData.companyName.trim()) {
         errors.companyName = 'Le nom de l\'entreprise est requis.';
+      }
+      if (!formData.department.trim()) {
+        errors.department = 'Le service / département est requis.';
       }
       if (!formData.position.trim()) {
         errors.position = 'Le poste est requis.';
@@ -176,8 +183,11 @@ export default function Signup() {
       return false;
     }
 
+    if (!formData.expertiseDomain.trim()) {
+      errors.expertiseDomain = 'Le domaine d\'expertise est requis.';
+    }
     if (!formData.specialization.trim()) {
-      errors.specialization = 'Le domaine d\'expertise est requis.';
+      errors.specialization = 'La spécialité est requise.';
     }
     if (!formData.experienceYears) {
       errors.experienceYears = 'Les années d\'expérience sont requises.';
@@ -247,6 +257,18 @@ export default function Signup() {
     setValidationErrors({});
 
     try {
+      // Map the form's display values to the backend's canonical tokens.
+      const EXPERIENCE_MAP = { '1': '<1', '2': '1-2', '4': '3-5', '8': '6-10', '11': '>10' };
+      const EDUCATION_MAP = {
+        'Collège': 'college', 'Lycée': 'lycee', 'Bac': 'bac',
+        'Bac+1': 'bac+1', 'Bac+2': 'bac+2', 'Bac+3': 'bac+3',
+        'Bac+4': 'bac+4', 'Bac+5': 'bac+5', 'Autre': 'autre',
+      };
+      const TEACHING_MODE_MAP = { 'online': 'online', 'in-person': 'onsite', 'both': 'hybrid' };
+      const LEARNER_SITUATION_MAP = {
+        student: 'student', employee: 'employee', both: 'student_employee', self_directed: 'self_directed',
+      };
+
       const payload = {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
@@ -258,17 +280,18 @@ export default function Signup() {
 
       if (formData.role === 'learner') {
         payload.studentProfile = {
-          situation: formData.learnerSituation,
+          situation: LEARNER_SITUATION_MAP[formData.learnerSituation] || formData.learnerSituation,
           school: formData.school.trim() || undefined,
           fieldOfStudy: formData.fieldOfStudy.trim() || undefined,
-          educationLevel: formData.educationLevel === 'Autre' ? formData.customEducationLevel.trim() : formData.educationLevel,
+          // Backend stores a fixed enum; a free-text "Autre" detail has no column, so we send 'autre'.
+          educationLevel: EDUCATION_MAP[formData.educationLevel] || undefined,
           academicYearStart: formData.academicYearStart || undefined,
           academicYearEnd: formData.academicYearEnd || undefined,
           companyName: formData.companyName.trim() || undefined,
           department: formData.department.trim() || undefined,
           position: formData.position.trim() || undefined,
           sector: formData.sector.trim() || undefined,
-          experienceYears: formData.experienceYears ? parseInt(formData.experienceYears) : undefined,
+          experienceYears: EXPERIENCE_MAP[formData.experienceYears] || undefined,
           interests: formData.interests.trim() || undefined,
           learningObjective: formData.learningObjective.trim() || undefined,
           currentLevel: formData.currentLevel || undefined,
@@ -277,13 +300,14 @@ export default function Signup() {
       } else if (formData.role === 'instructor') {
         payload.instructorProfile = {
           situation: formData.instructorSituation,
+          expertiseDomain: formData.expertiseDomain.trim(),
           specialization: formData.specialization.trim(),
           organization: formData.organization.trim() || undefined,
           department: formData.department.trim() || undefined,
           position: formData.position.trim() || undefined,
           sector: formData.sector.trim() || undefined,
-          experienceYears: parseInt(formData.experienceYears),
-          teachingMode: formData.teachingMode,
+          experienceYears: EXPERIENCE_MAP[formData.experienceYears] || undefined,
+          teachingMode: TEACHING_MODE_MAP[formData.teachingMode] || formData.teachingMode,
           teachingDomains: formData.teachingDomains.trim() || undefined,
         };
       }
@@ -649,6 +673,22 @@ export default function Signup() {
                 </div>
               </div>
 
+              <div className="form-group">
+                <label>Niveau</label>
+                <select
+                  className="form-control"
+                  value={formData.currentLevel}
+                  onChange={e => setFormData({ ...formData, currentLevel: e.target.value })}
+                  style={validationErrors.currentLevel ? { borderColor: 'var(--error-color)' } : {}}
+                >
+                  <option value="">Sélectionnez votre niveau</option>
+                  <option value="beginner">Débutant</option>
+                  <option value="intermediate">Intermédiaire</option>
+                  <option value="advanced">Avancé</option>
+                </select>
+                {validationErrors.currentLevel && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.currentLevel}</div>}
+              </div>
+
               <div style={{ marginTop: '1rem', padding: '1rem', background: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                 <p style={{ margin: 0, color: 'var(--secondary)', fontSize: '0.9rem' }}>
                   <strong>Groupe / Classe:</strong> Non attribué
@@ -685,7 +725,9 @@ export default function Signup() {
                   placeholder="Ex: IT"
                   value={formData.department}
                   onChange={e => setFormData({ ...formData, department: e.target.value })}
+                  style={validationErrors.department ? { borderColor: 'var(--error-color)' } : {}}
                 />
+                {validationErrors.department && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.department}</div>}
               </div>
 
               <div className="form-group">
@@ -945,11 +987,11 @@ export default function Signup() {
                 type="text"
                 className="form-control"
                 placeholder="Ex: Développement Web"
-                value={formData.specialization}
-                onChange={e => setFormData({ ...formData, specialization: e.target.value })}
-                style={validationErrors.specialization ? { borderColor: 'var(--error-color)' } : {}}
+                value={formData.expertiseDomain}
+                onChange={e => setFormData({ ...formData, expertiseDomain: e.target.value })}
+                style={validationErrors.expertiseDomain ? { borderColor: 'var(--error-color)' } : {}}
               />
-              {validationErrors.specialization && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.specialization}</div>}
+              {validationErrors.expertiseDomain && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.expertiseDomain}</div>}
             </div>
 
             <div className="form-group">
@@ -960,7 +1002,9 @@ export default function Signup() {
                 placeholder="Ex: React & Node.js"
                 value={formData.specialization}
                 onChange={e => setFormData({ ...formData, specialization: e.target.value })}
+                style={validationErrors.specialization ? { borderColor: 'var(--error-color)' } : {}}
               />
+              {validationErrors.specialization && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.specialization}</div>}
             </div>
 
             <div className="form-group">
@@ -1047,7 +1091,7 @@ export default function Signup() {
           <p style={{ margin: 0 }}><strong>Prénom:</strong> {formData.firstName}</p>
           <p style={{ margin: 0 }}><strong>Nom:</strong> {formData.lastName}</p>
           <p style={{ margin: 0 }}><strong>Email:</strong> {formData.email}</p>
-          {formData.phone && <p style={{ margin: 0 }}><strong>Téléphone:</strong> {formData.phone}</p>
+          {formData.phone && <p style={{ margin: 0 }}><strong>Téléphone:</strong> {formData.phone}</p>}
         </div>
       </div>
 
