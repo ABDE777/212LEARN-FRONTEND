@@ -147,6 +147,8 @@ function Navbar() {
 
   const avatarUrl = user?.avatar || user?.profilePicture || user?.photo || null;
   const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
+  const isInstructor = user?.role?.toUpperCase() === 'INSTRUCTOR';
+  const isStudent = user?.role?.toUpperCase() === 'STUDENT';
 
   const navStyle = {
     display: 'flex',
@@ -231,8 +233,8 @@ function Navbar() {
 
         {/* Right Controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          {/* Cart / Wishlist — not for admin */}
-          {isAuthenticated && !isAdmin && (
+          {/* Cart / Wishlist — only for students */}
+          {isAuthenticated && isStudent && (
             <>
               <NavIconButton
                 to="/wishlist"
