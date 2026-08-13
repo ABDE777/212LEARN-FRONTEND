@@ -1,12 +1,73 @@
 import React, { useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { User, Mail, FileText, Save, UploadCloud, Camera, Trash2, CheckCircle2, AlertCircle, Edit2, X, Phone, GraduationCap, Briefcase, Building, Calendar } from 'lucide-react';
+import { User, Mail, FileText, Save, UploadCloud, Camera, Trash2, CheckCircle2, AlertCircle, Edit2, X, Phone, GraduationCap, Briefcase, Building, Calendar, BookOpen } from 'lucide-react';
 import api from '../services/api';
+
+// Dropdown option sets (mirror the registration form + backend enums).
+const LEVEL_OPTIONS = [
+  { value: '', label: 'Sélectionnez votre niveau' },
+  { value: 'beginner', label: 'Débutant' },
+  { value: 'intermediate', label: 'Intermédiaire' },
+  { value: 'advanced', label: 'Avancé' },
+];
+const EXPERIENCE_OPTIONS = [
+  { value: '', label: 'Sélectionnez votre expérience' },
+  { value: '<1', label: "Moins d'un an" },
+  { value: '1-2', label: '1–2 ans' },
+  { value: '3-5', label: '3–5 ans' },
+  { value: '6-10', label: '6–10 ans' },
+  { value: '>10', label: 'Plus de 10 ans' },
+];
+
+const isoDate = (v) => (v ? String(v).slice(0, 10) : '');
+
+// Flatten a studentProfile into editable form fields (covers every learner
+// situation — student, employee, student_employee, self_directed).
+const learnerFields = (sp = {}) => ({
+  school: sp?.school || '',
+  fieldOfStudy: sp?.fieldOfStudy || '',
+  educationLevel: sp?.educationLevel || '',
+  academicYearStart: isoDate(sp?.academicYearStart),
+  academicYearEnd: isoDate(sp?.academicYearEnd),
+  currentLevel: sp?.currentLevel || '',
+  isSelfDirected: sp?.isSelfDirected || false,
+  companyName: sp?.companyName || '',
+  department: sp?.department || '',
+  position: sp?.position || '',
+  sector: sp?.sector || '',
+  experienceYears: sp?.experienceYears || '',
+  interests: sp?.interests || '',
+  learningObjective: sp?.learningObjective || '',
+});
+
+const instructorFields = (ip = {}) => ({
+  expertiseDomain: ip?.expertiseDomain || '',
+  specialization: ip?.specialization || '',
+  organization: ip?.organization || '',
+  experienceYears: ip?.experienceYears || '',
+  teachingMode: ip?.teachingMode || '',
+});
 
 export default function ProfileEditForm() {
   const { user, updateProfile } = useAuth();
   const { showSuccess, showError } = useToast();
+
+  const isLearner = user?.role === 'student' || user?.role === 'employee';
+  // Learners all register with role 'student'; the real distinction (student /
+  // employee / student_employee / self_directed) lives in the profile situation.
+  const situation = user?.studentProfile?.situation || 'student';
+  const showAcademic = isLearner && (situation === 'student' || situation === 'student_employee');
+  const showProfessional = isLearner && (situation === 'employee' || situation === 'student_employee');
+  const showSelfDirected = isLearner && situation === 'self_directed';
+  const roleLabel =
+    user?.role === 'instructor' ? '👨‍🏫 Instructeur'
+    : user?.role === 'admin' ? '🛡️ Administrateur'
+    : !isLearner ? 'Utilisateur'
+    : situation === 'employee' ? '💼 Employé'
+    : situation === 'student_employee' ? '🎓 Étudiant & 💼 Employé'
+    : situation === 'self_directed' ? '📚 Autodidacte'
+    : '🎓 Étudiant';
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -15,21 +76,11 @@ export default function ProfileEditForm() {
     avatar: user?.avatar || '',
     bio: user?.bio || '',
     phone: user?.phone || '',
-    ...(user?.role === 'student' || user?.role === 'employee' ? {
-      school: user?.studentProfile?.school || '',
-      fieldOfStudy: user?.studentProfile?.fieldOfStudy || '',
-      educationLevel: user?.studentProfile?.educationLevel || '',
-      academicYearStart: user?.studentProfile?.academicYearStart ? String(user.studentProfile.academicYearStart).slice(0, 10) : '',
-      academicYearEnd: user?.studentProfile?.academicYearEnd ? String(user.studentProfile.academicYearEnd).slice(0, 10) : '',
-      currentLevel: user?.studentProfile?.currentLevel || '',
-      isSelfDirected: user?.studentProfile?.isSelfDirected || false,
-    } : user?.role === 'instructor' ? {
-      expertiseDomain: user?.instructorProfile?.expertiseDomain || '',
-      specialization: user?.instructorProfile?.specialization || '',
-      organization: user?.instructorProfile?.organization || '',
-      experienceYears: user?.instructorProfile?.experienceYears || '',
-      teachingMode: user?.instructorProfile?.teachingMode || '',
-    } : {})
+    ...(isLearner
+      ? learnerFields(user?.studentProfile)
+      : user?.role === 'instructor'
+        ? instructorFields(user?.instructorProfile)
+        : {}),
   });
 
   const [errors, setErrors] = useState({});
@@ -63,21 +114,11 @@ export default function ProfileEditForm() {
       avatar: user?.avatar || '',
       bio: user?.bio || '',
       phone: user?.phone || '',
-      ...(user?.role === 'student' || user?.role === 'employee' ? {
-        school: user?.studentProfile?.school || '',
-        fieldOfStudy: user?.studentProfile?.fieldOfStudy || '',
-        educationLevel: user?.studentProfile?.educationLevel || '',
-        academicYearStart: user?.studentProfile?.academicYearStart ? String(user.studentProfile.academicYearStart).slice(0, 10) : '',
-        academicYearEnd: user?.studentProfile?.academicYearEnd ? String(user.studentProfile.academicYearEnd).slice(0, 10) : '',
-        currentLevel: user?.studentProfile?.currentLevel || '',
-        isSelfDirected: user?.studentProfile?.isSelfDirected || false,
-      } : user?.role === 'instructor' ? {
-        expertiseDomain: user?.instructorProfile?.expertiseDomain || '',
-        specialization: user?.instructorProfile?.specialization || '',
-        organization: user?.instructorProfile?.organization || '',
-        experienceYears: user?.instructorProfile?.experienceYears || '',
-        teachingMode: user?.instructorProfile?.teachingMode || '',
-      } : {})
+      ...(isLearner
+        ? learnerFields(user?.studentProfile)
+        : user?.role === 'instructor'
+          ? instructorFields(user?.instructorProfile)
+          : {}),
     });
     setIsEditing(true);
   };
@@ -203,6 +244,46 @@ export default function ProfileEditForm() {
       return;
     }
 
+    // Only send the profile fields that belong to this learner's situation, so
+    // we don't clobber (e.g.) an employee's data with empty academic fields.
+    let profilePayload = {};
+    if (isLearner) {
+      const academic = {
+        school: formData.school,
+        fieldOfStudy: formData.fieldOfStudy,
+        educationLevel: formData.educationLevel,
+        academicYearStart: formData.academicYearStart || undefined,
+        academicYearEnd: formData.academicYearEnd || undefined,
+        currentLevel: formData.currentLevel || undefined,
+      };
+      const professional = {
+        companyName: formData.companyName,
+        department: formData.department,
+        position: formData.position,
+        sector: formData.sector,
+        experienceYears: formData.experienceYears || undefined,
+      };
+      const selfDirected = {
+        interests: formData.interests,
+        learningObjective: formData.learningObjective,
+        currentLevel: formData.currentLevel || undefined,
+      };
+      if (situation === 'student') profilePayload = academic;
+      else if (situation === 'employee') profilePayload = professional;
+      else if (situation === 'student_employee') profilePayload = { ...academic, ...professional };
+      else if (situation === 'self_directed') profilePayload = selfDirected;
+      else profilePayload = academic;
+      profilePayload.isSelfDirected = formData.isSelfDirected;
+    } else if (user?.role === 'instructor') {
+      profilePayload = {
+        expertiseDomain: formData.expertiseDomain,
+        specialization: formData.specialization,
+        organization: formData.organization,
+        experienceYears: formData.experienceYears,
+        teachingMode: formData.teachingMode,
+      };
+    }
+
     setLoading(true);
     try {
       await updateProfile({
@@ -211,21 +292,7 @@ export default function ProfileEditForm() {
         avatar: formData.avatar || null,
         bio: formData.bio || null,
         phone: formData.phone || null,
-        ...(user?.role === 'student' || user?.role === 'employee' ? {
-          school: formData.school,
-          fieldOfStudy: formData.fieldOfStudy,
-          educationLevel: formData.educationLevel,
-          academicYearStart: formData.academicYearStart || undefined,
-          academicYearEnd: formData.academicYearEnd || undefined,
-          currentLevel: formData.currentLevel || undefined,
-          isSelfDirected: formData.isSelfDirected,
-        } : user?.role === 'instructor' ? {
-          expertiseDomain: formData.expertiseDomain,
-          specialization: formData.specialization,
-          organization: formData.organization,
-          experienceYears: formData.experienceYears,
-          teachingMode: formData.teachingMode,
-        } : {})
+        ...profilePayload,
       });
       showSuccess('Profil mis à jour avec succès !');
       setIsEditing(false);
@@ -236,6 +303,76 @@ export default function ProfileEditForm() {
       setLoading(false);
     }
   };
+
+  // ── Shared field-rendering helpers (called as functions, not components, so
+  //    inputs keep focus while typing) ─────────────────────────────────────────
+  const labelStyle = { display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' };
+  const controlStyle = (editable = true) => ({
+    width: '100%',
+    padding: '10px 14px',
+    borderRadius: '8px',
+    border: '1px solid var(--border-color, #e2e8f0)',
+    outline: 'none',
+    background: isEditing && editable ? '#ffffff' : 'var(--bg-color, #f8fafc)',
+    fontSize: '0.95rem',
+    color: 'var(--text-color)',
+    cursor: isEditing && editable ? 'text' : 'not-allowed',
+  });
+  const cardStyle = {
+    background: 'var(--surface-color, #ffffff)',
+    borderRadius: '16px',
+    padding: '2rem',
+    marginBottom: '1.5rem',
+    border: '1px solid var(--border-color, #e2e8f0)',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+  };
+  const headingStyle = { fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' };
+  const gridStyle = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' };
+
+  const renderText = (label, name, placeholder = '', type = 'text') => (
+    <div key={name}>
+      <label style={labelStyle}>{label}</label>
+      <input
+        type={type}
+        name={name}
+        value={formData[name] || ''}
+        onChange={handleChange}
+        placeholder={placeholder}
+        disabled={!isEditing}
+        style={controlStyle(true)}
+      />
+    </div>
+  );
+  const renderSelect = (label, name, options) => (
+    <div key={name}>
+      <label style={labelStyle}>{label}</label>
+      <select
+        name={name}
+        value={formData[name] || ''}
+        onChange={handleChange}
+        disabled={!isEditing}
+        style={{ ...controlStyle(true), cursor: isEditing ? 'pointer' : 'not-allowed' }}
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+    </div>
+  );
+  const renderTextarea = (label, name, placeholder = '') => (
+    <div key={name} style={{ gridColumn: '1 / -1' }}>
+      <label style={labelStyle}>{label}</label>
+      <textarea
+        name={name}
+        value={formData[name] || ''}
+        onChange={handleChange}
+        placeholder={placeholder}
+        rows={3}
+        disabled={!isEditing}
+        style={{ ...controlStyle(true), resize: 'vertical' }}
+      />
+    </div>
+  );
 
   return (
     <div style={{ maxWidth: '900px', margin: '0 auto' }}>
@@ -322,7 +459,7 @@ export default function ProfileEditForm() {
                 {formData.firstName} {formData.lastName}
               </h1>
               <p style={{ margin: 0, opacity: 0.9, fontSize: '1rem' }}>
-                {user?.role === 'student' ? '🎓 Étudiant' : user?.role === 'instructor' ? '👨‍🏫 Instructeur' : user?.role === 'employee' ? '💼 Employé' : 'Utilisateur'}
+                {roleLabel}
               </p>
               <p style={{ margin: '0.25rem 0 0 0', opacity: 0.8, fontSize: '0.9rem' }}>
                 {user?.email}
@@ -523,8 +660,8 @@ export default function ProfileEditForm() {
           </div>
         </div>
 
-        {/* Role-specific fields */}
-        {(user?.role === 'student' || user?.role === 'employee') && (
+        {/* Role-specific fields — driven by the learner's situation, not just role */}
+        {showAcademic && (
           <div
             style={{
               background: 'var(--surface-color, #ffffff)',
@@ -729,6 +866,38 @@ export default function ProfileEditForm() {
                   <span>Auto-formation (apprentissage en autonomie)</span>
                 </label>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Employee / working-learner fields (situation: employee or student_employee) */}
+        {showProfessional && (
+          <div style={cardStyle}>
+            <h3 style={headingStyle}>
+              <Briefcase size={20} style={{ color: 'var(--primary)' }} />
+              Informations professionnelles
+            </h3>
+            <div style={gridStyle}>
+              {renderText('Entreprise', 'companyName', "Nom de l'entreprise")}
+              {renderText('Service / Département', 'department', 'ex: Ressources Humaines')}
+              {renderText('Poste', 'position', 'ex: Développeur')}
+              {renderText('Secteur', 'sector', 'ex: Technologie')}
+              {renderSelect("Années d'expérience", 'experienceYears', EXPERIENCE_OPTIONS)}
+            </div>
+          </div>
+        )}
+
+        {/* Self-directed learner fields (situation: self_directed) */}
+        {showSelfDirected && (
+          <div style={cardStyle}>
+            <h3 style={headingStyle}>
+              <BookOpen size={20} style={{ color: 'var(--primary)' }} />
+              Objectifs d'apprentissage
+            </h3>
+            <div style={gridStyle}>
+              {renderSelect('Niveau', 'currentLevel', LEVEL_OPTIONS)}
+              {renderTextarea("Domaines d'intérêt", 'interests', 'ex: Développement web, Data Science, Design')}
+              {renderTextarea("Objectif d'apprentissage", 'learningObjective', 'Décrivez ce que vous souhaitez accomplir...')}
             </div>
           </div>
         )}
