@@ -4,12 +4,23 @@ import LottieRaw from 'lottie-react';
 const Lottie = LottieRaw.default || LottieRaw;
 import signupAnimation from '../lotties/Sign up.json';
 import logoImg from '../assets/navbarlogo.png';
-import { ArrowLeft, GraduationCap, User, Eye, EyeOff, ChevronLeft, ChevronRight, CheckCircle } from 'lucide-react';
+import { ArrowLeft, GraduationCap, User, Eye, EyeOff, ChevronLeft, ChevronRight, CheckCircle, Loader } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+
+// Reassurance messages shown while the account is being created. Registration is
+// a single request (no real progress signal), so instead of a fake % we advance
+// through these and hold on the last one until the response resolves.
+const SUBMIT_STAGES = [
+  'Validation de vos informations…',
+  'Création de votre compte…',
+  'Préparation de votre espace…',
+  'Presque terminé…',
+];
 
 export default function Signup() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [submitStage, setSubmitStage] = useState(0);
   const [error, setError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -23,6 +34,17 @@ export default function Signup() {
       navigate(dashboardPath, { replace: true });
     }
   }, [user, navigate]);
+
+  useEffect(() => {
+    if (!loading) {
+      setSubmitStage(0);
+      return undefined;
+    }
+    const id = setInterval(() => {
+      setSubmitStage((s) => Math.min(s + 1, SUBMIT_STAGES.length - 1));
+    }, 1200);
+    return () => clearInterval(id);
+  }, [loading]);
 
   // Form data state
   const [formData, setFormData] = useState({
@@ -1338,12 +1360,32 @@ export default function Signup() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '0.5rem',
+                  opacity: loading ? 0.85 : 1,
                 }}
               >
-                {loading ? 'Création du compte...' : 'Créer mon compte'}
+                {loading && <Loader size={18} className="spin" />}
+                {loading ? SUBMIT_STAGES[submitStage] : 'Créer mon compte'}
               </button>
             )}
           </div>
+
+          {/* Indeterminate progress bar — shown while the account is being created */}
+          {loading && (
+            <div
+              role="progressbar"
+              aria-label="Création du compte en cours"
+              style={{
+                marginTop: '1rem',
+                height: '4px',
+                width: '100%',
+                background: 'var(--border-color, #e2e8f0)',
+                borderRadius: '999px',
+                overflow: 'hidden',
+              }}
+            >
+              <div className="progress-indeterminate" style={{ height: '100%', background: 'var(--primary)', borderRadius: '999px' }} />
+            </div>
+          )}
 
           <p style={{ marginTop: '2rem', textAlign: 'center', fontSize: '0.9rem' }}>
             Vous avez déjà un compte ? <Link to="/login" style={{ fontWeight: 600 }}>Se connecter</Link>
