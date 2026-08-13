@@ -3,12 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   ChevronDown, ChevronUp, Plus, Trash2, FileText, Video,
   Upload, ArrowLeft, Link, Image, Archive, Edit2, Check, X,
-  File as FileIcon,
+  File as FileIcon, Users,
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useCurriculumBuilder } from '../hooks/useCurriculumBuilder';
 import { useInstructorAssignments, useSubmissions } from '../hooks/useInstructorAssignments';
+import { useCourseGroups } from '../hooks/useCourseGroups';
 
 /* ─────────────────────────────────────────────
    Helpers
@@ -770,6 +771,106 @@ function SubmissionsList({ assignmentId }) {
 /* ─────────────────────────────────────────────
    Page shell
 ───────────────────────────────────────────── */
+function GroupsManager({ courseId }) {
+  const { getCourseGroups, getGroupStudents, loading } = useCourseGroups();
+  const [groups, setGroups] = useState([]);
+  const [selectedGroup, setSelectedGroup] = useState(null);
+  const [students, setStudents] = useState([]);
+  const [studentsLoading, setStudentsLoading] = useState(false);
+  const [err, setErr] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const g = await getCourseGroups(courseId);
+        if (active) setGroups(g);
+      } catch {
+        if (active) setErr('Impossible de charger les groupes.');
+      }
+    })();
+    return () => { active = false; };
+  }, [courseId]);
+
+  const openGroup = async (group) => {
+    setSelectedGroup(group);
+    setStudents([]);
+    setStudentsLoading(true);
+    try {
+      const data = await getGroupStudents(group.id);
+      setStudents(data.students || []);
+    } catch {
+      setErr('Impossible de charger les étudiants.');
+    } finally {
+      setStudentsLoading(false);
+    }
+  };
+
+  const cardStyle = {
+    width: '100%', textAlign: 'left', cursor: 'pointer',
+    background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '1rem',
+  };
+  const rowStyle = {
+    background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '0.75rem 1rem',
+  };
+
+  if (loading && groups.length === 0 && !selectedGroup) return <LoadingSpinner />;
+
+  if (selectedGroup) {
+    return (
+      <div>
+        <button
+          onClick={() => setSelectedGroup(null)}
+          className="btn-secondary"
+          style={{ marginBottom: '1rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+        >
+          <ArrowLeft size={16} /> Retour aux groupes
+        </button>
+        <h2 style={{ marginBottom: '1rem', fontSize: '1.3rem' }}>Étudiants — {selectedGroup.name}</h2>
+        {err && <p style={{ color: 'var(--error-color)' }}>{err}</p>}
+        {studentsLoading ? (
+          <LoadingSpinner />
+        ) : students.length === 0 ? (
+          <p style={{ color: 'var(--secondary)' }}>Aucun étudiant dans ce groupe.</p>
+        ) : (
+          <div style={{ display: 'grid', gap: '0.75rem' }}>
+            {students.map(s => (
+              <div key={s.id} style={rowStyle}>
+                <div style={{ fontWeight: 600 }}>{s.firstName} {s.lastName}</div>
+                <div style={{ fontSize: '0.85rem', color: 'var(--secondary)' }}>{s.email}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <h2 style={{ marginBottom: '1rem', fontSize: '1.3rem' }}>Groupes de ce cours</h2>
+      {err && <p style={{ color: 'var(--error-color)' }}>{err}</p>}
+      {groups.length === 0 ? (
+        <p style={{ color: 'var(--secondary)' }}>Aucun groupe ne vous est assigné pour ce cours.</p>
+      ) : (
+        <div style={{ display: 'grid', gap: '1rem' }}>
+          {groups.map(g => (
+            <button key={g.id} onClick={() => openGroup(g)} style={cardStyle}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <Users size={20} style={{ color: 'var(--primary)' }} />
+                <div>
+                  <div style={{ fontWeight: 600 }}>{g.name}</div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--secondary)' }}>{g.studentCount ?? 0} étudiant(s)</div>
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function InstructorCourseManage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -778,6 +879,7 @@ export default function InstructorCourseManage() {
   const tabs = [
     { key: 'curriculum', label: 'Curriculum Builder' },
     { key: 'assignments', label: 'Devoirs & Notation' },
+    { key: 'groups', label: 'Groupes & Étudiants' },
   ];
 
   return (
@@ -820,6 +922,7 @@ export default function InstructorCourseManage() {
 
         {activeTab === 'curriculum' && <CurriculumBuilder courseId={id} />}
         {activeTab === 'assignments' && <AssignmentsManager courseId={id} />}
+        {activeTab === 'groups' && <GroupsManager courseId={id} />}
       </div>
     </div>
   );
