@@ -66,7 +66,7 @@ export default function ProfileEditForm() {
     : !isLearner ? 'Utilisateur'
     : situation === 'employee' ? '💼 Employé'
     : situation === 'student_employee' ? '🎓 Étudiant & 💼 Employé'
-    : situation === 'self_directed' ? '📚 Autodidacte'
+    : situation === 'self_directed' ? '📚 Auto-formation'
     : '🎓 Étudiant';
 
   const [isEditing, setIsEditing] = useState(false);
