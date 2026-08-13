@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import api from '../services/api';
+import api, { unwrap } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -19,8 +19,8 @@ export function AuthProvider({ children }) {
       if (token) {
         try {
           const response = await api.get('/auth/me');
-          const userData = response.data?.data?.user || response.data?.user || response.data;
-          setUser(userData);
+          const d = unwrap(response);
+          setUser(d?.user ?? d);
         } catch (error) {
           console.error('Failed to fetch user:', error);
           setToken(null);
@@ -76,7 +76,8 @@ export function AuthProvider({ children }) {
 
   const updateProfile = async (profileData) => {
     const response = await api.patch('/users/me', profileData);
-    const updatedUser = response.data?.data?.user || response.data?.user || response.data;
+    const d = unwrap(response);
+    const updatedUser = d?.user ?? d;
     setUser(updatedUser);
     return updatedUser;
   };
@@ -97,7 +98,8 @@ export function AuthProvider({ children }) {
     const response = await api.post('/users/me/avatar', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
-    const updatedUser = response.data?.data?.user || response.data?.user || response.data;
+    const d = unwrap(response);
+    const updatedUser = d?.user ?? d;
     setUser(updatedUser);
     return updatedUser;
   };

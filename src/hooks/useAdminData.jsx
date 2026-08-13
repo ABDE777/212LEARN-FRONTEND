@@ -224,7 +224,9 @@ export function useAssignFormateur() {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.patch(`/admin/groups/${groupId}/formateur`, { formateurId });
+      // Use the unified /groups subsystem; PATCH /groups/:id accepts formateurId
+      // and re-links the formateur to the group's course.
+      const response = await api.patch(`/groups/${groupId}`, { formateurId });
       return response.data;
     } catch (err) {
       console.error('Failed to assign formateur:', err);

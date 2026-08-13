@@ -13,6 +13,13 @@ const pendingRequests = new Map();
 const CACHE_TTL_MS = 15000; // 15 seconds in-memory cache for GET queries
 
 /**
+ * Unwrap the backend's `{ success, data }` envelope: returns `res.data.data`
+ * when present, otherwise `res.data`. Use this instead of hand-written
+ * `res.data.data.x || res.data.x` fallbacks so envelope handling is consistent.
+ */
+export const unwrap = (res) => (res?.data?.data !== undefined ? res.data.data : res?.data);
+
+/**
  * Clear cached API responses by URL prefix
  */
 export const clearApiCache = (pattern) => {
@@ -42,12 +49,13 @@ api.interceptors.request.use(
 // Response interceptor – handle caching, deduplication & 401 errors
 api.interceptors.response.use(
   response => {
-    // Invalidate GET cache on mutation methods (POST, PUT, PATCH, DELETE)
+    // Invalidate the GET cache on any mutation (POST, PUT, PATCH, DELETE).
+    // Clearing everything is the safe choice: the cache is only a 15s perf
+    // optimization, and a per-prefix scheme kept missing resources (groups,
+    // cart, wishlist, enrollments, coupons, meetings…) so writes there left the
+    // UI showing stale data. Correctness over a tiny cache-hit gain.
     if (['post', 'put', 'patch', 'delete'].includes(response.config.method?.toLowerCase())) {
-      const url = response.config.url || '';
-      if (url.includes('/courses')) clearApiCache('/courses');
-      if (url.includes('/categories')) clearApiCache('/categories');
-      if (url.includes('/users')) clearApiCache('/users');
+      clearApiCache();
     }
     return response;
   },
