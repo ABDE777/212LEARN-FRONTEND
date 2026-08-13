@@ -426,6 +426,22 @@ button {
   }
 }
 
+/* Indeterminate progress bar: a segment sweeping left→right, used while an
+   action with no measurable progress (e.g. account creation) is in flight. */
+.progress-indeterminate {
+  width: 40%;
+  animation: indeterminate 1.2s ease-in-out infinite;
+}
+
+@keyframes indeterminate {
+  0% {
+    margin-left: -40%;
+  }
+  100% {
+    margin-left: 100%;
+  }
+}
+
 .hero-left {
   display: flex;
   align-items: center;
