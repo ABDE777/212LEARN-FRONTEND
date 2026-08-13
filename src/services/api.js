@@ -13,6 +13,13 @@ const pendingRequests = new Map();
 const CACHE_TTL_MS = 15000; // 15 seconds in-memory cache for GET queries
 
 /**
+ * Unwrap the backend's `{ success, data }` envelope: returns `res.data.data`
+ * when present, otherwise `res.data`. Use this instead of hand-written
+ * `res.data.data.x || res.data.x` fallbacks so envelope handling is consistent.
+ */
+export const unwrap = (res) => (res?.data?.data !== undefined ? res.data.data : res?.data);
+
+/**
  * Clear cached API responses by URL prefix
  */
 export const clearApiCache = (pattern) => {

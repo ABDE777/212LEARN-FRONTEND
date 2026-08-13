@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
@@ -8,37 +9,38 @@ import { ToastProvider } from './context/ToastContext';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
 
-// Layouts
+// Layouts (small; kept eager — they wrap the routes)
 import ProtectedLayout from './layouts/ProtectedLayout';
 import StudentLayout from './layouts/StudentLayout';
 import InstructorLayout from './layouts/InstructorLayout';
 import AdminLayout from './layouts/AdminLayout';
 
-// Pages
-import Home from './pages/Home';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
-import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
-import Profile from './pages/Profile';
-import Catalog from './pages/Catalog';
-import About from './pages/About';
-import CourseDetails from './pages/CourseDetails';
-import Checkout from './pages/Checkout';
-import Cart from './pages/Cart';
-import Wishlist from './pages/Wishlist';
-import ClassroomPlayer from './pages/ClassroomPlayer';
-import QuizPlayer from './pages/QuizPlayer';
-import AssignmentSubmit from './pages/AssignmentSubmit';
-import StudentDashboard from './pages/StudentDashboard';
-import InstructorDashboard from './pages/InstructorDashboard';
-import AdminDashboard from './pages/AdminDashboard';
-import InstructorCourseManage from './pages/InstructorCourseManage';
-import NotFound from './pages/NotFound';
+// Pages — lazy-loaded so each route is its own chunk (was one 1.95 MB bundle).
+const Home = lazy(() => import('./pages/Home'));
+const Login = lazy(() => import('./pages/Login'));
+const Signup = lazy(() => import('./pages/Signup'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Catalog = lazy(() => import('./pages/Catalog'));
+const About = lazy(() => import('./pages/About'));
+const CourseDetails = lazy(() => import('./pages/CourseDetails'));
+const Checkout = lazy(() => import('./pages/Checkout'));
+const Cart = lazy(() => import('./pages/Cart'));
+const Wishlist = lazy(() => import('./pages/Wishlist'));
+const ClassroomPlayer = lazy(() => import('./pages/ClassroomPlayer'));
+const QuizPlayer = lazy(() => import('./pages/QuizPlayer'));
+const AssignmentSubmit = lazy(() => import('./pages/AssignmentSubmit'));
+const StudentDashboard = lazy(() => import('./pages/StudentDashboard'));
+const InstructorDashboard = lazy(() => import('./pages/InstructorDashboard'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const InstructorCourseManage = lazy(() => import('./pages/InstructorCourseManage'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 // Components
 import Footer from './components/Footer';
 import CartDrawer from './components/CartDrawer';
+import LoadingSpinner from './components/LoadingSpinner';
 
 const HIDDEN_FOOTER_PATHS = [
   '/student/dashboard',
@@ -62,6 +64,7 @@ function App() {
         <CartProvider>
           <WishlistProvider>
             <Router>
+              <Suspense fallback={<LoadingSpinner />}>
               <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<Home />} />
@@ -103,6 +106,7 @@ function App() {
                 {/* 404 Catch-all */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              </Suspense>
               <CartDrawer />
               <FooterWrapper />
             </Router>
