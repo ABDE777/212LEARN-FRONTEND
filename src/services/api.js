@@ -42,12 +42,13 @@ api.interceptors.request.use(
 // Response interceptor – handle caching, deduplication & 401 errors
 api.interceptors.response.use(
   response => {
-    // Invalidate GET cache on mutation methods (POST, PUT, PATCH, DELETE)
+    // Invalidate the GET cache on any mutation (POST, PUT, PATCH, DELETE).
+    // Clearing everything is the safe choice: the cache is only a 15s perf
+    // optimization, and a per-prefix scheme kept missing resources (groups,
+    // cart, wishlist, enrollments, coupons, meetings…) so writes there left the
+    // UI showing stale data. Correctness over a tiny cache-hit gain.
     if (['post', 'put', 'patch', 'delete'].includes(response.config.method?.toLowerCase())) {
-      const url = response.config.url || '';
-      if (url.includes('/courses')) clearApiCache('/courses');
-      if (url.includes('/categories')) clearApiCache('/categories');
-      if (url.includes('/users')) clearApiCache('/users');
+      clearApiCache();
     }
     return response;
   },
