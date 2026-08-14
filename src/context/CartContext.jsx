@@ -6,7 +6,7 @@ import { useAuth } from './AuthContext';
 const CartContext = createContext(null);
 
 export function CartProvider({ children }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { showSuccess, showError } = useToast();
 
   const [cart, setCart] = useState(null);
@@ -14,7 +14,9 @@ export function CartProvider({ children }) {
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   const fetchCart = useCallback(async () => {
-    if (!isAuthenticated) {
+    const userRole = user?.role?.toUpperCase();
+    // Only fetch cart for students
+    if (!isAuthenticated || userRole !== 'STUDENT') {
       setCart(null);
       return;
     }
@@ -28,7 +30,7 @@ export function CartProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user]);
 
   useEffect(() => {
     fetchCart();
