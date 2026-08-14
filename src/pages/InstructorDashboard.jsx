@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import InstructorSidebar from '../components/InstructorSidebar';
 import {
   BookOpen, Plus, Video, Users, User, LogOut,
   Calendar, Clock, Link, ExternalLink, Copy, Check,
@@ -21,6 +22,14 @@ import SessionCalendar from '../components/SessionCalendar';
 import api from '../services/api';
 
 /* ─── helpers ─────────────────────────────── */
+// Course status → French label + colour (draft / published / archived).
+const COURSE_STATUS = {
+  draft:     { label: 'Brouillon', color: '#b26a00' },
+  published: { label: 'Publié',    color: 'var(--success-color)' },
+  archived:  { label: 'Archivé',   color: 'var(--secondary)' },
+};
+const courseStatusMeta = (status) => COURSE_STATUS[status] || { label: status || 'Brouillon', color: '#b26a00' };
+
 const PLATFORMS = [
   { id: 'zoom',   label: 'Zoom',         color: '#2D8CFF', pattern: 'zoom.us' },
   { id: 'meet',   label: 'Google Meet',  color: '#34A853', pattern: 'meet.google' },
@@ -1685,16 +1694,23 @@ export default function InstructorDashboard() {
   };
   const { courses, loading, error } = useInstructorCourses();
   const { createCourse, loading: createLoading, error: createError } = useCreateCourse();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { revenueData, studentsData, completionData, loading: analyticsLoading, error: analyticsError, refetch: refetchAnalytics } = useInstructorAnalytics();
 
   const [newCourseTitle, setNewCourseTitle] = useState('');
+  const [newCourseDescription, setNewCourseDescription] = useState('');
+  const [newCoursePrice, setNewCoursePrice] = useState('');
+  const [newCourseLevel, setNewCourseLevel] = useState('');
   const [newCourseCategoryId, setNewCourseCategoryId] = useState('');
   const [newCourseThumbnailFile, setNewCourseThumbnailFile] = useState(null);
   const [newCourseThumbnailUrl, setNewCourseThumbnailUrl] = useState('');
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
+
+  // "Mes cours" filters — follow every course whatever its status.
+  const [courseSearch, setCourseSearch] = useState('');
+  const [courseStatusFilter, setCourseStatusFilter] = useState('all');
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -1765,7 +1781,10 @@ export default function InstructorDashboard() {
     try {
       const course = await createCourse({
         title: newCourseTitle,
+        description: newCourseDescription || undefined,
         categoryId: newCourseCategoryId,
+        price: newCoursePrice === '' ? 0 : Number(newCoursePrice),
+        level: newCourseLevel || undefined,
         thumbnail: newCourseThumbnailUrl || undefined,
       });
       navigate(`/instructor/courses/${course.id}/manage`);
@@ -1774,54 +1793,11 @@ export default function InstructorDashboard() {
     }
   };
 
-  const TABS = [
-    { key: 'courses',   icon: <BookOpen size={18} />,  label: 'Mes cours' },
-    { key: 'create',    icon: <Plus size={18} />,       label: 'Créer un cours' },
-    { key: 'analytics', icon: <BarChart3 size={18} />,   label: 'Analytics' },
-    { key: 'quizzes',   icon: <HelpCircle size={18} />, label: 'Quiz' },
-    { key: 'meetings',  icon: <Video size={18} />,      label: 'Sessions Live' },
-    { key: 'students',  icon: <Users size={18} />,      label: 'Étudiants' },
-    { key: 'profile',   icon: <User size={18} />,       label: 'Mon profil' },
-  ];
-
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
-
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-color)' }}>
       <Navbar />
       <div className="dashboard-layout">
-        <aside className={`dashboard-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
-          <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="sidebar-toggle-btn"
-            title={sidebarCollapsed ? "Déplier le menu" : "Réduire le menu"}
-          >
-            {sidebarCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-          </button>
-
-          <nav className="sidebar-menu">
-            {TABS.map(t => (
-              <button
-                key={t.key}
-                onClick={() => setActiveTab(t.key)}
-                className={`sidebar-menu-btn ${activeTab === t.key ? 'active' : ''}`}
-                title={t.label}
-              >
-                {t.icon}
-                <span>{t.label}</span>
-              </button>
-            ))}
-            <button
-              onClick={() => { logout(); window.location.href = '/login'; }}
-              className="sidebar-menu-btn"
-              style={{ marginTop: 'auto', color: 'var(--error-color)' }}
-              title="Déconnexion"
-            >
-              <LogOut size={18} />
-              <span>Déconnexion</span>
-            </button>
-          </nav>
-        </aside>
+        <InstructorSidebar active={activeTab} onSelect={setActiveTab} />
 
         <main className="dashboard-main-content">
           {activeTab === 'profile' ? (
@@ -1833,45 +1809,87 @@ export default function InstructorDashboard() {
             <div key={activeTab} className="tab-panel" style={{ background: '#fff', padding: '2rem', borderRadius: '16px', boxShadow: 'var(--shadow-sm)' }}>
 
               {/* My Courses */}
-              {activeTab === 'courses' && (
+              {activeTab === 'courses' && (() => {
+                const q = courseSearch.trim().toLowerCase();
+                const filteredCourses = courses.filter(c => {
+                  const matchesSearch = !q || (c.title || '').toLowerCase().includes(q);
+                  const matchesStatus = courseStatusFilter === 'all' || (c.status || 'draft') === courseStatusFilter;
+                  return matchesSearch && matchesStatus;
+                });
+                const countBy = (s) => courses.filter(c => (c.status || 'draft') === s).length;
+                return (
                 <div>
-                  <h2 style={{ marginBottom: '1.5rem', fontSize: '1.5rem' }}>Mes cours</h2>
+                  <h2 style={{ marginBottom: '1.25rem', fontSize: '1.5rem' }}>Mes cours</h2>
                   {loading && <LoadingSpinner />}
                   {error && <p style={{ color: 'var(--error-color)' }}>{error}</p>}
                   {!loading && !error && courses.length === 0 && (
                     <p style={{ color: 'var(--secondary)' }}>Vous n'avez pas encore de cours.</p>
                   )}
                   {!loading && !error && courses.length > 0 && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
-                      {courses.map(course => (
-                        <div key={course.id} style={{ padding: '1.5rem', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
-                          <h3 style={{ marginBottom: '0.5rem', color: 'var(--text-color)' }}>{course.title}</h3>
-                          <p style={{ marginBottom: '0.35rem', color: 'var(--secondary)' }}>
-                            Statut : <span style={{ fontWeight: 600, color: course.status === 'published' ? 'var(--success-color)' : '#b26a00' }}>
-                              {course.status === 'published' ? 'Publié' : 'Brouillon'}
-                            </span>
-                          </p>
-                          <p style={{ color: 'var(--secondary)', marginBottom: '0.35rem' }}>
-                            {course._count?.enrollments || course.enrolledCount || 0} étudiants inscrits
-                          </p>
-                          {course.price && (
-                            <p style={{ color: 'var(--text-color)', fontWeight: 600, marginBottom: '1rem' }}>
-                              {course.price} MAD
-                            </p>
-                          )}
-                          <button
-                            onClick={() => navigate(`/instructor/courses/${course.id}/manage`)}
-                            className="btn-primary"
-                            style={{ padding: '0.5rem 1rem', width: '100%', cursor: 'pointer' }}
-                          >
-                            Gérer le cours
-                          </button>
+                    <>
+                      {/* Filter bar — follow every course whatever its status */}
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center', marginBottom: '1.5rem' }}>
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={courseSearch}
+                          onChange={e => setCourseSearch(e.target.value)}
+                          placeholder="Rechercher un cours par titre…"
+                          style={{ flex: '1 1 220px', maxWidth: '340px' }}
+                        />
+                        <select
+                          className="form-control"
+                          value={courseStatusFilter}
+                          onChange={e => setCourseStatusFilter(e.target.value)}
+                          style={{ flex: '0 0 auto', width: 'auto' }}
+                        >
+                          <option value="all">Tous les statuts ({courses.length})</option>
+                          <option value="draft">Brouillon ({countBy('draft')})</option>
+                          <option value="published">Publié ({countBy('published')})</option>
+                          <option value="archived">Archivé ({countBy('archived')})</option>
+                        </select>
+                        <span style={{ color: 'var(--secondary)', fontSize: '0.9rem' }}>
+                          {filteredCourses.length} / {courses.length}
+                        </span>
+                      </div>
+
+                      {filteredCourses.length === 0 ? (
+                        <p style={{ color: 'var(--secondary)' }}>Aucun cours ne correspond à votre recherche.</p>
+                      ) : (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
+                          {filteredCourses.map(course => {
+                            const meta = courseStatusMeta(course.status);
+                            return (
+                              <div key={course.id} style={{ padding: '1.5rem', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
+                                <h3 style={{ marginBottom: '0.5rem', color: 'var(--text-color)' }}>{course.title}</h3>
+                                <p style={{ marginBottom: '0.35rem', color: 'var(--secondary)' }}>
+                                  Statut : <span style={{ fontWeight: 600, color: meta.color }}>{meta.label}</span>
+                                </p>
+                                <p style={{ color: 'var(--secondary)', marginBottom: '0.35rem' }}>
+                                  {course._count?.enrollments || course.enrolledCount || 0} étudiants inscrits
+                                </p>
+                                {course.price != null && (
+                                  <p style={{ color: 'var(--text-color)', fontWeight: 600, marginBottom: '1rem' }}>
+                                    {Number(course.price) === 0 ? 'Gratuit' : `${course.price} MAD`}
+                                  </p>
+                                )}
+                                <button
+                                  onClick={() => navigate(`/instructor/courses/${course.id}/manage`)}
+                                  className="btn-primary"
+                                  style={{ padding: '0.5rem 1rem', width: '100%', cursor: 'pointer' }}
+                                >
+                                  Gérer le cours
+                                </button>
+                              </div>
+                            );
+                          })}
                         </div>
-                      ))}
-                    </div>
+                      )}
+                    </>
                   )}
                 </div>
-              )}
+                );
+              })()}
 
               {/* Create course */}
               {activeTab === 'create' && (
@@ -1904,6 +1922,44 @@ export default function InstructorDashboard() {
                           <option key={cat.id} value={cat.id}>{cat.name}</option>
                         ))}
                       </select>
+                    </div>
+                    <div className="form-group" style={{ marginBottom: '1rem' }}>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Description</label>
+                      <textarea
+                        className="form-control"
+                        value={newCourseDescription}
+                        onChange={e => setNewCourseDescription(e.target.value)}
+                        rows={4}
+                        placeholder="Décrivez le contenu et les objectifs du cours…"
+                        style={{ resize: 'vertical' }}
+                      />
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                      <div className="form-group">
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Prix (MAD)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          className="form-control"
+                          value={newCoursePrice}
+                          onChange={e => setNewCoursePrice(e.target.value)}
+                          placeholder="0 = gratuit"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Niveau</label>
+                        <select
+                          className="form-control"
+                          value={newCourseLevel}
+                          onChange={e => setNewCourseLevel(e.target.value)}
+                        >
+                          <option value="">-- Sélectionner un niveau --</option>
+                          <option value="beginner">Débutant</option>
+                          <option value="intermediate">Intermédiaire</option>
+                          <option value="advanced">Avancé</option>
+                        </select>
+                      </div>
                     </div>
                     <div className="form-group" style={{ marginBottom: '1rem' }}>
                       <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Image de couverture</label>
