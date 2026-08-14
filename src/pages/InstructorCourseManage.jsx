@@ -6,6 +6,7 @@ import {
   File as FileIcon, Users,
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import InstructorSidebar from '../components/InstructorSidebar';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useCurriculumBuilder } from '../hooks/useCurriculumBuilder';
 import { useInstructorAssignments, useSubmissions } from '../hooks/useInstructorAssignments';
@@ -885,9 +886,12 @@ export default function InstructorCourseManage() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-color)' }}>
       <Navbar />
-      <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
+      <div className="dashboard-layout">
+        <InstructorSidebar active={null} />
+        <main className="dashboard-main-content">
+          <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         <button
-          onClick={() => navigate('/instructor/dashboard')}
+          onClick={() => navigate('/instructor/dashboard?tab=courses')}
           className="btn-secondary"
           style={{ marginBottom: '1.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
         >
@@ -923,6 +927,8 @@ export default function InstructorCourseManage() {
         {activeTab === 'curriculum' && <CurriculumBuilder courseId={id} />}
         {activeTab === 'assignments' && <AssignmentsManager courseId={id} />}
         {activeTab === 'groups' && <GroupsManager courseId={id} />}
+          </div>
+        </main>
       </div>
     </div>
   );
