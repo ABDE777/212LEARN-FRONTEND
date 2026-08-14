@@ -21,6 +21,20 @@ import SessionCalendar from '../components/SessionCalendar';
 import api from '../services/api';
 
 /* ─── helpers ─────────────────────────────── */
+// GET /categories returns a nested tree (roots with children[]). Flatten it so
+// the course-category dropdown lists parents AND sub-categories, indented and
+// all selectable — same behaviour as the admin course form.
+function flattenCategories(categories = [], level = 0) {
+  return categories.flatMap((cat) => {
+    const indent = '    '.repeat(level);
+    const prefix = level > 0 ? `${indent}└─ ` : '📁 ';
+    return [
+      { id: cat.id, name: cat.name, level, selectLabel: `${prefix}${cat.name}` },
+      ...(cat.children ? flattenCategories(cat.children, level + 1) : []),
+    ];
+  });
+}
+
 const PLATFORMS = [
   { id: 'zoom',   label: 'Zoom',         color: '#2D8CFF', pattern: 'zoom.us' },
   { id: 'meet',   label: 'Google Meet',  color: '#34A853', pattern: 'meet.google' },
@@ -1708,9 +1722,8 @@ export default function InstructorDashboard() {
       try {
         const response = await api.get('/categories');
         const allCategories = response.data?.data?.categories || response.data?.data || [];
-        // Filter only parent categories (no parentId)
-        const parentCategories = allCategories.filter(cat => !cat.parentId);
-        setCategories(parentCategories);
+        // Include sub-categories (the API nests them under each parent's children).
+        setCategories(flattenCategories(allCategories));
       } catch (err) {
         console.error('Failed to fetch categories:', err);
       } finally {
@@ -2130,7 +2143,7 @@ export default function InstructorDashboard() {
                   >
                     <option value="">{categoriesLoading ? 'Chargement...' : '-- Sélectionner une catégorie --'}</option>
                     {categories.map(cat => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                      <option key={cat.id} value={cat.id}>{cat.selectLabel || cat.name}</option>
                     ))}
                   </select>
                 </div>
