@@ -1690,6 +1690,9 @@ export default function InstructorDashboard() {
 
   const [newCourseTitle, setNewCourseTitle] = useState('');
   const [newCourseCategoryId, setNewCourseCategoryId] = useState('');
+  const [newCourseThumbnailFile, setNewCourseThumbnailFile] = useState(null);
+  const [newCourseThumbnailUrl, setNewCourseThumbnailUrl] = useState('');
+  const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
 
@@ -1708,12 +1711,62 @@ export default function InstructorDashboard() {
     fetchCategories();
   }, []);
 
+  const handleThumbnailChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setNewCourseThumbnailFile(file);
+      // Upload immediately to Cloudinary
+      uploadThumbnailToCloudinary(file);
+    }
+  };
+
+  const uploadThumbnailToCloudinary = async (file) => {
+    setUploadingThumbnail(true);
+    try {
+      // Get signed upload from backend
+      const signResponse = await api.post('/uploads/cloudinary-sign', {
+        type: 'image',
+        filename: file.name,
+        mimetype: file.type,
+      });
+
+      const { uploadUrl, formFields, cloudName } = signResponse.data.data;
+
+      // Upload directly to Cloudinary
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('api_key', formFields.api_key);
+      formData.append('timestamp', formFields.timestamp);
+      formData.append('signature', formFields.signature);
+      formData.append('folder', formFields.folder);
+      formData.append('public_id', formFields.public_id);
+
+      const uploadResponse = await fetch(uploadUrl, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const uploadResult = await uploadResponse.json();
+      
+      if (uploadResult.secure_url) {
+        setNewCourseThumbnailUrl(uploadResult.secure_url);
+      } else {
+        console.error('Upload failed:', uploadResult);
+      }
+    } catch (err) {
+      console.error('Failed to upload thumbnail:', err);
+    } finally {
+      setUploadingThumbnail(false);
+    }
+  };
+
   const handleCreateCourse = async (e) => {
     e.preventDefault();
     try {
       const course = await createCourse({
         title: newCourseTitle,
         categoryId: newCourseCategoryId,
+        thumbnail: newCourseThumbnailUrl || undefined,
       });
       navigate(`/instructor/courses/${course.id}/manage`);
     } catch (err) {
@@ -1851,6 +1904,36 @@ export default function InstructorDashboard() {
                           <option key={cat.id} value={cat.id}>{cat.name}</option>
                         ))}
                       </select>
+                    </div>
+                    <div className="form-group" style={{ marginBottom: '1rem' }}>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Image de couverture</label>
+                      <input
+                        type="file"
+                        className="form-control"
+                        onChange={handleThumbnailChange}
+                        accept="image/jpeg,image/png,image/gif,image/webp"
+                        disabled={uploadingThumbnail}
+                      />
+                      {uploadingThumbnail && (
+                        <p style={{ fontSize: '0.8rem', color: 'var(--primary)', marginTop: '0.3rem' }}>
+                          Téléchargement en cours...
+                        </p>
+                      )}
+                      {newCourseThumbnailUrl && !uploadingThumbnail && (
+                        <div style={{ marginTop: '0.5rem' }}>
+                          <img
+                            src={newCourseThumbnailUrl}
+                            alt="Aperçu"
+                            style={{ maxWidth: '200px', maxHeight: '150px', borderRadius: '8px', border: '1px solid var(--border-color)' }}
+                          />
+                          <p style={{ fontSize: '0.8rem', color: 'var(--success-color)', marginTop: '0.3rem' }}>
+                            Image téléchargée avec succès
+                          </p>
+                        </div>
+                      )}
+                      <p style={{ fontSize: '0.8rem', color: 'var(--secondary)', marginTop: '0.3rem' }}>
+                        Formats acceptés: JPG, PNG, GIF, WebP (max 10 MB)
+                      </p>
                     </div>
                     <button type="submit" className="btn-primary" disabled={createLoading || !newCourseCategoryId} style={{ padding: '0.75rem 1.5rem' }}>
                       {createLoading ? 'Création…' : 'Créer le brouillon'}
