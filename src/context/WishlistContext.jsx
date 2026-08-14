@@ -6,14 +6,16 @@ import { useAuth } from './AuthContext';
 const WishlistContext = createContext(null);
 
 export function WishlistProvider({ children }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { showSuccess, showError } = useToast();
 
   const [wishlist, setWishlist] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const fetchWishlist = useCallback(async () => {
-    if (!isAuthenticated) {
+    const userRole = user?.role?.toUpperCase();
+    // Only fetch wishlist for students
+    if (!isAuthenticated || userRole !== 'STUDENT') {
       setWishlist(null);
       return;
     }
@@ -27,7 +29,7 @@ export function WishlistProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user]);
 
   useEffect(() => {
     fetchWishlist();

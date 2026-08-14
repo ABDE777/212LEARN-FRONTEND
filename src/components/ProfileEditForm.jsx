@@ -565,7 +565,7 @@ export default function ProfileEditForm() {
             <User size={20} style={{ color: 'var(--primary)' }} />
             Informations personnelles
           </h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
                 Prénom
@@ -622,7 +622,7 @@ export default function ProfileEditForm() {
                 </span>
               )}
             </div>
-            <div>
+            <div style={{ gridColumn: '1 / -1' }}>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
                 Téléphone
               </label>
@@ -691,7 +691,7 @@ export default function ProfileEditForm() {
               <GraduationCap size={20} style={{ color: 'var(--primary)' }} />
               Informations académiques
             </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
                   École / Université
@@ -892,12 +892,14 @@ export default function ProfileEditForm() {
               <Briefcase size={20} style={{ color: 'var(--primary)' }} />
               Informations professionnelles
             </h3>
-            <div style={gridStyle}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
               {renderText('Entreprise', 'companyName', "Nom de l'entreprise")}
               {renderText('Service / Département', 'department', 'ex: Ressources Humaines')}
               {renderText('Poste', 'position', 'ex: Développeur')}
               {renderText('Secteur', 'sector', 'ex: Technologie')}
-              {renderSelect("Années d'expérience", 'experienceYears', EXPERIENCE_OPTIONS)}
+              <div style={{ gridColumn: '1 / -1' }}>
+                {renderSelect("Années d'expérience", 'experienceYears', EXPERIENCE_OPTIONS)}
+              </div>
             </div>
           </div>
         )}
@@ -932,7 +934,7 @@ export default function ProfileEditForm() {
               <Briefcase size={20} style={{ color: 'var(--primary)' }} />
               Informations professionnelles
             </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
                   Domaine d'expertise
@@ -981,7 +983,7 @@ export default function ProfileEditForm() {
                   }}
                 />
               </div>
-              <div>
+              <div style={{ gridColumn: '1 / -1' }}>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
                   Organisation / Entreprise
                 </label>
@@ -1005,7 +1007,7 @@ export default function ProfileEditForm() {
                   }}
                 />
               </div>
-              <div>
+              <div style={{ gridColumn: '1 / -1' }}>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
                   Années d'expérience
                 </label>

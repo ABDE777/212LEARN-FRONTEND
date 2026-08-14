@@ -5,7 +5,7 @@ import {
   BookOpen, Plus, Video, Users, User, LogOut,
   Calendar, Clock, Link, ExternalLink, Copy, Check,
   CheckCircle, ChevronRight, ChevronLeft, Zap, Mail, Search,
-  HelpCircle, Brain, Lock, Pencil, Trash2, X, Save, LayoutGrid,
+  HelpCircle, Brain, Pencil, Trash2, X, Save, LayoutGrid,
   TrendingUp, DollarSign, Award, BarChart3, RefreshCw,
 } from 'lucide-react';
 import { useInstructorCourses, useCreateCourse, useCourseCurriculum, useCourseQuizzes, useCreateQuiz, useGenerateAiQuiz, useAddQuizQuestion, useQuiz, useUpdateQuiz, useDeleteQuiz, useUpdateQuestion, useDeleteQuestion } from '../hooks/useInstructorCourses';
@@ -18,6 +18,7 @@ import ProfileEditForm from '../components/ProfileEditForm';
 import ChangePasswordForm from '../components/ChangePasswordForm';
 import VirtualClassroom from '../components/VirtualClassroom';
 import SessionCalendar from '../components/SessionCalendar';
+import api from '../services/api';
 
 /* ─── helpers ─────────────────────────────── */
 const PLATFORMS = [
@@ -1688,14 +1689,84 @@ export default function InstructorDashboard() {
   const { revenueData, studentsData, completionData, loading: analyticsLoading, error: analyticsError, refetch: refetchAnalytics } = useInstructorAnalytics();
 
   const [newCourseTitle, setNewCourseTitle] = useState('');
-  const [newCourseCategory, setNewCourseCategory] = useState('');
+  const [newCourseCategoryId, setNewCourseCategoryId] = useState('');
+  const [newCourseThumbnailFile, setNewCourseThumbnailFile] = useState(null);
+  const [newCourseThumbnailUrl, setNewCourseThumbnailUrl] = useState('');
+  const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      setCategoriesLoading(true);
+      try {
+        const response = await api.get('/categories');
+        setCategories(response.data?.data?.categories || response.data?.data || []);
+      } catch (err) {
+        console.error('Failed to fetch categories:', err);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  const handleThumbnailChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setNewCourseThumbnailFile(file);
+      // Upload immediately to Cloudinary
+      uploadThumbnailToCloudinary(file);
+    }
+  };
+
+  const uploadThumbnailToCloudinary = async (file) => {
+    setUploadingThumbnail(true);
+    try {
+      // Get signed upload from backend
+      const signResponse = await api.post('/uploads/cloudinary-sign', {
+        type: 'image',
+        filename: file.name,
+        mimetype: file.type,
+      });
+
+      const { uploadUrl, formFields, cloudName } = signResponse.data.data;
+
+      // Upload directly to Cloudinary
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('api_key', formFields.api_key);
+      formData.append('timestamp', formFields.timestamp);
+      formData.append('signature', formFields.signature);
+      formData.append('folder', formFields.folder);
+      formData.append('public_id', formFields.public_id);
+
+      const uploadResponse = await fetch(uploadUrl, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const uploadResult = await uploadResponse.json();
+      
+      if (uploadResult.secure_url) {
+        setNewCourseThumbnailUrl(uploadResult.secure_url);
+      } else {
+        console.error('Upload failed:', uploadResult);
+      }
+    } catch (err) {
+      console.error('Failed to upload thumbnail:', err);
+    } finally {
+      setUploadingThumbnail(false);
+    }
+  };
 
   const handleCreateCourse = async (e) => {
     e.preventDefault();
     try {
       const course = await createCourse({
         title: newCourseTitle,
-        categoryId: newCourseCategory || undefined,
+        categoryId: newCourseCategoryId,
+        thumbnail: newCourseThumbnailUrl || undefined,
       });
       navigate(`/instructor/courses/${course.id}/manage`);
     } catch (err) {
@@ -1711,7 +1782,6 @@ export default function InstructorDashboard() {
     { key: 'meetings',  icon: <Video size={18} />,      label: 'Sessions Live' },
     { key: 'students',  icon: <Users size={18} />,      label: 'Étudiants' },
     { key: 'profile',   icon: <User size={18} />,       label: 'Mon profil' },
-    { key: 'security',  icon: <Lock size={18} />,       label: 'Sécurité' },
   ];
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
@@ -1755,9 +1825,10 @@ export default function InstructorDashboard() {
 
         <main className="dashboard-main-content">
           {activeTab === 'profile' ? (
-            <div key="profile" className="tab-panel"><ProfileEditForm /></div>
-          ) : activeTab === 'security' ? (
-            <div key="security" className="tab-panel"><ChangePasswordForm /></div>
+            <div key="profile" className="tab-panel" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+              <ProfileEditForm />
+              <ChangePasswordForm />
+            </div>
           ) : (
             <div key={activeTab} className="tab-panel" style={{ background: '#fff', padding: '2rem', borderRadius: '16px', boxShadow: 'var(--shadow-sm)' }}>
 
@@ -1819,7 +1890,52 @@ export default function InstructorDashboard() {
                         placeholder="ex : Maîtriser React en 2026"
                       />
                     </div>
-                    <button type="submit" className="btn-primary" disabled={createLoading} style={{ padding: '0.75rem 1.5rem' }}>
+                    <div className="form-group" style={{ marginBottom: '1rem' }}>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Catégorie *</label>
+                      <select
+                        className="form-control"
+                        value={newCourseCategoryId}
+                        onChange={e => setNewCourseCategoryId(e.target.value)}
+                        required
+                        disabled={categoriesLoading}
+                      >
+                        <option value="">{categoriesLoading ? 'Chargement...' : '-- Sélectionner une catégorie --'}</option>
+                        {categories.map(cat => (
+                          <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="form-group" style={{ marginBottom: '1rem' }}>
+                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Image de couverture</label>
+                      <input
+                        type="file"
+                        className="form-control"
+                        onChange={handleThumbnailChange}
+                        accept="image/jpeg,image/png,image/gif,image/webp"
+                        disabled={uploadingThumbnail}
+                      />
+                      {uploadingThumbnail && (
+                        <p style={{ fontSize: '0.8rem', color: 'var(--primary)', marginTop: '0.3rem' }}>
+                          Téléchargement en cours...
+                        </p>
+                      )}
+                      {newCourseThumbnailUrl && !uploadingThumbnail && (
+                        <div style={{ marginTop: '0.5rem' }}>
+                          <img
+                            src={newCourseThumbnailUrl}
+                            alt="Aperçu"
+                            style={{ maxWidth: '200px', maxHeight: '150px', borderRadius: '8px', border: '1px solid var(--border-color)' }}
+                          />
+                          <p style={{ fontSize: '0.8rem', color: 'var(--success-color)', marginTop: '0.3rem' }}>
+                            Image téléchargée avec succès
+                          </p>
+                        </div>
+                      )}
+                      <p style={{ fontSize: '0.8rem', color: 'var(--secondary)', marginTop: '0.3rem' }}>
+                        Formats acceptés: JPG, PNG, GIF, WebP (max 10 MB)
+                      </p>
+                    </div>
+                    <button type="submit" className="btn-primary" disabled={createLoading || !newCourseCategoryId} style={{ padding: '0.75rem 1.5rem' }}>
                       {createLoading ? 'Création…' : 'Créer le brouillon'}
                     </button>
                   </form>

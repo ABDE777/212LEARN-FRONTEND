@@ -313,13 +313,15 @@ export default function Signup() {
           department: formData.department.trim() || undefined,
           position: formData.position.trim() || undefined,
           sector: formData.sector.trim() || undefined,
-          experienceYears: EXPERIENCE_MAP[formData.experienceYears] || undefined,
+          experienceYears: EXPERIENCE_MAP[formData.experienceYears] || formData.experienceYears,
           interests: formData.interests.trim() || undefined,
           learningObjective: formData.learningObjective.trim() || undefined,
           currentLevel: formData.currentLevel || undefined,
           isSelfDirected: formData.learnerSituation === 'self_directed',
         };
       } else if (formData.role === 'instructor') {
+        const mappedExperience = EXPERIENCE_MAP[formData.experienceYears];
+        console.log('Mapping experienceYears:', formData.experienceYears, '->', mappedExperience);
         payload.instructorProfile = {
           situation: formData.instructorSituation,
           expertiseDomain: formData.expertiseDomain.trim(),
@@ -328,7 +330,7 @@ export default function Signup() {
           department: formData.department.trim() || undefined,
           position: formData.position.trim() || undefined,
           sector: formData.sector.trim() || undefined,
-          experienceYears: EXPERIENCE_MAP[formData.experienceYears] || undefined,
+          experienceYears: mappedExperience || formData.experienceYears,
           teachingMode: TEACHING_MODE_MAP[formData.teachingMode] || formData.teachingMode,
           teachingDomains: formData.teachingDomains.trim() || undefined,
         };
@@ -1164,7 +1166,14 @@ export default function Signup() {
                 <p style={{ margin: 0 }}><strong>Entreprise:</strong> {formData.companyName}</p>
                 <p style={{ margin: 0 }}><strong>Poste:</strong> {formData.position}</p>
                 <p style={{ margin: 0 }}><strong>Secteur:</strong> {formData.sector}</p>
-                <p style={{ margin: 0 }}><strong>Expérience:</strong> {formData.experienceYears} ans</p>
+                <p style={{ margin: 0 }}><strong>Expérience:</strong> {
+                  formData.experienceYears === '1' ? 'Moins d\'un an' :
+                  formData.experienceYears === '2' ? '1–2 ans' :
+                  formData.experienceYears === '4' ? '3–5 ans' :
+                  formData.experienceYears === '8' ? '6–10 ans' :
+                  formData.experienceYears === '11' ? 'Plus de 10 ans' :
+                  formData.experienceYears
+                }</p>
               </div>
             </div>
           )}
@@ -1197,7 +1206,14 @@ export default function Signup() {
             <div style={{ color: 'var(--secondary)', lineHeight: '1.8' }}>
               <p style={{ margin: 0 }}><strong>Domaine d'expertise:</strong> {formData.specialization}</p>
               <p style={{ margin: 0 }}><strong>Spécialité:</strong> {formData.specialization}</p>
-              <p style={{ margin: 0 }}><strong>Expérience:</strong> {formData.experienceYears} ans</p>
+              <p style={{ margin: 0 }}><strong>Expérience:</strong> {
+                formData.experienceYears === '1' ? 'Moins d\'un an' :
+                formData.experienceYears === '2' ? '1–2 ans' :
+                formData.experienceYears === '4' ? '3–5 ans' :
+                formData.experienceYears === '8' ? '6–10 ans' :
+                formData.experienceYears === '11' ? 'Plus de 10 ans' :
+                formData.experienceYears
+              }</p>
               <p style={{ margin: 0 }}><strong>Domaines enseignés:</strong> {formData.teachingDomains}</p>
               <p style={{ margin: 0 }}><strong>Mode d'enseignement:</strong> {
                 formData.teachingMode === 'online' ? 'En ligne' :

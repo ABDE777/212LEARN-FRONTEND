@@ -19,8 +19,12 @@ export default function Cart() {
   const [discount, setDiscount] = useState(0);
 
   useEffect(() => {
-    if (user?.role?.toUpperCase() === 'ADMIN') {
+    const userRole = user?.role?.toUpperCase();
+    if (userRole === 'ADMIN') {
       navigate('/admin/dashboard', { replace: true });
+      return;
+    } else if (userRole === 'INSTRUCTOR') {
+      navigate('/instructor/dashboard', { replace: true });
       return;
     }
     fetchCart();
