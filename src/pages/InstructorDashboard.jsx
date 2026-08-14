@@ -1690,12 +1690,17 @@ export default function InstructorDashboard() {
 
   const [createCourseDrawerOpen, setCreateCourseDrawerOpen] = useState(false);
   const [newCourseTitle, setNewCourseTitle] = useState('');
+  const [newCourseDescription, setNewCourseDescription] = useState('');
   const [newCourseCategoryId, setNewCourseCategoryId] = useState('');
+  const [newCoursePrice, setNewCoursePrice] = useState('');
+  const [newCourseLevel, setNewCourseLevel] = useState('');
   const [newCourseThumbnailFile, setNewCourseThumbnailFile] = useState(null);
   const [newCourseThumbnailUrl, setNewCourseThumbnailUrl] = useState('');
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [courseSearchTerm, setCourseSearchTerm] = useState('');
+  const [courseStatusFilter, setCourseStatusFilter] = useState('all');
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -1763,7 +1768,10 @@ export default function InstructorDashboard() {
 
   const resetCourseForm = () => {
     setNewCourseTitle('');
+    setNewCourseDescription('');
     setNewCourseCategoryId('');
+    setNewCoursePrice('');
+    setNewCourseLevel('');
     setNewCourseThumbnailFile(null);
     setNewCourseThumbnailUrl('');
   };
@@ -1771,11 +1779,16 @@ export default function InstructorDashboard() {
   const handleCreateCourse = async (e) => {
     e.preventDefault();
     try {
-      const course = await createCourse({
+      const payload = {
         title: newCourseTitle,
         categoryId: newCourseCategoryId,
-        thumbnail: newCourseThumbnailUrl || undefined,
-      });
+        price: parseFloat(newCoursePrice) || 0,
+      };
+      if (newCourseDescription.trim()) payload.description = newCourseDescription.trim();
+      if (newCourseLevel) payload.level = newCourseLevel;
+      if (newCourseThumbnailUrl) payload.thumbnail = newCourseThumbnailUrl;
+      
+      const course = await createCourse(payload);
       resetCourseForm();
       setCreateCourseDrawerOpen(false);
       navigate(`/instructor/courses/${course.id}/manage`);
@@ -1859,6 +1872,43 @@ export default function InstructorDashboard() {
                       <Plus size={18} /> Créer un cours
                     </button>
                   </div>
+
+                  {/* Search and Filter */}
+                  <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: '250px' }}>
+                      <input
+                        type="text"
+                        placeholder="Rechercher un cours..."
+                        value={courseSearchTerm}
+                        onChange={(e) => setCourseSearchTerm(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '0.6rem 1rem',
+                          borderRadius: '8px',
+                          border: '1px solid var(--border-color)',
+                          fontSize: '0.9rem',
+                        }}
+                      />
+                    </div>
+                    <div style={{ minWidth: '150px' }}>
+                      <select
+                        value={courseStatusFilter}
+                        onChange={(e) => setCourseStatusFilter(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '0.6rem 1rem',
+                          borderRadius: '8px',
+                          border: '1px solid var(--border-color)',
+                          fontSize: '0.9rem',
+                        }}
+                      >
+                        <option value="all">Tous les statuts</option>
+                        <option value="published">Publié</option>
+                        <option value="draft">Brouillon</option>
+                      </select>
+                    </div>
+                  </div>
+
                   {loading && <LoadingSpinner />}
                   {error && <p style={{ color: 'var(--error-color)' }}>{error}</p>}
                   {!loading && !error && courses.length === 0 && (
@@ -1866,7 +1916,13 @@ export default function InstructorDashboard() {
                   )}
                   {!loading && !error && courses.length > 0 && (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
-                      {courses.map(course => (
+                      {courses
+                        .filter(course => {
+                          const matchesSearch = course.title.toLowerCase().includes(courseSearchTerm.toLowerCase());
+                          const matchesStatus = courseStatusFilter === 'all' || course.status === courseStatusFilter;
+                          return matchesSearch && matchesStatus;
+                        })
+                        .map(course => (
                         <div key={course.id} style={{ padding: '1.5rem', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
                           <h3 style={{ marginBottom: '0.5rem', color: 'var(--text-color)' }}>{course.title}</h3>
                           <p style={{ marginBottom: '0.35rem', color: 'var(--secondary)' }}>
@@ -2013,6 +2069,50 @@ export default function InstructorDashboard() {
                     value={newCourseTitle}
                     onChange={(e) => setNewCourseTitle(e.target.value)}
                   />
+                </div>
+
+                <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem' }}>Description</label>
+                  <textarea
+                    className="form-control"
+                    style={{ padding: '10px 14px', fontSize: '0.88rem' }}
+                    rows={3}
+                    placeholder="Description détaillée du cours..."
+                    value={newCourseDescription}
+                    onChange={(e) => setNewCourseDescription(e.target.value)}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
+                  <div className="form-group">
+                    <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem' }}>Prix (MAD) *</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      className="form-control"
+                      style={{ padding: '10px 14px', fontSize: '0.9rem' }}
+                      required
+                      placeholder="0 pour Gratuit"
+                      value={newCoursePrice}
+                      onChange={(e) => setNewCoursePrice(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem' }}>Niveau</label>
+                    <select
+                      className="form-control"
+                      style={{ padding: '10px 14px', fontSize: '0.88rem' }}
+                      value={newCourseLevel}
+                      onChange={(e) => setNewCourseLevel(e.target.value)}
+                    >
+                      <option value="">-- Optionnel --</option>
+                      <option value="beginner">Débutant</option>
+                      <option value="intermediate">Intermédiaire</option>
+                      <option value="advanced">Avancé</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div className="form-group" style={{ marginBottom: '1.25rem' }}>

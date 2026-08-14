@@ -3,13 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   ChevronDown, ChevronUp, Plus, Trash2, FileText, Video,
   Upload, ArrowLeft, Link, Image, Archive, Edit2, Check, X,
-  File as FileIcon, Users,
+  File as FileIcon, Users, BookOpen, BarChart3, HelpCircle, User, ChevronLeft, ChevronRight, LogOut,
 } from 'lucide-react';
-import Navbar from '../components/Navbar';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useCurriculumBuilder } from '../hooks/useCurriculumBuilder';
 import { useInstructorAssignments, useSubmissions } from '../hooks/useInstructorAssignments';
 import { useCourseGroups } from '../hooks/useCourseGroups';
+import { useAuth } from '../context/AuthContext';
 
 /* ─────────────────────────────────────────────
    Helpers
@@ -874,7 +874,9 @@ function GroupsManager({ courseId }) {
 export default function InstructorCourseManage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState('curriculum');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
 
   const tabs = [
     { key: 'curriculum', label: 'Curriculum Builder' },
@@ -882,19 +884,67 @@ export default function InstructorCourseManage() {
     { key: 'groups', label: 'Groupes & Étudiants' },
   ];
 
+  const sidebarTabs = [
+    { key: 'courses',   icon: <BookOpen size={18} />,  label: 'Mes cours' },
+    { key: 'analytics', icon: <BarChart3 size={18} />,   label: 'Analytics' },
+    { key: 'quizzes',   icon: <HelpCircle size={18} />, label: 'Quiz' },
+    { key: 'meetings',  icon: <Video size={18} />,      label: 'Sessions Live' },
+    { key: 'students',  icon: <Users size={18} />,      label: 'Étudiants' },
+    { key: 'profile',   icon: <User size={18} />,       label: 'Mon profil' },
+  ];
+
+  const handleLogout = () => {
+    logout();
+    window.location.href = '/login';
+  };
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-color)' }}>
       <Navbar />
-      <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-        <button
-          onClick={() => navigate('/instructor/dashboard')}
-          className="btn-secondary"
-          style={{ marginBottom: '1.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
-        >
-          <ArrowLeft size={16} /> Retour au tableau de bord
-        </button>
+      <div className="dashboard-layout">
+        <aside className={`dashboard-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="sidebar-toggle-btn"
+            title={sidebarCollapsed ? "Déplier le menu" : "Réduire le menu"}
+          >
+            {sidebarCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+          </button>
 
-        <h1 style={{ marginBottom: '2rem', fontSize: '2rem' }}>Gérer le cours</h1>
+          <nav className="sidebar-menu">
+            {sidebarTabs.map(t => (
+              <button
+                key={t.key}
+                onClick={() => navigate(`/instructor/dashboard?tab=${t.key}`)}
+                className="sidebar-menu-btn"
+                title={t.label}
+              >
+                {t.icon}
+                <span>{t.label}</span>
+              </button>
+            ))}
+            <button
+              onClick={handleLogout}
+              className="sidebar-menu-btn"
+              style={{ marginTop: 'auto', color: 'var(--error-color)' }}
+              title="Déconnexion"
+            >
+              <LogOut size={18} />
+              <span>Déconnexion</span>
+            </button>
+          </nav>
+        </aside>
+
+        <main className="dashboard-main-content" style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
+          <button
+            onClick={() => navigate('/instructor/dashboard')}
+            className="btn-secondary"
+            style={{ marginBottom: '1.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+          >
+            <ArrowLeft size={16} /> Retour à mes cours
+          </button>
+
+          <h1 style={{ marginBottom: '2rem', fontSize: '2rem' }}>Gérer le cours</h1>
 
         {/* Tab bar */}
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', borderBottom: '2px solid var(--border-color)', paddingBottom: '0' }}>
@@ -923,6 +973,7 @@ export default function InstructorCourseManage() {
         {activeTab === 'curriculum' && <CurriculumBuilder courseId={id} />}
         {activeTab === 'assignments' && <AssignmentsManager courseId={id} />}
         {activeTab === 'groups' && <GroupsManager courseId={id} />}
+        </main>
       </div>
     </div>
   );
