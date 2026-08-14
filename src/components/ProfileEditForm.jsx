@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { User, Mail, FileText, Save, UploadCloud, Camera, Trash2, CheckCircle2, AlertCircle, Edit2, X, Phone, GraduationCap, Briefcase, Building, Calendar, BookOpen } from 'lucide-react';
 import api from '../services/api';
+import PortfolioEditor from './PortfolioEditor';
 
 // Dropdown option sets (mirror the registration form + backend enums).
 const LEVEL_OPTIONS = [
@@ -49,6 +50,16 @@ const instructorFields = (ip = {}) => ({
   teachingMode: ip?.teachingMode || '',
 });
 
+// Portfolio fields live on the user (not the profile). See backend
+// portfolioValidation.js for the shapes.
+const portfolioFields = (u = {}) => ({
+  skills: u?.skills || [],
+  languages: u?.languages || [],
+  certifications: u?.certifications || [],
+  diplomas: u?.diplomas || [],
+  socialLinks: u?.socialLinks || {},
+});
+
 export default function ProfileEditForm() {
   const { user, updateProfile } = useAuth();
   const { showSuccess, showError } = useToast();
@@ -60,13 +71,14 @@ export default function ProfileEditForm() {
   const showAcademic = isLearner && (situation === 'student' || situation === 'student_employee');
   const showProfessional = isLearner && (situation === 'employee' || situation === 'student_employee');
   const showSelfDirected = isLearner && situation === 'self_directed';
+  const showPortfolio = isLearner || user?.role === 'instructor';
   const roleLabel =
     user?.role === 'instructor' ? '👨‍🏫 Instructeur'
     : user?.role === 'admin' ? '🛡️ Administrateur'
     : !isLearner ? 'Utilisateur'
     : situation === 'employee' ? '💼 Employé'
     : situation === 'student_employee' ? '🎓 Étudiant & 💼 Employé'
-    : situation === 'self_directed' ? '📚 Autodidacte'
+    : situation === 'self_directed' ? '📚 Auto-formation'
     : '🎓 Étudiant';
 
   const [isEditing, setIsEditing] = useState(false);
@@ -83,6 +95,7 @@ export default function ProfileEditForm() {
         : {}),
   });
 
+  const [portfolio, setPortfolio] = useState(portfolioFields(user));
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -120,6 +133,7 @@ export default function ProfileEditForm() {
           ? instructorFields(user?.instructorProfile)
           : {}),
     });
+    setPortfolio(portfolioFields(user));
     setIsEditing(true);
   };
 
@@ -293,6 +307,7 @@ export default function ProfileEditForm() {
         bio: formData.bio || null,
         phone: formData.phone || null,
         ...profilePayload,
+        ...(showPortfolio ? portfolio : {}),
       });
       showSuccess('Profil mis à jour avec succès !');
       setIsEditing(false);
@@ -1050,6 +1065,12 @@ export default function ProfileEditForm() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Portfolio — skills, languages, certificates, diplomas, links.
+            Learners & instructors only (admins excluded). */}
+        {showPortfolio && (
+          <PortfolioEditor value={portfolio} isEditing={isEditing} onChange={setPortfolio} />
         )}
       </form>
     </div>
