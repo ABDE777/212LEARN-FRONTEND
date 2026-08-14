@@ -14,7 +14,7 @@ export function useInstructorCourses() {
     const fetchCourses = async () => {
       try {
         const response = await api.get('/courses', {
-          params: { instructorId: user.id, limit: 100 },
+          params: { instructorId: user.id, limit: 100, status: 'all' },
         });
         setCourses(response.data?.data?.courses || []);
       } catch (err) {

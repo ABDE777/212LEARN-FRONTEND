@@ -1707,7 +1707,10 @@ export default function InstructorDashboard() {
       setCategoriesLoading(true);
       try {
         const response = await api.get('/categories');
-        setCategories(response.data?.data?.categories || response.data?.data || []);
+        const allCategories = response.data?.data?.categories || response.data?.data || [];
+        // Filter only parent categories (no parentId)
+        const parentCategories = allCategories.filter(cat => !cat.parentId);
+        setCategories(parentCategories);
       } catch (err) {
         console.error('Failed to fetch categories:', err);
       } finally {

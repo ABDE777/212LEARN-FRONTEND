@@ -3665,6 +3665,14 @@ export default function AdminDashboard() {
   const [couponFormLoading, setCouponFormLoading] = useState(false);
   const [couponFormError, setCouponFormError] = useState(null);
 
+  const [updateRequests, setUpdateRequests] = useState([]);
+  const [updateRequestsLoading, setUpdateRequestsLoading] = useState(false);
+  const [updateRequestsError, setUpdateRequestsError] = useState(null);
+  const [updateRequestStatusFilter, setUpdateRequestStatusFilter] = useState('all');
+  const [selectedUpdateRequest, setSelectedUpdateRequest] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [processingUpdateRequest, setProcessingUpdateRequest] = useState(null);
+
   const handleLoadCouponUsage = async (coupon) => {
     setSelectedCouponForUsage(coupon);
     setCouponUsageLoading(true);
@@ -4294,6 +4302,71 @@ export default function AdminDashboard() {
     }
   }, [activeTab, fetchMeetings]);
 
+  // Fetch update requests when update-requests tab is active
+  useEffect(() => {
+    const fetchUpdateRequests = async () => {
+      if (activeTab === 'update-requests') {
+        setUpdateRequestsLoading(true);
+        setUpdateRequestsError(null);
+        try {
+          const response = await api.get('/admin/update-requests', {
+            params: updateRequestStatusFilter !== 'all' ? { status: updateRequestStatusFilter } : {}
+          });
+          const requests = response.data?.data?.updateRequests || response.data?.data || [];
+          setUpdateRequests(Array.isArray(requests) ? requests : []);
+        } catch (err) {
+          setUpdateRequestsError(err.response?.data?.error?.message || err.response?.data?.message || 'Failed to fetch update requests');
+          setUpdateRequests([]);
+        } finally {
+          setUpdateRequestsLoading(false);
+        }
+      }
+    };
+    fetchUpdateRequests();
+  }, [activeTab, updateRequestStatusFilter]);
+
+  const handleApproveUpdateRequest = async (requestId) => {
+    setProcessingUpdateRequest(requestId);
+    try {
+      await api.patch(`/admin/update-requests/${requestId}/approve`);
+      setUserActionMsg({ type: 'success', text: 'Demande de mise à jour approuvée avec succès.' });
+      // Refresh update requests
+      const response = await api.get('/admin/update-requests', {
+        params: updateRequestStatusFilter !== 'all' ? { status: updateRequestStatusFilter } : {}
+      });
+      const requests = response.data?.data?.updateRequests || response.data?.data || [];
+      setUpdateRequests(Array.isArray(requests) ? requests : []);
+    } catch (err) {
+      setUserActionMsg({ type: 'error', text: err.response?.data?.error?.message || err.response?.data?.message || 'Failed to approve update request' });
+    } finally {
+      setProcessingUpdateRequest(null);
+    }
+  };
+
+  const handleRejectUpdateRequest = async (requestId) => {
+    if (!rejectionReason.trim()) {
+      setUserActionMsg({ type: 'error', text: 'Veuillez fournir une raison pour le rejet.' });
+      return;
+    }
+    setProcessingUpdateRequest(requestId);
+    try {
+      await api.patch(`/admin/update-requests/${requestId}/reject`, { rejectionReason: rejectionReason.trim() });
+      setUserActionMsg({ type: 'success', text: 'Demande de mise à jour rejetée avec succès.' });
+      setRejectionReason('');
+      setSelectedUpdateRequest(null);
+      // Refresh update requests
+      const response = await api.get('/admin/update-requests', {
+        params: updateRequestStatusFilter !== 'all' ? { status: updateRequestStatusFilter } : {}
+      });
+      const requests = response.data?.data?.updateRequests || response.data?.data || [];
+      setUpdateRequests(Array.isArray(requests) ? requests : []);
+    } catch (err) {
+      setUserActionMsg({ type: 'error', text: err.response?.data?.error?.message || err.response?.data?.message || 'Failed to reject update request' });
+    } finally {
+      setProcessingUpdateRequest(null);
+    }
+  };
+
   const handlePublishCourse = async (courseId) => {
     setCourseActionSuccess('');
     try {
@@ -4391,6 +4464,14 @@ export default function AdminDashboard() {
             >
               <Building2 size={18} />
               <span>Virements</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('update-requests')}
+              className={`sidebar-menu-btn ${activeTab === 'update-requests' ? 'active' : ''}`}
+              title="Demandes de mise à jour"
+            >
+              <FileText size={18} />
+              <span>Demandes de mise à jour</span>
             </button>
             <button
               onClick={() => setActiveTab('audit')}
@@ -5322,6 +5403,174 @@ export default function AdminDashboard() {
 
               {activeTab === 'transfer' && <TransferTab />}
 
+              {activeTab === 'update-requests' && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <div>
+                      <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Demandes de mise à jour de cours</h2>
+                      <p style={{ color: 'var(--secondary)', margin: '0.35rem 0 0' }}>
+                        Gérez les demandes de modification des cours publiés par les instructeurs.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Status Filter */}
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <select
+                      value={updateRequestStatusFilter}
+                      onChange={(e) => setUpdateRequestStatusFilter(e.target.value)}
+                      style={{
+                        padding: '0.6rem 1rem',
+                        borderRadius: '8px',
+                        border: '1px solid var(--border-color)',
+                        fontSize: '0.9rem',
+                        minWidth: '200px',
+                      }}
+                    >
+                      <option value="all">Tous les statuts</option>
+                      <option value="PENDING">En attente</option>
+                      <option value="APPROVED">Approuvées</option>
+                      <option value="REJECTED">Rejetées</option>
+                    </select>
+                  </div>
+
+                  {updateRequestsLoading && <LoadingSpinner />}
+                  {updateRequestsError && <p style={{ color: 'var(--error-color)' }}>{updateRequestsError}</p>}
+
+                  {!updateRequestsLoading && !updateRequestsError && updateRequests.length === 0 && (
+                    <div style={{ textAlign: 'center', padding: '3rem', border: '2px dashed var(--border-color)', borderRadius: '12px' }}>
+                      <FileText size={36} style={{ marginBottom: '1rem', opacity: 0.3, color: 'var(--secondary)' }} />
+                      <p style={{ color: 'var(--secondary)' }}>Aucune demande de mise à jour trouvée.</p>
+                    </div>
+                  )}
+
+                  {!updateRequestsLoading && !updateRequestsError && updateRequests.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      {updateRequests.map((request) => (
+                        <div
+                          key={request.id}
+                          style={{
+                            padding: '1.5rem',
+                            background: '#fff',
+                            borderRadius: '12px',
+                            border: '1px solid var(--border-color)',
+                            boxShadow: 'var(--shadow-sm)',
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                            <div style={{ flex: 1 }}>
+                              <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-color)' }}>
+                                {request.course?.title || 'Cours inconnu'}
+                              </h3>
+                              <p style={{ color: 'var(--secondary)', fontSize: '0.85rem', margin: '0.25rem 0 0' }}>
+                                Instructeur: {request.instructor?.firstName} {request.instructor?.lastName} ({request.instructor?.email})
+                              </p>
+                              <p style={{ color: 'var(--secondary)', fontSize: '0.8rem', margin: '0.25rem 0 0' }}>
+                                Demandé le: {new Date(request.createdAt).toLocaleString('fr-FR')}
+                              </p>
+                            </div>
+                            <div style={{
+                              padding: '0.35rem 0.85rem',
+                              borderRadius: '999px',
+                              fontSize: '0.8rem',
+                              fontWeight: 700,
+                              background: request.status === 'PENDING' ? '#fff3cd' :
+                                       request.status === 'APPROVED' ? '#d4edda' : '#f8d7da',
+                              color: request.status === 'PENDING' ? '#856404' :
+                                     request.status === 'APPROVED' ? '#155724' : '#721c24',
+                              border: `1px solid ${request.status === 'PENDING' ? '#ffc107' :
+                                                request.status === 'APPROVED' ? '#28a745' : '#dc3545'}`,
+                            }}>
+                              {request.status === 'PENDING' ? '⏳ En attente' :
+                               request.status === 'APPROVED' ? '✅ Approuvée' : '❌ Rejetée'}
+                            </div>
+                          </div>
+
+                          {/* Requested Changes */}
+                          <div style={{ background: 'var(--bg-color)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
+                            <h4 style={{ margin: '0 0 0.75rem', fontSize: '0.9rem', color: 'var(--secondary)' }}>Modifications demandées :</h4>
+                            {request.title && <p style={{ margin: '0.25rem 0', fontSize: '0.9rem' }}><strong>Titre :</strong> {request.title}</p>}
+                            {request.description && <p style={{ margin: '0.25rem 0', fontSize: '0.9rem' }}><strong>Description :</strong> {request.description}</p>}
+                            {request.price !== null && <p style={{ margin: '0.25rem 0', fontSize: '0.9rem' }}><strong>Prix :</strong> {request.price} MAD</p>}
+                            {request.level && <p style={{ margin: '0.25rem 0', fontSize: '0.9rem' }}><strong>Niveau :</strong> {request.level}</p>}
+                            {request.thumbnail && <p style={{ margin: '0.25rem 0', fontSize: '0.9rem' }}><strong>Image :</strong> URL mise à jour</p>}
+                          </div>
+
+                          {/* Rejection Reason */}
+                          {request.status === 'REJECTED' && request.rejectionReason && (
+                            <div style={{
+                              padding: '0.75rem',
+                              background: '#f8d7da',
+                              border: '1px solid #f5c6cb',
+                              borderRadius: '8px',
+                              marginBottom: '1rem',
+                              fontSize: '0.85rem',
+                              color: '#721c24',
+                            }}>
+                              <strong>Raison du rejet :</strong> {request.rejectionReason}
+                            </div>
+                          )}
+
+                          {/* Actions */}
+                          {request.status === 'PENDING' && (
+                            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                              <button
+                                onClick={() => handleApproveUpdateRequest(request.id)}
+                                disabled={processingUpdateRequest === request.id}
+                                style={{
+                                  padding: '0.5rem 1rem',
+                                  borderRadius: '8px',
+                                  border: 'none',
+                                  background: '#28a745',
+                                  color: '#fff',
+                                  cursor: 'pointer',
+                                  fontWeight: 600,
+                                  fontSize: '0.85rem',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.4rem',
+                                  opacity: processingUpdateRequest === request.id ? 0.6 : 1,
+                                }}
+                              >
+                                {processingUpdateRequest === request.id ? <Loader size={14} className="spin" /> : <Check size={14} />}
+                                Approuver
+                              </button>
+                              <button
+                                onClick={() => setSelectedUpdateRequest(request)}
+                                disabled={processingUpdateRequest === request.id}
+                                style={{
+                                  padding: '0.5rem 1rem',
+                                  borderRadius: '8px',
+                                  border: '1px solid #dc3545',
+                                  background: '#fff',
+                                  color: '#dc3545',
+                                  cursor: 'pointer',
+                                  fontWeight: 600,
+                                  fontSize: '0.85rem',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.4rem',
+                                }}
+                              >
+                                <X size={14} />
+                                Rejeter
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Reviewer Info */}
+                          {request.status !== 'PENDING' && request.reviewer && (
+                            <p style={{ fontSize: '0.8rem', color: 'var(--secondary)', margin: '0.5rem 0 0' }}>
+                              Traité par: {request.reviewer.firstName} {request.reviewer.lastName} le {request.reviewedAt ? new Date(request.reviewedAt).toLocaleString('fr-FR') : ''}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {activeTab === 'audit' && <AuditLogsTab />}
 
               {activeTab === 'health' && <SystemHealthTab />}
@@ -5429,6 +5678,124 @@ export default function AdminDashboard() {
         loading={userFormLoading}
         error={userFormError}
       />
+
+      {/* Rejection Reason Modal for Update Requests */}
+      {selectedUpdateRequest && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.55)',
+            backdropFilter: 'blur(6px)',
+            zIndex: 99999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.5rem',
+          }}
+          onClick={() => setSelectedUpdateRequest(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#fff',
+              borderRadius: '16px',
+              maxWidth: '500px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.35)',
+            }}
+          >
+            <div
+              style={{
+                padding: '1.5rem',
+                borderBottom: '1px solid var(--border-color)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <h3 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700 }}>
+                Rejeter la demande de mise à jour
+              </h3>
+              <button
+                onClick={() => setSelectedUpdateRequest(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--secondary)' }}
+              >
+                <X size={22} />
+              </button>
+            </div>
+
+            <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1 }}>
+              <p style={{ color: 'var(--secondary)', marginBottom: '1rem' }}>
+                Veuillez fournir une raison pour le rejet de cette demande de mise à jour pour le cours "{selectedUpdateRequest.course?.title}".
+              </p>
+              <textarea
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="Expliquez pourquoi cette demande est rejetée..."
+                rows={4}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color)',
+                  fontSize: '0.9rem',
+                  resize: 'vertical',
+                }}
+              />
+            </div>
+
+            <div
+              style={{
+                padding: '1.25rem 1.5rem',
+                borderTop: '1px solid var(--border-color)',
+                display: 'flex',
+                gap: '0.75rem',
+                justifyContent: 'flex-end',
+              }}
+            >
+              <button
+                onClick={() => setSelectedUpdateRequest(null)}
+                style={{
+                  padding: '0.6rem 1.25rem',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color)',
+                  background: '#fff',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  color: 'var(--secondary)',
+                }}
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => handleRejectUpdateRequest(selectedUpdateRequest.id)}
+                disabled={processingUpdateRequest === selectedUpdateRequest.id}
+                style={{
+                  padding: '0.6rem 1.25rem',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: '#dc3545',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  opacity: processingUpdateRequest === selectedUpdateRequest.id ? 0.6 : 1,
+                }}
+              >
+                {processingUpdateRequest === selectedUpdateRequest.id ? <Loader size={16} className="spin" /> : <X size={16} />}
+                Rejeter
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Create / Edit Category Slide-Over Right Drawer */}
       <AdminCategoryDrawer

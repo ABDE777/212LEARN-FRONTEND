@@ -6,10 +6,12 @@ import {
   File as FileIcon, Users, BookOpen, BarChart3, HelpCircle, User, ChevronLeft, ChevronRight, LogOut,
 } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
+import Navbar from '../components/Navbar';
 import { useCurriculumBuilder } from '../hooks/useCurriculumBuilder';
 import { useInstructorAssignments, useSubmissions } from '../hooks/useInstructorAssignments';
 import { useCourseGroups } from '../hooks/useCourseGroups';
 import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
 
 /* ─────────────────────────────────────────────
    Helpers
@@ -877,12 +879,135 @@ export default function InstructorCourseManage() {
   const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState('curriculum');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [course, setCourse] = useState(null);
+  const [loadingCourse, setLoadingCourse] = useState(true);
+  const [updateRequest, setUpdateRequest] = useState(null);
+  const [loadingRequest, setLoadingRequest] = useState(false);
+  const [updateFormOpen, setUpdateFormOpen] = useState(false);
+  const [updateFormData, setUpdateFormData] = useState({
+    title: '',
+    description: '',
+    price: '',
+    level: '',
+    thumbnail: '',
+  });
+  const [updateThumbnailFile, setUpdateThumbnailFile] = useState(null);
+  const [uploadingUpdateThumbnail, setUploadingUpdateThumbnail] = useState(false);
+  const [submittingUpdate, setSubmittingUpdate] = useState(false);
+  const [updateError, setUpdateError] = useState('');
 
   const tabs = [
     { key: 'curriculum', label: 'Curriculum Builder' },
     { key: 'assignments', label: 'Devoirs & Notation' },
     { key: 'groups', label: 'Groupes & Étudiants' },
+    { key: 'updates', label: 'Mettre à jour' },
   ];
+
+  useEffect(() => {
+    const fetchCourse = async () => {
+      try {
+        const response = await api.get(`/courses/${id}`);
+        setCourse(response.data?.data?.course || response.data);
+      } catch (err) {
+        console.error('Failed to fetch course:', err);
+      } finally {
+        setLoadingCourse(false);
+      }
+    };
+    fetchCourse();
+  }, [id]);
+
+  useEffect(() => {
+    const fetchUpdateRequest = async () => {
+      setLoadingRequest(true);
+      try {
+        const response = await api.get('/instructor/update-requests');
+        const requests = response.data?.data?.updateRequests || response.data?.data || [];
+        const courseRequest = requests.find(r => r.courseId === id);
+        setUpdateRequest(courseRequest || null);
+      } catch (err) {
+        console.error('Failed to fetch update request:', err);
+      } finally {
+        setLoadingRequest(false);
+      }
+    };
+    fetchUpdateRequest();
+  }, [id]);
+
+  const handleUpdateThumbnailChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setUpdateThumbnailFile(file);
+      uploadUpdateThumbnailToCloudinary(file);
+    }
+  };
+
+  const uploadUpdateThumbnailToCloudinary = async (file) => {
+    setUploadingUpdateThumbnail(true);
+    try {
+      const signResponse = await api.post('/uploads/cloudinary-sign', {
+        type: 'image',
+        filename: file.name,
+        mimetype: file.type,
+      });
+
+      const { uploadUrl, formFields, cloudName } = signResponse.data.data;
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('api_key', formFields.api_key);
+      formData.append('timestamp', formFields.timestamp);
+      formData.append('signature', formFields.signature);
+      formData.append('folder', formFields.folder);
+      formData.append('public_id', formFields.public_id);
+
+      const uploadResponse = await fetch(uploadUrl, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const uploadResult = await uploadResponse.json();
+
+      if (uploadResult.secure_url) {
+        setUpdateFormData({ ...updateFormData, thumbnail: uploadResult.secure_url });
+      } else {
+        console.error('Upload failed:', uploadResult);
+      }
+    } catch (err) {
+      console.error('Failed to upload thumbnail:', err);
+    } finally {
+      setUploadingUpdateThumbnail(false);
+    }
+  };
+
+  const handleSubmitUpdateRequest = async (e) => {
+    e.preventDefault();
+    setUpdateError('');
+    setSubmittingUpdate(true);
+
+    try {
+      const payload = {};
+      if (updateFormData.title.trim()) payload.title = updateFormData.title.trim();
+      if (updateFormData.description.trim()) payload.description = updateFormData.description.trim();
+      if (updateFormData.price) payload.price = parseFloat(updateFormData.price);
+      if (updateFormData.level) payload.level = updateFormData.level;
+      if (updateFormData.thumbnail.trim()) payload.thumbnail = updateFormData.thumbnail.trim();
+
+      await api.post(`/courses/${id}/update-requests`, payload);
+      setUpdateFormOpen(false);
+      setUpdateFormData({ title: '', description: '', price: '', level: '', thumbnail: '' });
+      setUpdateThumbnailFile(null);
+      // Refresh update request status
+      const response = await api.get('/instructor/update-requests');
+      const requests = response.data?.data?.updateRequests || response.data?.data || [];
+      const courseRequest = requests.find(r => r.courseId === id);
+      setUpdateRequest(courseRequest || null);
+    } catch (err) {
+      setUpdateError(err.response?.data?.error?.message || err.response?.data?.message || 'Failed to submit update request');
+    } finally {
+      setSubmittingUpdate(false);
+    }
+  };
 
   const sidebarTabs = [
     { key: 'courses',   icon: <BookOpen size={18} />,  label: 'Mes cours' },
@@ -973,6 +1098,227 @@ export default function InstructorCourseManage() {
         {activeTab === 'curriculum' && <CurriculumBuilder courseId={id} />}
         {activeTab === 'assignments' && <AssignmentsManager courseId={id} />}
         {activeTab === 'groups' && <GroupsManager courseId={id} />}
+        {activeTab === 'updates' && (
+          <div>
+            {loadingCourse ? (
+              <LoadingSpinner />
+            ) : !course ? (
+              <p style={{ color: 'var(--secondary)' }}>Chargement du cours...</p>
+            ) : course.status !== 'published' ? (
+              <div style={{ padding: '2rem', background: '#fff', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                <p style={{ color: 'var(--secondary)', fontSize: '1.1rem' }}>
+                  Les demandes de mise à jour ne sont nécessaires que pour les cours publiés.
+                </p>
+                <p style={{ color: 'var(--secondary)', marginTop: '0.5rem' }}>
+                  Statut actuel du cours : <strong>{course.status === 'draft' ? 'Brouillon' : course.status}</strong>
+                </p>
+              </div>
+            ) : (
+              <div>
+                {loadingRequest ? (
+                  <LoadingSpinner />
+                ) : updateRequest ? (
+                  <div style={{ padding: '2rem', background: '#fff', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                    <h3 style={{ marginBottom: '1rem', fontSize: '1.3rem' }}>Statut de la demande de mise à jour</h3>
+                    <div style={{
+                      padding: '1rem',
+                      borderRadius: '8px',
+                      marginBottom: '1.5rem',
+                      background: updateRequest.status === 'PENDING' ? '#fff3cd' : 
+                               updateRequest.status === 'APPROVED' ? '#d4edda' : '#f8d7da',
+                      border: `1px solid ${updateRequest.status === 'PENDING' ? '#ffc107' : 
+                                    updateRequest.status === 'APPROVED' ? '#28a745' : '#dc3545'}`
+                    }}>
+                      <p style={{
+                        fontWeight: 600,
+                        color: updateRequest.status === 'PENDING' ? '#856404' : 
+                               updateRequest.status === 'APPROVED' ? '#155724' : '#721c24',
+                        margin: 0
+                      }}>
+                        {updateRequest.status === 'PENDING' ? '⏳ En attente de validation par l\'administrateur' :
+                         updateRequest.status === 'APPROVED' ? '✅ Demande approuvée - Les modifications ont été appliquées' :
+                         '❌ Demande rejetée'}
+                      </p>
+                      {updateRequest.status === 'REJECTED' && updateRequest.rejectionReason && (
+                        <p style={{ marginTop: '0.5rem', color: '#721c24', fontSize: '0.9rem' }}>
+                          Raison : {updateRequest.rejectionReason}
+                        </p>
+                      )}
+                    </div>
+
+                    {updateRequest.status === 'PENDING' && (
+                      <div style={{ padding: '1.5rem', background: 'var(--bg-color)', borderRadius: '8px' }}>
+                        <h4 style={{ marginBottom: '1rem', color: 'var(--secondary)' }}>Modifications demandées :</h4>
+                        {updateRequest.title && <p><strong>Titre :</strong> {updateRequest.title}</p>}
+                        {updateRequest.description && <p><strong>Description :</strong> {updateRequest.description}</p>}
+                        {updateRequest.price !== null && <p><strong>Prix :</strong> {updateRequest.price} MAD</p>}
+                        {updateRequest.level && <p><strong>Niveau :</strong> {updateRequest.level}</p>}
+                        {updateRequest.thumbnail && <p><strong>Image :</strong> URL mise à jour</p>}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    {!updateFormOpen ? (
+                      <div style={{ padding: '2rem', background: '#fff', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                        <h3 style={{ marginBottom: '1rem', fontSize: '1.3rem' }}>Demander une mise à jour du cours</h3>
+                        <p style={{ color: 'var(--secondary)', marginBottom: '1.5rem' }}>
+                          Ce cours est publié. Pour modifier les informations de base (titre, description, prix, niveau, image),
+                          vous devez soumettre une demande à l'administrateur pour validation.
+                        </p>
+                        <button
+                          onClick={() => {
+                            setUpdateFormData({
+                              title: course.title || '',
+                              description: course.description || '',
+                              price: course.price || '',
+                              level: course.level || '',
+                              thumbnail: course.thumbnail || '',
+                            });
+                            setUpdateFormOpen(true);
+                          }}
+                          className="btn-primary"
+                          style={{ padding: '0.75rem 1.5rem', cursor: 'pointer' }}
+                        >
+                          <Plus size={18} style={{ marginRight: '0.5rem' }} /> Créer une demande de mise à jour
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ padding: '2rem', background: '#fff', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                          <h3 style={{ margin: 0, fontSize: '1.3rem' }}>Nouvelle demande de mise à jour</h3>
+                          <button
+                            onClick={() => setUpdateFormOpen(false)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--secondary)', padding: '0.5rem' }}
+                          >
+                            <X size={24} />
+                          </button>
+                        </div>
+
+                        {updateError && (
+                          <div style={{ color: '#721c24', background: '#f8d7da', border: '1px solid #f5c6cb', padding: '0.75rem 1rem', borderRadius: '8px', marginBottom: '1rem' }}>
+                            {updateError}
+                          </div>
+                        )}
+
+                        <form onSubmit={handleSubmitUpdateRequest}>
+                          <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+                            <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem' }}>
+                              Nouveau titre (optionnel)
+                            </label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              style={{ padding: '10px 14px', fontSize: '0.9rem' }}
+                              placeholder="Laisser vide pour ne pas modifier"
+                              value={updateFormData.title}
+                              onChange={(e) => setUpdateFormData({ ...updateFormData, title: e.target.value })}
+                            />
+                          </div>
+
+                          <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+                            <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem' }}>
+                              Nouvelle description (optionnel)
+                            </label>
+                            <textarea
+                              className="form-control"
+                              style={{ padding: '10px 14px', fontSize: '0.88rem' }}
+                              rows={3}
+                              placeholder="Laisser vide pour ne pas modifier"
+                              value={updateFormData.description}
+                              onChange={(e) => setUpdateFormData({ ...updateFormData, description: e.target.value })}
+                            />
+                          </div>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
+                            <div className="form-group">
+                              <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem' }}>
+                                Nouveau prix (MAD, optionnel)
+                              </label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                className="form-control"
+                                style={{ padding: '10px 14px', fontSize: '0.9rem' }}
+                                placeholder="Laisser vide pour ne pas modifier"
+                                value={updateFormData.price}
+                                onChange={(e) => setUpdateFormData({ ...updateFormData, price: e.target.value })}
+                              />
+                            </div>
+
+                            <div className="form-group">
+                              <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem' }}>
+                                Nouveau niveau (optionnel)
+                              </label>
+                              <select
+                                className="form-control"
+                                style={{ padding: '10px 14px', fontSize: '0.88rem' }}
+                                value={updateFormData.level}
+                                onChange={(e) => setUpdateFormData({ ...updateFormData, level: e.target.value })}
+                              >
+                                <option value="">-- Optionnel --</option>
+                                <option value="beginner">Débutant</option>
+                                <option value="intermediate">Intermédiaire</option>
+                                <option value="advanced">Avancé</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                            <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem' }}>
+                              Nouvelle image (optionnel)
+                            </label>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="form-control"
+                              style={{ padding: '10px 14px', fontSize: '0.9rem' }}
+                              onChange={handleUpdateThumbnailChange}
+                              disabled={uploadingUpdateThumbnail}
+                            />
+                            {uploadingUpdateThumbnail && (
+                              <p style={{ fontSize: '0.85rem', color: 'var(--secondary)', marginTop: '0.5rem' }}>
+                                Téléchargement en cours...
+                              </p>
+                            )}
+                            {updateFormData.thumbnail && !uploadingUpdateThumbnail && (
+                              <div style={{ marginTop: '0.5rem' }}>
+                                <img
+                                  src={updateFormData.thumbnail}
+                                  alt="Aperçu"
+                                  style={{ maxWidth: '200px', maxHeight: '150px', borderRadius: '8px', border: '1px solid var(--border-color)' }}
+                                />
+                              </div>
+                            )}
+                          </div>
+
+                          <div style={{ display: 'flex', gap: '1rem' }}>
+                            <button
+                              type="submit"
+                              disabled={submittingUpdate}
+                              className="btn-primary"
+                              style={{ flex: 1, padding: '0.75rem', cursor: 'pointer', opacity: submittingUpdate ? 0.6 : 1 }}
+                            >
+                              {submittingUpdate ? 'Soumission en cours...' : 'Soumettre la demande'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setUpdateFormOpen(false)}
+                              style={{ padding: '0.75rem 1.5rem', borderRadius: '10px', border: '1px solid var(--border-color)', background: '#fff', cursor: 'pointer', fontWeight: 600, color: 'var(--secondary)' }}
+                            >
+                              Annuler
+                            </button>
+                          </div>
+                        </form>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
         </main>
       </div>
     </div>
