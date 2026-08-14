@@ -1688,6 +1688,7 @@ export default function InstructorDashboard() {
   const { user, logout } = useAuth();
   const { revenueData, studentsData, completionData, loading: analyticsLoading, error: analyticsError, refetch: refetchAnalytics } = useInstructorAnalytics();
 
+  const [createCourseDrawerOpen, setCreateCourseDrawerOpen] = useState(false);
   const [newCourseTitle, setNewCourseTitle] = useState('');
   const [newCourseCategoryId, setNewCourseCategoryId] = useState('');
   const [newCourseThumbnailFile, setNewCourseThumbnailFile] = useState(null);
@@ -1760,6 +1761,13 @@ export default function InstructorDashboard() {
     }
   };
 
+  const resetCourseForm = () => {
+    setNewCourseTitle('');
+    setNewCourseCategoryId('');
+    setNewCourseThumbnailFile(null);
+    setNewCourseThumbnailUrl('');
+  };
+
   const handleCreateCourse = async (e) => {
     e.preventDefault();
     try {
@@ -1768,15 +1776,21 @@ export default function InstructorDashboard() {
         categoryId: newCourseCategoryId,
         thumbnail: newCourseThumbnailUrl || undefined,
       });
+      resetCourseForm();
+      setCreateCourseDrawerOpen(false);
       navigate(`/instructor/courses/${course.id}/manage`);
     } catch (err) {
       console.error(err);
     }
   };
 
+  const handleCloseCreateCourseDrawer = () => {
+    resetCourseForm();
+    setCreateCourseDrawerOpen(false);
+  };
+
   const TABS = [
     { key: 'courses',   icon: <BookOpen size={18} />,  label: 'Mes cours' },
-    { key: 'create',    icon: <Plus size={18} />,       label: 'Créer un cours' },
     { key: 'analytics', icon: <BarChart3 size={18} />,   label: 'Analytics' },
     { key: 'quizzes',   icon: <HelpCircle size={18} />, label: 'Quiz' },
     { key: 'meetings',  icon: <Video size={18} />,      label: 'Sessions Live' },
@@ -1835,7 +1849,16 @@ export default function InstructorDashboard() {
               {/* My Courses */}
               {activeTab === 'courses' && (
                 <div>
-                  <h2 style={{ marginBottom: '1.5rem', fontSize: '1.5rem' }}>Mes cours</h2>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Mes cours</h2>
+                    <button
+                      onClick={() => setCreateCourseDrawerOpen(true)}
+                      className="btn-primary"
+                      style={{ padding: '0.6rem 1.25rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
+                    >
+                      <Plus size={18} /> Créer un cours
+                    </button>
+                  </div>
                   {loading && <LoadingSpinner />}
                   {error && <p style={{ color: 'var(--error-color)' }}>{error}</p>}
                   {!loading && !error && courses.length === 0 && (
@@ -1873,74 +1896,6 @@ export default function InstructorDashboard() {
                 </div>
               )}
 
-              {/* Create course */}
-              {activeTab === 'create' && (
-                <div>
-                  <h2 style={{ marginBottom: '1.5rem', fontSize: '1.5rem' }}>Créer un cours</h2>
-                  {createError && <p style={{ color: 'var(--error-color)', marginBottom: '1rem' }}>{createError}</p>}
-                  <form onSubmit={handleCreateCourse} style={{ maxWidth: '500px' }}>
-                    <div className="form-group" style={{ marginBottom: '1rem' }}>
-                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Titre du cours *</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        value={newCourseTitle}
-                        onChange={e => setNewCourseTitle(e.target.value)}
-                        required
-                        placeholder="ex : Maîtriser React en 2026"
-                      />
-                    </div>
-                    <div className="form-group" style={{ marginBottom: '1rem' }}>
-                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Catégorie *</label>
-                      <select
-                        className="form-control"
-                        value={newCourseCategoryId}
-                        onChange={e => setNewCourseCategoryId(e.target.value)}
-                        required
-                        disabled={categoriesLoading}
-                      >
-                        <option value="">{categoriesLoading ? 'Chargement...' : '-- Sélectionner une catégorie --'}</option>
-                        {categories.map(cat => (
-                          <option key={cat.id} value={cat.id}>{cat.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="form-group" style={{ marginBottom: '1rem' }}>
-                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Image de couverture</label>
-                      <input
-                        type="file"
-                        className="form-control"
-                        onChange={handleThumbnailChange}
-                        accept="image/jpeg,image/png,image/gif,image/webp"
-                        disabled={uploadingThumbnail}
-                      />
-                      {uploadingThumbnail && (
-                        <p style={{ fontSize: '0.8rem', color: 'var(--primary)', marginTop: '0.3rem' }}>
-                          Téléchargement en cours...
-                        </p>
-                      )}
-                      {newCourseThumbnailUrl && !uploadingThumbnail && (
-                        <div style={{ marginTop: '0.5rem' }}>
-                          <img
-                            src={newCourseThumbnailUrl}
-                            alt="Aperçu"
-                            style={{ maxWidth: '200px', maxHeight: '150px', borderRadius: '8px', border: '1px solid var(--border-color)' }}
-                          />
-                          <p style={{ fontSize: '0.8rem', color: 'var(--success-color)', marginTop: '0.3rem' }}>
-                            Image téléchargée avec succès
-                          </p>
-                        </div>
-                      )}
-                      <p style={{ fontSize: '0.8rem', color: 'var(--secondary)', marginTop: '0.3rem' }}>
-                        Formats acceptés: JPG, PNG, GIF, WebP (max 10 MB)
-                      </p>
-                    </div>
-                    <button type="submit" className="btn-primary" disabled={createLoading || !newCourseCategoryId} style={{ padding: '0.75rem 1.5rem' }}>
-                      {createLoading ? 'Création…' : 'Créer le brouillon'}
-                    </button>
-                  </form>
-                </div>
-              )}
 
               {/* Analytics */}
               {activeTab === 'analytics' && (
@@ -1973,11 +1928,209 @@ export default function InstructorDashboard() {
         </main>
       </div>
 
+      {/* Create Course Drawer */}
+      {createCourseDrawerOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.55)',
+            backdropFilter: 'blur(6px)',
+            zIndex: 99999,
+            display: 'flex',
+            justifyContent: 'flex-end',
+            animation: 'fadeIn 0.2s ease',
+          }}
+          onClick={(e) => e.target === e.currentTarget && handleCloseCreateCourseDrawer()}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '520px',
+              height: '100%',
+              background: '#fff',
+              boxShadow: '-10px 0 40px rgba(0, 0, 0, 0.2)',
+              display: 'flex',
+              flexDirection: 'column',
+              animation: 'slideInRight 0.35s cubic-bezier(0.22, 1, 0.36, 1)',
+              position: 'relative',
+            }}
+          >
+            {/* Drawer Header */}
+            <div
+              style={{
+                padding: '1.5rem 2rem',
+                borderBottom: '1px solid var(--border-color)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                background: 'linear-gradient(135deg, rgba(27,75,90,0.04), rgba(193,101,47,0.04))',
+              }}
+            >
+              <div>
+                <h2 style={{ fontSize: '1.3rem', margin: 0, color: 'var(--primary)', fontWeight: 700 }}>
+                  Créer un nouveau cours
+                </h2>
+                <p style={{ color: 'var(--secondary)', fontSize: '0.85rem', margin: '0.2rem 0 0' }}>
+                  Ajoutez un cours au catalogue 212Learn
+                </p>
+              </div>
+              <button
+                onClick={handleCloseCreateCourseDrawer}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'var(--secondary)',
+                  padding: '0.4rem',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <X size={22} />
+              </button>
+            </div>
+
+            {/* Drawer Form Body */}
+            <div style={{ padding: '2rem', overflowY: 'auto', flex: 1 }}>
+              {createError && (
+                <div style={{ color: '#721c24', background: '#f8d7da', border: '1px solid #f5c6cb', padding: '0.75rem 1rem', borderRadius: '10px', fontSize: '0.88rem', marginBottom: '1.25rem' }}>
+                  {createError}
+                </div>
+              )}
+
+              <form onSubmit={handleCreateCourse}>
+                <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem' }}>Titre du cours *</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    style={{ padding: '10px 14px', fontSize: '0.9rem' }}
+                    required
+                    placeholder="Ex: React from Zero to Hero"
+                    value={newCourseTitle}
+                    onChange={(e) => setNewCourseTitle(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem' }}>Catégorie *</label>
+                  <select
+                    className="form-control"
+                    style={{ padding: '10px 14px', fontSize: '0.88rem' }}
+                    required
+                    value={newCourseCategoryId}
+                    onChange={(e) => setNewCourseCategoryId(e.target.value)}
+                    disabled={categoriesLoading}
+                  >
+                    <option value="">{categoriesLoading ? 'Chargement...' : '-- Sélectionner une catégorie --'}</option>
+                    {categories.map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem' }}>Image de couverture</label>
+                  <input
+                    type="file"
+                    className="form-control"
+                    onChange={handleThumbnailChange}
+                    accept="image/jpeg,image/png,image/gif,image/webp"
+                    disabled={uploadingThumbnail}
+                    style={{ padding: '10px 14px', fontSize: '0.88rem' }}
+                  />
+                  {uploadingThumbnail && (
+                    <p style={{ fontSize: '0.8rem', color: 'var(--primary)', marginTop: '0.3rem' }}>
+                      Téléchargement en cours...
+                    </p>
+                  )}
+                  {newCourseThumbnailUrl && !uploadingThumbnail && (
+                    <div style={{ marginTop: '0.5rem' }}>
+                      <img
+                        src={newCourseThumbnailUrl}
+                        alt="Aperçu"
+                        style={{ maxWidth: '200px', maxHeight: '150px', borderRadius: '8px', border: '1px solid var(--border-color)' }}
+                      />
+                      <p style={{ fontSize: '0.8rem', color: 'var(--success-color)', marginTop: '0.3rem' }}>
+                        Image téléchargée avec succès
+                      </p>
+                    </div>
+                  )}
+                  <p style={{ fontSize: '0.8rem', color: 'var(--secondary)', marginTop: '0.3rem' }}>
+                    Formats acceptés: JPG, PNG, GIF, WebP (max 10 MB)
+                  </p>
+                </div>
+              </form>
+            </div>
+
+            {/* Drawer Footer */}
+            <div
+              style={{
+                padding: '1.25rem 2rem',
+                borderTop: '1px solid var(--border-color)',
+                display: 'flex',
+                gap: '0.75rem',
+                background: '#fafafa',
+              }}
+            >
+              <button
+                onClick={handleCreateCourse}
+                disabled={createLoading || !newCourseCategoryId}
+                style={{
+                  flex: 1,
+                  padding: '0.75rem',
+                  fontSize: '0.92rem',
+                  borderRadius: '10px',
+                  border: 'none',
+                  background: 'var(--primary)',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                }}
+              >
+                {createLoading ? 'Création en cours...' : 'Créer le cours'}
+              </button>
+              <button
+                type="button"
+                onClick={handleCloseCreateCourseDrawer}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  fontSize: '0.92rem',
+                  borderRadius: '10px',
+                  border: '1px solid var(--border-color)',
+                  background: '#fff',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  color: 'var(--secondary)',
+                }}
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Keyframe for pulse dot */}
       <style>{`
         @keyframes pulse {
           0%, 100% { opacity: 1; transform: scale(1); }
           50% { opacity: 0.5; transform: scale(1.4); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes slideInRight {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
         }
       `}</style>
     </div>
