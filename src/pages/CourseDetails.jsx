@@ -55,9 +55,12 @@ export default function CourseDetails() {
     );
   }
 
+  // Price arrives from the API as a string (Prisma Decimal) — compare numerically.
+  const isFree = Number(course.price) === 0;
+
   const handleEnroll = async () => {
     // Free course: enroll directly — no checkout, no payment, no coupon.
-    if (course.price === 0) {
+    if (isFree) {
       setEnrolling(true);
       try {
         await api.post('/enrollments', { courseId: id });
@@ -248,7 +251,7 @@ export default function CourseDetails() {
               <div style={{ padding: '2rem' }}>
                 <div style={{ marginBottom: '1.5rem' }}>
                   <span style={{ fontSize: '2.5rem', fontWeight: 700, color: 'var(--primary)' }}>
-                    {course.price === 0 ? 'Gratuit' : `${course.price}€`}
+                    {isFree ? 'Gratuit' : `${course.price}€`}
                   </span>
                 </div>
                 
@@ -281,13 +284,13 @@ export default function CourseDetails() {
                     onClick={handleEnroll}
                     loading={enrolling}
                   >
-                    {course.price === 0 ? "S'inscrire gratuitement" : "S'inscrire maintenant"}
+                    {isFree ? "S'inscrire gratuitement" : "S'inscrire maintenant"}
                   </Button>
                 )}
 
                 {!course.isEnrolled && !isStaff && (
                   <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-                    {course.price !== 0 && (
+                    {!isFree && (
                       <Button
                         variant="outline"
                         style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}
