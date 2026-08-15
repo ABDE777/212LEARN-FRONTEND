@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Clock, Users, Star, BookOpen, PlayCircle, CheckCircle, Heart, ShoppingCart } from 'lucide-react';
 import { useCourse, useCourseCurriculum } from '../hooks/useCourses';
 import { useCart } from '../hooks/useCart';
 import { useWishlist } from '../hooks/useWishlist';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
+import api from '../services/api';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -13,6 +16,8 @@ export default function CourseDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { showSuccess, showError } = useToast();
+  const [enrolling, setEnrolling] = useState(false);
   // Admins and instructors run/teach the platform and cannot enroll in courses.
   const isStaff = ['admin', 'instructor'].includes(user?.role?.toLowerCase());
   const { course, loading: courseLoading, error: courseError } = useCourse(id);
@@ -50,7 +55,31 @@ export default function CourseDetails() {
     );
   }
 
-  const handleEnroll = () => {
+  // Price arrives from the API as a string (Prisma Decimal) — compare numerically.
+  const isFree = Number(course.price) === 0;
+
+  const handleEnroll = async () => {
+    // Free course: enroll directly — no checkout, no payment, no coupon.
+    if (isFree) {
+      setEnrolling(true);
+      try {
+        await api.post('/enrollments', { courseId: id });
+        showSuccess('Cours ajouté à vos cours !');
+        navigate('/student/dashboard');
+      } catch (err) {
+        const code = err.response?.data?.error?.code;
+        if (code === 'ALREADY_ENROLLED') {
+          showSuccess('Ce cours est déjà dans vos cours.');
+          navigate('/student/dashboard');
+        } else {
+          showError(err.response?.data?.error?.message || err.response?.data?.message || "Impossible de vous inscrire au cours.");
+        }
+      } finally {
+        setEnrolling(false);
+      }
+      return;
+    }
+    // Paid course: go through checkout.
     navigate(`/courses/${id}/checkout`);
   };
 
@@ -222,7 +251,7 @@ export default function CourseDetails() {
               <div style={{ padding: '2rem' }}>
                 <div style={{ marginBottom: '1.5rem' }}>
                   <span style={{ fontSize: '2.5rem', fontWeight: 700, color: 'var(--primary)' }}>
-                    {course.price === 0 ? 'Gratuit' : `${course.price}€`}
+                    {isFree ? 'Gratuit' : `${course.price}€`}
                   </span>
                 </div>
                 
@@ -253,22 +282,25 @@ export default function CourseDetails() {
                     size="large"
                     style={{ width: '100%', marginBottom: '1rem' }}
                     onClick={handleEnroll}
+                    loading={enrolling}
                   >
-                    {course.price === 0 ? "S'inscrire gratuitement" : "S'inscrire maintenant"}
+                    {isFree ? "S'inscrire gratuitement" : "S'inscrire maintenant"}
                   </Button>
                 )}
 
                 {!course.isEnrolled && !isStaff && (
                   <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-                    <Button
-                      variant="outline"
-                      style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}
-                      onClick={() => addToCart(course.id)}
-                      disabled={cartLoading}
-                    >
-                      <ShoppingCart size={18} />
-                      Panier
-                    </Button>
+                    {!isFree && (
+                      <Button
+                        variant="outline"
+                        style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}
+                        onClick={() => addToCart(course.id)}
+                        disabled={cartLoading}
+                      >
+                        <ShoppingCart size={18} />
+                        Panier
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}
