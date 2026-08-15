@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Trophy, Flame, Target, BookOpen, Clock, TrendingUp, Award, LogOut, User, Lock, ShoppingCart, Heart, Trash2, AlertTriangle, X, Video, Calendar, ExternalLink, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { Trophy, Target, BookOpen, TrendingUp, Award, LogOut, User, Lock, ShoppingCart, Heart, Trash2, AlertTriangle, X, Video, Calendar, ExternalLink, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { useStudentDashboardData } from '../hooks/useStudentDashboard';
 import { useAuth } from '../context/AuthContext';
 import { useCartContext } from '../context/CartContext';
@@ -286,7 +286,7 @@ export default function StudentDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, logout } = useAuth();
   const { openCart } = useCartContext();
-  const { profile, achievements, enrollments, loading, error } = useStudentDashboardData(user?.id);
+  const { profile, achievements, badges, enrollments, loading, error } = useStudentDashboardData(user?.id);
 
   const [activeTab, setActiveTabState] = useState(() => {
     const tabFromUrl = searchParams.get('tab');
@@ -489,7 +489,7 @@ export default function StudentDashboard() {
                       </div>
                       <div>
                         <div style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--text-color)' }}>
-                          {achievements?.points ?? 1250}
+                          {achievements?.points ?? 0}
                         </div>
                         <div style={{ fontSize: '0.85rem', color: 'var(--secondary)' }}>Points totaux</div>
                       </div>
@@ -510,13 +510,13 @@ export default function StudentDashboard() {
                           flexShrink: 0,
                         }}
                       >
-                        <Flame size={28} color="#fff" />
+                        <BookOpen size={28} color="#fff" />
                       </div>
                       <div>
                         <div style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--text-color)' }}>
-                          {achievements?.streak ?? 7}
+                          {achievements?.totalEnrollments ?? enrollments.length}
                         </div>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--secondary)' }}>Jours consécutifs</div>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--secondary)' }}>Cours suivis</div>
                       </div>
                     </div>
                   </Card>
@@ -539,9 +539,9 @@ export default function StudentDashboard() {
                       </div>
                       <div>
                         <div style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--text-color)' }}>
-                          {achievements?.completedCourses ?? 0}
+                          {achievements?.completedLessons ?? 0}
                         </div>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--secondary)' }}>Cours terminés</div>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--secondary)' }}>Leçons complétées</div>
                       </div>
                     </div>
                   </Card>
@@ -560,13 +560,13 @@ export default function StudentDashboard() {
                           flexShrink: 0,
                         }}
                       >
-                        <Clock size={28} color="#fff" />
+                        <TrendingUp size={28} color="#fff" />
                       </div>
                       <div>
                         <div style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--text-color)' }}>
-                          {achievements?.totalHours ?? 24}h
+                          {achievements?.completionRate ?? 0}%
                         </div>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--secondary)' }}>Apprentissage</div>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--secondary)' }}>Taux de complétion</div>
                       </div>
                     </div>
                   </Card>
@@ -631,9 +631,10 @@ export default function StudentDashboard() {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         {enrollments.map((item) => {
                           const course = item.course || item;
-                          const progressPercent = item.progress ?? (item.status === 'completed' ? 100 : 35);
-                          const totalLessons = course.duration ? Math.ceil(course.duration / 15) : 12;
-                          const completedLessons = Math.round((progressPercent / 100) * totalLessons);
+                          // Real progress from the backend (completed lessons / total lessons).
+                          const progressPercent = item.progress ?? 0;
+                          const totalLessons = item.totalLessons ?? 0;
+                          const completedLessons = item.completedLessons ?? 0;
 
                           return (
                             <div
@@ -727,61 +728,40 @@ export default function StudentDashboard() {
                       Badges obtenus
                     </h2>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
-                      <div style={{ textAlign: 'center' }}>
-                        <div
-                          style={{
-                            width: '52px',
-                            height: '52px',
-                            borderRadius: '50%',
-                            background: 'linear-gradient(135deg, #FFD700, #FFA500)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            margin: '0 auto 0.4rem',
-                          }}
-                        >
-                          <Award size={24} color="#fff" />
-                        </div>
-                        <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-color)' }}>Pionnier</p>
+                    {(!badges || badges.length === 0) ? (
+                      <p style={{ fontSize: '0.85rem', color: 'var(--secondary)', margin: 0 }}>
+                        Aucun badge pour le moment — continuez à apprendre pour en débloquer !
+                      </p>
+                    ) : (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
+                        {badges.map((b) => (
+                          <div key={b.id || b.name} style={{ textAlign: 'center' }} title={b.description || ''}>
+                            <div
+                              style={{
+                                width: '52px',
+                                height: '52px',
+                                borderRadius: '50%',
+                                background: 'linear-gradient(135deg, #FFD700, #FFA500)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                margin: '0 auto 0.4rem',
+                                overflow: 'hidden',
+                              }}
+                            >
+                              {b.icon && b.icon.startsWith('http') ? (
+                                <img src={b.icon} alt={b.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              ) : b.icon ? (
+                                <span style={{ fontSize: '1.4rem' }}>{b.icon}</span>
+                              ) : (
+                                <Award size={24} color="#fff" />
+                              )}
+                            </div>
+                            <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-color)' }}>{b.name}</p>
+                          </div>
+                        ))}
                       </div>
-
-                      <div style={{ textAlign: 'center' }}>
-                        <div
-                          style={{
-                            width: '52px',
-                            height: '52px',
-                            borderRadius: '50%',
-                            background: 'linear-gradient(135deg, #4CAF50, #2E7D32)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            margin: '0 auto 0.4rem',
-                          }}
-                        >
-                          <Flame size={24} color="#fff" />
-                        </div>
-                        <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-color)' }}>Streak 7</p>
-                      </div>
-
-                      <div style={{ textAlign: 'center' }}>
-                        <div
-                          style={{
-                            width: '52px',
-                            height: '52px',
-                            borderRadius: '50%',
-                            background: 'linear-gradient(135deg, #2196F3, #1565C0)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            margin: '0 auto 0.4rem',
-                          }}
-                        >
-                          <BookOpen size={24} color="#fff" />
-                        </div>
-                        <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-color)' }}>Assidu</p>
-                      </div>
-                    </div>
+                    )}
                   </Card>
                 </div>
               </div>

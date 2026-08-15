@@ -4,6 +4,7 @@ import api from '../services/api';
 export function useStudentDashboardData(userId) {
   const [profile, setProfile] = useState(null);
   const [achievements, setAchievements] = useState(null);
+  const [badges, setBadges] = useState([]);
   const [enrollments, setEnrollments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -36,24 +37,9 @@ export function useStudentDashboardData(userId) {
         const parsedEnrollments = Array.isArray(rawEnrollments) ? rawEnrollments : [];
         setEnrollments(parsedEnrollments);
 
-        // Process Achievements / Stats
-        if (achRes?.data?.data?.stats) {
-          const stats = achRes.data.data.stats;
-          setAchievements({
-            points: stats.points ?? 1250,
-            streak: 7,
-            completedCourses: stats.completedLessons ?? 0,
-            totalHours: stats.totalEnrollments ? stats.totalEnrollments * 8 : 24,
-          });
-        } else {
-          const completedCount = parsedEnrollments.filter((e) => e.status === 'completed' || e.progress === 100).length;
-          setAchievements({
-            points: completedCount * 250 + (parsedEnrollments.length * 50),
-            streak: parsedEnrollments.length > 0 ? 5 : 0,
-            completedCourses: completedCount,
-            totalHours: parsedEnrollments.length * 6,
-          });
-        }
+        // Real achievements stats + earned badges (no fabrication).
+        setAchievements(achRes?.data?.data?.stats || null);
+        setBadges(achRes?.data?.data?.badges || []);
       } catch (err) {
         if (isMounted) {
           setError(err.response?.data?.message || 'Impossible de charger les données de l\'étudiant.');
@@ -72,7 +58,7 @@ export function useStudentDashboardData(userId) {
     };
   }, [userId]);
 
-  return { profile, achievements, enrollments, loading, error };
+  return { profile, achievements, badges, enrollments, loading, error };
 }
 
 export function useStudentAchievements(userId) {
