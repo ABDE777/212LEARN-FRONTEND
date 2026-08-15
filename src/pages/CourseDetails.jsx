@@ -254,7 +254,7 @@ export default function CourseDetails() {
                     style={{ width: '100%', marginBottom: '1rem' }}
                     onClick={handleEnroll}
                   >
-                    S'inscrire maintenant
+                    {course.price === 0 ? "S'inscrire gratuitement" : "S'inscrire maintenant"}
                   </Button>
                 )}
 

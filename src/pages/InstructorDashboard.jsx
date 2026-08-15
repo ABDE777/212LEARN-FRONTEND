@@ -2266,7 +2266,16 @@ export default function InstructorDashboard() {
                       placeholder="0 pour Gratuit"
                       value={newCoursePrice}
                       onChange={(e) => setNewCoursePrice(e.target.value)}
+                      disabled={newCoursePrice === '0'}
                     />
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.5rem', fontSize: '0.82rem', fontWeight: 600, color: 'var(--secondary)', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={newCoursePrice === '0'}
+                        onChange={(e) => setNewCoursePrice(e.target.checked ? '0' : '')}
+                      />
+                      Cours gratuit
+                    </label>
                   </div>
 
                   <div className="form-group">

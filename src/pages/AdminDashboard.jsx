@@ -573,7 +573,16 @@ function AdminCreateCourseDrawer({
                   placeholder="0 pour Gratuit"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
+                  disabled={price === '0'}
                 />
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.5rem', fontSize: '0.82rem', fontWeight: 600, color: 'var(--secondary)', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={price === '0'}
+                    onChange={(e) => setPrice(e.target.checked ? '0' : '')}
+                  />
+                  Cours gratuit
+                </label>
               </div>
 
               <div className="form-group">
@@ -1306,7 +1315,16 @@ function AdminEditCourseDrawer({
                   required
                   value={form.price}
                   onChange={(e) => setForm((prev) => ({ ...prev, price: e.target.value }))}
+                  disabled={String(form.price) === '0'}
                 />
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.5rem', fontSize: '0.82rem', fontWeight: 600, color: 'var(--secondary)', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={String(form.price) === '0'}
+                    onChange={(e) => setForm((prev) => ({ ...prev, price: e.target.checked ? '0' : '' }))}
+                  />
+                  Cours gratuit
+                </label>
               </div>
 
               <div className="form-group">
