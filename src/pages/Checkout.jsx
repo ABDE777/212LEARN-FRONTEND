@@ -12,6 +12,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCartContext } from '../context/CartContext';
 import Navbar from '../components/Navbar';
 import SEOHead from '../components/SEOHead';
+import api from '../services/api';
 
 export default function Checkout() {
   const { id } = useParams();
@@ -37,6 +38,27 @@ export default function Checkout() {
   const [discount, setDiscount] = useState(0);
   const [couponError, setCouponError] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [enrolling, setEnrolling] = useState(false);
+
+  // Free course: enroll the student (creates a settled 0-amount PAID enrollment
+  // on the backend) before sending them into the course.
+  const handleFreeEnroll = async () => {
+    setEnrolling(true);
+    setLocalError('');
+    try {
+      await api.post('/enrollments', { courseId: id });
+    } catch (err) {
+      const code = err.response?.data?.error?.code;
+      // Already enrolled is fine — just continue into the course.
+      if (code !== 'ALREADY_ENROLLED') {
+        setLocalError(err.response?.data?.error?.message || err.response?.data?.message || "Impossible de vous inscrire au cours.");
+        setEnrolling(false);
+        return;
+      }
+    }
+    clearCart();
+    navigate(`/learn/${id}/lesson/intro`);
+  };
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -164,8 +186,8 @@ export default function Checkout() {
                 <div style={{ textAlign: 'center', padding: '2rem' }}>
                   <CheckCircle size={64} color="var(--success-color)" style={{ marginBottom: '1rem' }} />
                   <h3 style={{ marginBottom: '1rem', color: 'var(--text-color)' }}>Ce cours est gratuit !</h3>
-                  <Button variant="primary" size="large" onClick={() => { clearCart(); navigate(`/learn/${id}/lesson/intro`); }}>
-                    Commencer le cours
+                  <Button variant="primary" size="large" onClick={handleFreeEnroll} loading={enrolling}>
+                    S'inscrire gratuitement
                   </Button>
                 </div>
               ) : (
