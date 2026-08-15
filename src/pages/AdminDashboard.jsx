@@ -3908,7 +3908,7 @@ export default function AdminDashboard() {
         await createCoupon(payload);
         setUserActionMsg({ type: 'success', text: 'Coupon créé avec succès.' });
       }
-      await refreshCoupons();
+      await refetchCoupons();
       setShowCouponForm(false);
     } catch (err) {
       const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Erreur lors de l\'enregistrement du coupon.';
@@ -3933,7 +3933,7 @@ export default function AdminDashboard() {
         try {
           await deleteCoupon(couponId);
           setUserActionMsg({ type: 'success', text: `Le coupon "${couponCode}" a été supprimé avec succès.` });
-          await refreshCoupons();
+          await refetchCoupons();
         } catch (err) {
           const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Impossible de supprimer ce coupon.';
           setUserActionMsg({ type: 'error', text: msg });
