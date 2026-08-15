@@ -223,6 +223,64 @@ function StudentLiveSessionsTab({ enrollments = [], currentUser }) {
   );
 }
 
+// The student's own groups (assigned by a formateur for a course they paid for).
+function MyGroupsSection() {
+  const [groups, setGroups] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const { default: api } = await import('../services/api');
+        const res = await api.get('/groups/mine');
+        if (active) setGroups(res.data?.data?.groups || []);
+      } catch {
+        if (active) setGroups([]);
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, []);
+
+  if (loading || groups.length === 0) return null;
+
+  return (
+    <div style={{ marginTop: '2.5rem' }}>
+      <h2 style={{ marginBottom: '1.25rem', color: 'var(--text-color)', fontSize: '1.3rem', fontWeight: 700 }}>
+        Mes groupes
+      </h2>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem' }}>
+        {groups.map((g) => (
+          <Card key={g.groupId} variant="elevated" padding="1.25rem">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+              <div style={{
+                width: '44px', height: '44px', borderRadius: '12px', flexShrink: 0,
+                background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <User size={22} color="#fff" />
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, color: 'var(--text-color)' }}>{g.name}</div>
+                {g.course?.title && (
+                  <div style={{ fontSize: '0.85rem', color: 'var(--secondary)' }}>{g.course.title}</div>
+                )}
+              </div>
+            </div>
+            {g.formateur && (
+              <p style={{ fontSize: '0.85rem', color: 'var(--secondary)', margin: 0 }}>
+                Formateur : {g.formateur.firstName} {g.formateur.lastName}
+              </p>
+            )}
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function StudentDashboard() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -727,6 +785,8 @@ export default function StudentDashboard() {
                   </Card>
                 </div>
               </div>
+
+              <MyGroupsSection />
             </div>
           )}
         </main>
