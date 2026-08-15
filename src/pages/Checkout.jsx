@@ -162,7 +162,8 @@ export default function Checkout() {
     );
   }
 
-  const isFree = course.price === 0;
+  // Price arrives from the API as a string (Prisma Decimal) — compare numerically.
+  const isFree = Number(course.price) === 0;
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-color)' }}>
@@ -478,7 +479,7 @@ export default function Checkout() {
               <div style={{ marginBottom: '1.5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', color: 'var(--secondary)' }}>
                   <span>Sous-total</span>
-                  <span>{course.price === 0 ? 'Gratuit' : `${course.price}€`}</span>
+                  <span>{isFree ? 'Gratuit' : `${course.price}€`}</span>
                 </div>
                 {discount > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', color: '#4caf50' }}>
@@ -488,13 +489,13 @@ export default function Checkout() {
                 )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', color: 'var(--secondary)' }}>
                   <span>TVA (20%)</span>
-                  <span>{course.price === 0 ? '0€' : `${((course.price - discount) * 0.2).toFixed(2)}€`}</span>
+                  <span>{isFree ? '0€' : `${((Number(course.price) - discount) * 0.2).toFixed(2)}€`}</span>
                 </div>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '1rem', borderTop: '2px solid var(--border-color)', marginBottom: '1.5rem' }}>
                 <span style={{ fontWeight: 700, fontSize: '1.2rem', color: 'var(--text-color)' }}>Total</span>
                 <span style={{ fontWeight: 700, fontSize: '1.2rem', color: 'var(--primary)' }}>
-                  {course.price === 0 ? 'Gratuit' : `${((course.price - discount) * 1.2).toFixed(2)}€`}
+                  {isFree ? 'Gratuit' : `${((Number(course.price) - discount) * 1.2).toFixed(2)}€`}
                 </span>
               </div>
             </Card>
