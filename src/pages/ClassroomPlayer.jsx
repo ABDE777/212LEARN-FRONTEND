@@ -26,7 +26,7 @@ export default function ClassroomPlayer() {
     if (curriculum && lessonId) {
       // Find current lesson across all sections
       for (const section of curriculum.sections) {
-        const lesson = section.lessons?.find(l => l._id === lessonId);
+        const lesson = section.lessons?.find(l => l.id === lessonId);
         if (lesson) {
           setCurrentLesson({ ...lesson, sectionTitle: section.title });
           break;
@@ -37,7 +37,7 @@ export default function ClassroomPlayer() {
 
   const handleLessonClick = (lesson) => {
     if (lesson.isLocked) return;
-    navigate(`/learn/${courseId}/lesson/${lesson._id}`);
+    navigate(`/learn/${courseId}/lesson/${lesson.id}`);
   };
 
   const handleMarkComplete = async () => {
@@ -59,12 +59,12 @@ export default function ClassroomPlayer() {
     
     for (let i = 0; i < curriculum.sections.length; i++) {
       const section = curriculum.sections[i];
-      const lessonIndex = section.lessons?.findIndex(l => l._id === lessonId);
+      const lessonIndex = section.lessons?.findIndex(l => l.id === lessonId);
       
       if (lessonIndex !== -1 && lessonIndex < section.lessons.length - 1) {
         // Next lesson in same section
         const nextLesson = section.lessons[lessonIndex + 1];
-        navigate(`/learn/${courseId}/lesson/${nextLesson._id}`);
+        navigate(`/learn/${courseId}/lesson/${nextLesson.id}`);
         return;
       }
       
@@ -72,7 +72,7 @@ export default function ClassroomPlayer() {
         // First lesson of next section
         const nextSection = curriculum.sections[i + 1];
         if (nextSection.lessons?.length > 0) {
-          navigate(`/learn/${courseId}/lesson/${nextSection.lessons[0]._id}`);
+          navigate(`/learn/${courseId}/lesson/${nextSection.lessons[0].id}`);
           return;
         }
       }
@@ -84,12 +84,12 @@ export default function ClassroomPlayer() {
     
     for (let i = 0; i < curriculum.sections.length; i++) {
       const section = curriculum.sections[i];
-      const lessonIndex = section.lessons?.findIndex(l => l._id === lessonId);
+      const lessonIndex = section.lessons?.findIndex(l => l.id === lessonId);
       
       if (lessonIndex !== -1 && lessonIndex > 0) {
         // Previous lesson in same section
         const prevLesson = section.lessons[lessonIndex - 1];
-        navigate(`/learn/${courseId}/lesson/${prevLesson._id}`);
+        navigate(`/learn/${courseId}/lesson/${prevLesson.id}`);
         return;
       }
       
@@ -97,7 +97,7 @@ export default function ClassroomPlayer() {
         // Last lesson of previous section
         const prevSection = curriculum.sections[i - 1];
         if (prevSection.lessons?.length > 0) {
-          navigate(`/learn/${courseId}/lesson/${prevSection.lessons[prevSection.lessons.length - 1]._id}`);
+          navigate(`/learn/${courseId}/lesson/${prevSection.lessons[prevSection.lessons.length - 1].id}`);
           return;
         }
       }
@@ -175,7 +175,7 @@ export default function ClassroomPlayer() {
             </div>
 
             {curriculum?.sections?.map((section, sectionIndex) => (
-              <div key={section._id} style={{ marginBottom: '1.5rem' }}>
+              <div key={section.id} style={{ marginBottom: '1.5rem' }}>
                 <h4 style={{ 
                   fontSize: '0.95rem', 
                   fontWeight: 600, 
@@ -188,12 +188,12 @@ export default function ClassroomPlayer() {
                 </h4>
                 <div>
                   {section.lessons?.map((lesson) => {
-                    const isCompleted = completedLessons.has(lesson._id);
-                    const isCurrent = lesson._id === lessonId;
+                    const isCompleted = completedLessons.has(lesson.id);
+                    const isCurrent = lesson.id === lessonId;
                     
                     return (
                       <div
-                        key={lesson._id}
+                        key={lesson.id}
                         onClick={() => handleLessonClick(lesson)}
                         style={{
                           display: 'flex',
