@@ -2023,7 +2023,8 @@ function WafacashTab() {
     const course = p.enrollment?.course || p.course;
     const refCode = p.transactionReference || p.paymentReference || p.reference || '—';
     const currencyStr = p.currency || 'MAD';
-    const invoiceDate = p.createdAt ? new Date(p.createdAt).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR');
+    const invoiceDateSource = p.paidAt || p.enrollment?.enrolledAt;
+    const invoiceDate = invoiceDateSource ? new Date(invoiceDateSource).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR');
     const studentName = student ? `${student.firstName || ''} ${student.lastName || ''}`.trim() || student.email : 'Étudiant';
     const studentEmail = student?.email || '—';
     const courseTitle = course?.title || 'Inscription Cours 212 Learn';
@@ -2284,7 +2285,9 @@ function WafacashTab() {
                     { label: 'MTCN', value: p.mtcn || '—', mono: true },
                     { label: 'Référence', value: refCode, mono: true },
                     { label: 'Statut', value: null, badge: statusBadge(p.status) },
-                    { label: 'Date', value: p.createdAt ? new Date(p.createdAt).toLocaleString('fr-FR') : '—' },
+                    { label: 'Fournisseur', value: p.provider || '—' },
+                    { label: 'Date de paiement', value: (p.paidAt || p.enrollment?.enrolledAt) ? new Date(p.paidAt || p.enrollment.enrolledAt).toLocaleString('fr-FR') : '—' },
+                    { label: 'Vérifié le', value: p.verifiedAt ? new Date(p.verifiedAt).toLocaleString('fr-FR') : '—' },
                   ].map(({ label, value, highlight, mono, badge }) => (
                     <div key={label} style={{ background: 'var(--bg-color)', borderRadius: '10px', padding: '0.85rem 1rem', border: '1px solid var(--border-color)' }}>
                       <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.3rem' }}>{label}</div>
@@ -2296,6 +2299,14 @@ function WafacashTab() {
                     </div>
                   ))}
                 </div>
+
+                {/* Notes */}
+                {p.notes && (
+                  <div style={{ marginBottom: '1.5rem', background: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '1rem' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.35rem' }}>Notes</div>
+                    <div style={{ fontSize: '0.9rem', color: 'var(--text-color)', whiteSpace: 'pre-wrap' }}>{p.notes}</div>
+                  </div>
+                )}
 
                 {/* Coupon Info */}
                 {p.coupon && (
@@ -2747,7 +2758,9 @@ function TransferTab() {
                     { label: 'RIB Client', value: p.rib || '—', mono: true },
                     { label: 'Référence', value: refCode, mono: true },
                     { label: 'Statut', value: null, badge: statusBadge(p.status) },
-                    { label: 'Date', value: p.createdAt ? new Date(p.createdAt).toLocaleString('fr-FR') : '—' },
+                    { label: 'Fournisseur', value: p.provider || '—' },
+                    { label: 'Date de paiement', value: (p.paidAt || p.enrollment?.enrolledAt) ? new Date(p.paidAt || p.enrollment.enrolledAt).toLocaleString('fr-FR') : '—' },
+                    { label: 'Vérifié le', value: p.verifiedAt ? new Date(p.verifiedAt).toLocaleString('fr-FR') : '—' },
                   ].map(({ label, value, highlight, mono, badge }) => (
                     <div key={label} style={{ background: 'var(--bg-color)', borderRadius: '10px', padding: '0.85rem 1rem', border: '1px solid var(--border-color)' }}>
                       <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.3rem' }}>{label}</div>
@@ -2759,6 +2772,14 @@ function TransferTab() {
                     </div>
                   ))}
                 </div>
+
+                {/* Notes */}
+                {p.notes && (
+                  <div style={{ marginBottom: '1.5rem', background: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '1rem' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.35rem' }}>Notes</div>
+                    <div style={{ fontSize: '0.9rem', color: 'var(--text-color)', whiteSpace: 'pre-wrap' }}>{p.notes}</div>
+                  </div>
+                )}
 
                 {/* Coupon Info */}
                 {p.coupon && (
