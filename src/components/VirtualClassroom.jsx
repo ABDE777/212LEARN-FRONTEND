@@ -38,12 +38,11 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
       try {
         const response = await api.get(`/meetings/${meeting.id}/join`);
         const data = response.data?.data;
-        if (data?.jwt) {
-          setJwtToken(data.jwt);
-          // Store domain and roomName from response
-          if (data?.domain) setDomain(data.domain);
-          if (data?.roomName) setRoomName(data.roomName);
-        }
+        // domain + roomName apply whether or not a JWT is issued: public Jitsi
+        // (meet.jit.si) returns them with jwt = null.
+        if (data?.domain) setDomain(data.domain);
+        if (data?.roomName) setRoomName(data.roomName);
+        if (data?.jwt) setJwtToken(data.jwt);
       } catch (err) {
         console.error('Failed to fetch JaaS join info:', err);
         // Continue without JWT for fallback to meet.jit.si
