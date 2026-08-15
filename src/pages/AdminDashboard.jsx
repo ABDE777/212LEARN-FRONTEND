@@ -21,6 +21,7 @@ import { useAdminAuditLogs, useSystemDiagnostics } from '../hooks/useAdminAudit'
 import { useAdminMeetings } from '../hooks/useAdminMeetings';
 import { useAdminGroups } from '../hooks/useAdminGroups';
 import { useCoupons } from '../hooks/useCoupons';
+import { useAdminSettings } from '../hooks/useAdminSettings';
 import { useGroups } from '../hooks/useGroups';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useAuth } from '../context/AuthContext';
@@ -2718,23 +2719,39 @@ function AuditLogsTab() {
 }
 
 function AdminSettingsTab() {
-  const [settings, setSettings] = useState({
-    siteName: '212 Learn',
-    supportEmail: 'support@212learn.com',
-    currency: 'MAD',
-    wafacashAutoApprove: false,
-    requireKyc: true,
-    allowRegistrations: true,
-    maintenanceMode: false,
-    emailNotifications: true,
-  });
+  const { settings: loaded, loading, error, saving, save } = useAdminSettings();
+  const [settings, setSettings] = useState(null);
   const [savedMsg, setSavedMsg] = useState(false);
+  const [saveError, setSaveError] = useState(null);
 
-  const handleSave = (e) => {
+  // Mirror the loaded settings into local editable state once fetched.
+  useEffect(() => { if (loaded) setSettings(loaded); }, [loaded]);
+
+  const handleSave = async (e) => {
     e.preventDefault();
-    setSavedMsg(true);
-    setTimeout(() => setSavedMsg(false), 3000);
+    if (!settings) return;
+    setSaveError(null);
+    try {
+      await save({
+        siteName: settings.siteName,
+        supportEmail: settings.supportEmail,
+        currency: settings.currency,
+        wafacashAutoApprove: settings.wafacashAutoApprove,
+        requireKyc: settings.requireKyc,
+        allowRegistrations: settings.allowRegistrations,
+        maintenanceMode: settings.maintenanceMode,
+        emailNotifications: settings.emailNotifications,
+      });
+      setSavedMsg(true);
+      setTimeout(() => setSavedMsg(false), 3000);
+    } catch (err) {
+      setSaveError(err.message);
+    }
   };
+
+  if (loading || !settings) {
+    return <div style={{ padding: '2rem' }}><LoadingSpinner /></div>;
+  }
 
   return (
     <div>
@@ -2747,20 +2764,28 @@ function AdminSettingsTab() {
         </div>
         <button
           onClick={handleSave}
+          disabled={saving}
           style={{
             display: 'inline-flex', alignItems: 'center', gap: '8px',
             padding: '10px 20px', background: 'var(--primary)', color: '#fff',
-            border: 'none', borderRadius: '10px', fontWeight: 700, cursor: 'pointer',
-            fontSize: '0.9rem', boxShadow: 'var(--shadow-sm)', transition: 'all 0.2s',
+            border: 'none', borderRadius: '10px', fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer',
+            fontSize: '0.9rem', boxShadow: 'var(--shadow-sm)', transition: 'all 0.2s', opacity: saving ? 0.7 : 1,
           }}
         >
-          <CheckCircle size={16} /> Enregistrer les modifications
+          {saving ? <Loader size={16} className="spin" /> : <CheckCircle size={16} />}
+          {saving ? 'Enregistrement…' : 'Enregistrer les modifications'}
         </button>
       </div>
 
       {savedMsg && (
         <div style={{ padding: '1rem 1.25rem', background: '#e8f5e9', color: '#2e7d32', border: '1px solid #c8e6c9', borderRadius: '10px', marginBottom: '1.5rem', fontWeight: 600 }}>
           ✓ Paramètres enregistrés avec succès !
+        </div>
+      )}
+
+      {(saveError || error) && (
+        <div style={{ padding: '1rem 1.25rem', background: '#ffebee', color: '#c62828', border: '1px solid #ffcdd2', borderRadius: '10px', marginBottom: '1.5rem', fontWeight: 600 }}>
+          {saveError || error}
         </div>
       )}
 
