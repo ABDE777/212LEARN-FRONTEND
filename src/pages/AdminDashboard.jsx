@@ -3508,7 +3508,7 @@ export default function AdminDashboard() {
     error: pendingKycError,
     refreshPendingKyc,
   } = usePendingKyc();
-  const { courses, enrollments, loading: coursesLoading, error: coursesError, refreshCourses } = useAdminCourses();
+  const { courses, loading: coursesLoading, error: coursesError, refreshCourses } = useAdminCourses();
   const { instructors, loading: instructorsLoading, error: instructorsError } = useAdminInstructors();
   const {
     categories,
@@ -3673,6 +3673,8 @@ export default function AdminDashboard() {
   const [showGroupStudentsModal, setShowGroupStudentsModal] = useState(false);
   const [selectedGroupForStudents, setSelectedGroupForStudents] = useState(null);
   const [groupStudentsLoading, setGroupStudentsLoading] = useState(false);
+  // The course's PAID students — the pool eligible to be assigned to the group.
+  const [groupCoursePaidStudents, setGroupCoursePaidStudents] = useState([]);
 
   const [showCouponForm, setShowCouponForm] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState(null);
@@ -3782,10 +3784,27 @@ export default function AdminDashboard() {
 
   const handleManageGroupStudents = async (group) => {
     setSelectedGroupForStudents(group);
+    setGroupCoursePaidStudents([]);
     setGroupStudentsLoading(true);
     try {
       const response = await api.get(`/groups/${group.id}`);
-      setSelectedGroupForStudents(response.data?.data?.group || response.data?.group || group);
+      const loadedGroup = response.data?.data?.group || response.data?.group || group;
+      setSelectedGroupForStudents(loadedGroup);
+
+      // Eligible pool: the course's PAID students, from the authoritative
+      // endpoint (already filtered to PAID) rather than the client-side
+      // enrollments list, which is truncated and ignores payment status.
+      if (loadedGroup.courseId) {
+        try {
+          const studentsRes = await api.get(`/courses/${loadedGroup.courseId}/students`, {
+            params: { limit: 500 },
+          });
+          setGroupCoursePaidStudents(studentsRes.data?.data?.students || studentsRes.data?.data || []);
+        } catch (studentsErr) {
+          console.error('Failed to load paid students for course:', studentsErr);
+          setGroupCoursePaidStudents([]);
+        }
+      }
     } catch (err) {
       console.error('Failed to load group students:', err);
     } finally {
@@ -3796,20 +3815,21 @@ export default function AdminDashboard() {
 
   const getAvailableStudentsForGroup = () => {
     if (!selectedGroupForStudents) return [];
-    
-    const allStudents = activeUsers.filter(u => u.role === 'student' || u.role === 'employee');
-    
-    // If group has a courseId, only show students enrolled in that course
+
+    // Members already in the group (so we can exclude them from the picker).
+    const memberIds = new Set(
+      (selectedGroupForStudents.students || []).map(m => m.user?.id).filter(Boolean)
+    );
+
+    // A course-bound group draws from the course's PAID students only.
     if (selectedGroupForStudents.courseId) {
-      return allStudents.filter(student => {
-        return enrollments.some(enrollment =>
-          enrollment.userId === student.id && enrollment.courseId === selectedGroupForStudents.courseId
-        );
-      });
+      return groupCoursePaidStudents.filter(s => !memberIds.has(s.id));
     }
-    
-    // If no courseId, show all students
-    return allStudents;
+
+    // A group with no course: any active student/employee not already a member.
+    return activeUsers
+      .filter(u => u.role === 'student' || u.role === 'employee')
+      .filter(u => !memberIds.has(u.id));
   };
 
   const handleDeleteGroup = (groupId, groupName) => {
