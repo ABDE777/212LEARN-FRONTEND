@@ -20,6 +20,8 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
   const apiRef = useRef(null);
   const [apiLoaded, setApiLoaded] = useState(!!window.JitsiMeetExternalAPI);
   const [participantCount, setParticipantCount] = useState(0);
+  const [isRecording, setIsRecording] = useState(false);
+  const recordingStartedRef = useRef(false); // guard: only auto-start once
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('connecting'); // connecting | connected | error
   // The loading overlay sits on top of the Jitsi iframe. If the "joined" event
@@ -171,7 +173,21 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
       setOverlayDismissed(true);
       if (isInstructor) {
         api.executeCommand('subject', meeting.title || 'Session 212Learn');
+        // Auto-start cloud (file) recording so the session is captured without
+        // the instructor having to remember. Requires the recording feature in
+        // the JaaS JWT (granted to moderators) and JaaS recording storage.
+        if (!recordingStartedRef.current) {
+          recordingStartedRef.current = true;
+          setTimeout(() => {
+            try { api.executeCommand('startRecording', { mode: 'file' }); } catch (_) {}
+          }, 2500);
+        }
       }
+    });
+
+    // Reflect the real recording state (also covers manual start/stop).
+    api.addEventListener('recordingStatusChanged', (e) => {
+      setIsRecording(Boolean(e?.on));
     });
 
     // Safety net: reveal the Jitsi iframe even if "joined" never fires (auth or
@@ -293,6 +309,18 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
             )}
             {connectionStatus === 'connected' ? 'Connecté' : connectionStatus === 'error' ? 'Erreur' : 'Connexion…'}
           </span>
+
+          {/* Recording indicator */}
+          {isRecording && (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+              padding: '0.25rem 0.7rem', borderRadius: '9999px', fontSize: '0.72rem', fontWeight: 700,
+              background: 'rgba(220,53,69,0.15)', color: '#dc3545', border: '1px solid rgba(220,53,69,0.3)',
+            }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#dc3545', animation: 'glowPulse 1s ease infinite', display: 'inline-block' }} />
+              REC
+            </span>
+          )}
 
           {/* Participant count */}
           {participantCount > 0 && (
