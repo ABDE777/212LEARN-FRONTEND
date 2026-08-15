@@ -29,6 +29,22 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
   const [jwtToken, setJwtToken] = useState(null);
   const [domain, setDomain] = useState('meet.jit.si');
   const [roomName, setRoomName] = useState(null);
+  // Anti-leak watermark: for students, stamp their identity over the video so any
+  // screen recording is traceable. It drifts between corners so it can't simply
+  // be cropped out. (OS-level screen capture can't be blocked outright — this is
+  // deterrence + traceability, the same approach paid platforms use.)
+  const [wmCorner, setWmCorner] = useState(0);
+  useEffect(() => {
+    if (isInstructor) return;
+    const t = setInterval(() => setWmCorner((c) => (c + 1) % 4), 8000);
+    return () => clearInterval(t);
+  }, [isInstructor]);
+  const wmStyle = [
+    { top: '14%', left: '6%' },
+    { top: '14%', right: '6%' },
+    { bottom: '16%', right: '6%' },
+    { bottom: '16%', left: '6%' },
+  ][wmCorner];
 
   // 1. Fetch JaaS join info from backend
   useEffect(() => {
@@ -218,14 +234,17 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      zIndex: 9000,
-      display: 'flex',
-      flexDirection: 'column',
-      background: '#0f1117',
-    }}>
+    <div
+      onContextMenu={(e) => e.preventDefault()}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9000,
+        display: 'flex',
+        flexDirection: 'column',
+        background: '#0f1117',
+      }}
+    >
       {/* Top bar */}
       <div style={{
         display: 'flex',
@@ -413,6 +432,21 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
         )}
 
         <div ref={jitsiContainerRef} style={{ width: '100%', height: '100%' }} />
+
+        {/* Traceability watermark — students only, drifts to resist cropping */}
+        {!isInstructor && (
+          <div
+            aria-hidden
+            style={{
+              position: 'absolute', ...wmStyle, zIndex: 5, pointerEvents: 'none',
+              color: 'rgba(255,255,255,0.28)', fontSize: '0.8rem', fontWeight: 700,
+              textShadow: '0 1px 2px rgba(0,0,0,0.5)', transition: 'all 1s ease',
+              letterSpacing: '0.02em', userSelect: 'none', whiteSpace: 'nowrap',
+            }}
+          >
+            212Learn · {displayName || 'Participant'}
+          </div>
+        )}
       </div>
     </div>
   );

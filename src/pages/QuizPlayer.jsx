@@ -215,8 +215,21 @@ export default function QuizPlayer() {
 
   const progress = ((currentQuestion + 1) / totalCount) * 100;
 
+  // Anti-cheat: block copy / cut / right-click and text selection while taking
+  // the quiz, so question statements and options can't be lifted out. (Not
+  // foolproof — a determined user can still screenshot — but stops casual copy.)
+  const blockCopy = (e) => { e.preventDefault(); return false; };
+
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-color)', padding: '2rem' }}>
+    <div
+      onCopy={blockCopy}
+      onCut={blockCopy}
+      onContextMenu={blockCopy}
+      style={{
+        minHeight: '100vh', background: 'var(--bg-color)', padding: '2rem',
+        userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none',
+      }}
+    >
       <div style={{ maxWidth: '800px', margin: '0 auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
           <Link
