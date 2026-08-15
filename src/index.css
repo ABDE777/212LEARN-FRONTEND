@@ -1647,6 +1647,24 @@ button {
   }
 }
 
+/* Profile page 2-column layout: form sections on the left, portfolio on the
+   right, filling the full width. Collapses to a single column below 992px.
+   `min-width: 0` lets the inner .pf-grid shrink instead of overflowing. */
+.profile-cols {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+.profile-col {
+  min-width: 0;
+}
+@media (min-width: 992px) {
+  .profile-cols {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  }
+}
+
 .profile-avatar-selector {
   display: flex;
   align-items: center;

@@ -389,7 +389,7 @@ export default function ProfileEditForm() {
   );
 
   return (
-    <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+    <div style={{ width: '100%' }}>
       {/* Header with Avatar and Basic Info */}
       <div
         style={{
@@ -549,6 +549,9 @@ export default function ProfileEditForm() {
       </div>
 
       <form onSubmit={handleSubmit} noValidate id="profile-form">
+        <div className={showPortfolio ? 'profile-cols' : ''}>
+        {/* Left column: personal + situation/instructor sections */}
+        <div className="profile-col">
         {/* Personal Information Card */}
         <div
           style={{
@@ -948,11 +951,15 @@ export default function ProfileEditForm() {
           </div>
         )}
 
-        {/* Portfolio — skills, languages, certificates, diplomas, links.
-            Learners & instructors only (admins excluded). */}
+        </div>{/* /profile-col (left) */}
+
+        {/* Right column: portfolio (learners & instructors only). */}
         {showPortfolio && (
-          <PortfolioEditor value={portfolio} isEditing={isEditing} onChange={setPortfolio} />
+          <div className="profile-col">
+            <PortfolioEditor value={portfolio} isEditing={isEditing} onChange={setPortfolio} />
+          </div>
         )}
+        </div>{/* /profile-cols */}
       </form>
     </div>
   );
