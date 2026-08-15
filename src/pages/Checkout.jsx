@@ -411,7 +411,7 @@ export default function Checkout() {
               </div>
 
               {/* Coupon Code Section */}
-              {!appliedCoupon && (
+              {!isFree && !appliedCoupon && (
                 <div style={{ marginBottom: '1.5rem' }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', fontWeight: 500, color: 'var(--secondary)' }}>
                     <Tag size={16} />
@@ -450,7 +450,7 @@ export default function Checkout() {
                 </div>
               )}
 
-              {appliedCoupon && (
+              {!isFree && appliedCoupon && (
                 <div style={{ marginBottom: '1.5rem', background: '#e8f5e9', border: '1px solid #4caf50', borderRadius: '6px', padding: '0.75rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                     <span style={{ color: '#2e7d32', fontWeight: 500, fontSize: '0.9rem' }}>
