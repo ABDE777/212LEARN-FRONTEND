@@ -774,12 +774,16 @@ function SubmissionsList({ assignmentId }) {
    Page shell
 ───────────────────────────────────────────── */
 function GroupsManager({ courseId }) {
-  const { getCourseGroups, getGroupStudents, loading } = useCourseGroups();
+  const { getCourseGroups, getGroupStudents, addStudentToGroup, removeStudentFromGroup, loading } = useCourseGroups();
   const [groups, setGroups] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [students, setStudents] = useState([]);
   const [studentsLoading, setStudentsLoading] = useState(false);
   const [err, setErr] = useState(null);
+  // Paid students of the course — the pool eligible to be assigned to a group.
+  const [paidStudents, setPaidStudents] = useState([]);
+  const [assignSelection, setAssignSelection] = useState('');
+  const [assigning, setAssigning] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -794,17 +798,53 @@ function GroupsManager({ courseId }) {
     return () => { active = false; };
   }, [courseId]);
 
+  const loadGroupStudents = async (groupId) => {
+    const data = await getGroupStudents(groupId);
+    setStudents(data.students || []);
+  };
+
   const openGroup = async (group) => {
     setSelectedGroup(group);
     setStudents([]);
+    setPaidStudents([]);
+    setAssignSelection('');
+    setErr(null);
     setStudentsLoading(true);
     try {
-      const data = await getGroupStudents(group.id);
-      setStudents(data.students || []);
+      await loadGroupStudents(group.id);
+      // Eligible pool: the course's PAID students (backend filters to PAID).
+      const res = await api.get(`/courses/${courseId}/students`, { skipCache: true });
+      setPaidStudents(res.data?.data?.students || res.data?.data || []);
     } catch {
       setErr('Impossible de charger les étudiants.');
     } finally {
       setStudentsLoading(false);
+    }
+  };
+
+  const handleAssign = async () => {
+    if (!assignSelection || !selectedGroup) return;
+    setAssigning(true);
+    setErr(null);
+    try {
+      await addStudentToGroup(selectedGroup.id, assignSelection);
+      setAssignSelection('');
+      await loadGroupStudents(selectedGroup.id);
+    } catch (e) {
+      setErr(e.response?.data?.error?.message || e.response?.data?.message || "Impossible d'assigner l'étudiant.");
+    } finally {
+      setAssigning(false);
+    }
+  };
+
+  const handleRemove = async (userId) => {
+    if (!selectedGroup) return;
+    setErr(null);
+    try {
+      await removeStudentFromGroup(selectedGroup.id, userId);
+      await loadGroupStudents(selectedGroup.id);
+    } catch (e) {
+      setErr(e.response?.data?.error?.message || e.response?.data?.message || "Impossible de retirer l'étudiant.");
     }
   };
 
@@ -819,6 +859,8 @@ function GroupsManager({ courseId }) {
   if (loading && groups.length === 0 && !selectedGroup) return <LoadingSpinner />;
 
   if (selectedGroup) {
+    const memberIds = new Set(students.map(s => s.id));
+    const assignable = paidStudents.filter(s => !memberIds.has(s.id));
     return (
       <div>
         <button
@@ -830,6 +872,32 @@ function GroupsManager({ courseId }) {
         </button>
         <h2 style={{ marginBottom: '1rem', fontSize: '1.3rem' }}>Étudiants — {selectedGroup.name}</h2>
         {err && <p style={{ color: 'var(--error-color)' }}>{err}</p>}
+
+        {/* Assign a paid student to this group */}
+        <div style={{ ...rowStyle, marginBottom: '1.25rem', display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <select
+            value={assignSelection}
+            onChange={(e) => setAssignSelection(e.target.value)}
+            disabled={studentsLoading || assigning}
+            style={{ flex: '1 1 240px', padding: '0.6rem 0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}
+          >
+            <option value="">
+              {assignable.length === 0 ? 'Aucun étudiant payé disponible' : 'Assigner un étudiant payé…'}
+            </option>
+            {assignable.map(s => (
+              <option key={s.id} value={s.id}>{s.firstName} {s.lastName} — {s.email}</option>
+            ))}
+          </select>
+          <button
+            onClick={handleAssign}
+            disabled={!assignSelection || assigning}
+            className="btn-primary"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+          >
+            <Plus size={16} /> {assigning ? 'Assignation…' : 'Assigner'}
+          </button>
+        </div>
+
         {studentsLoading ? (
           <LoadingSpinner />
         ) : students.length === 0 ? (
@@ -837,9 +905,20 @@ function GroupsManager({ courseId }) {
         ) : (
           <div style={{ display: 'grid', gap: '0.75rem' }}>
             {students.map(s => (
-              <div key={s.id} style={rowStyle}>
-                <div style={{ fontWeight: 600 }}>{s.firstName} {s.lastName}</div>
-                <div style={{ fontSize: '0.85rem', color: 'var(--secondary)' }}>{s.email}</div>
+              <div key={s.id} style={{ ...rowStyle, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+                <div>
+                  <div style={{ fontWeight: 600 }}>{s.firstName} {s.lastName}</div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--secondary)' }}>{s.email}</div>
+                </div>
+                <button
+                  onClick={() => handleRemove(s.id)}
+                  title="Retirer du groupe"
+                  aria-label="Retirer du groupe"
+                  className="btn-secondary"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', color: 'var(--error-color)' }}
+                >
+                  <X size={16} />
+                </button>
               </div>
             ))}
           </div>

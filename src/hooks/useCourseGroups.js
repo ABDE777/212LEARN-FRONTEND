@@ -40,5 +40,33 @@ export const useCourseGroups = () => {
     }
   };
 
-  return { getCourseGroups, getGroupStudents, loading, error };
+  const addStudentToGroup = async (groupId, userId) => {
+    setLoading(true);
+    setError(null);
+    try {
+      await api.post(`/groups/${groupId}/students`, { userId });
+    } catch (err) {
+      const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to add student';
+      setError(msg);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const removeStudentFromGroup = async (groupId, userId) => {
+    setLoading(true);
+    setError(null);
+    try {
+      await api.delete(`/groups/${groupId}/students/${userId}`);
+    } catch (err) {
+      const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to remove student';
+      setError(msg);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { getCourseGroups, getGroupStudents, addStudentToGroup, removeStudentFromGroup, loading, error };
 };
