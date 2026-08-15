@@ -52,9 +52,9 @@ export function useCoupons() {
     }
   };
 
-  const validateCoupon = async (code) => {
+  const validateCoupon = async (code, courseId) => {
     try {
-      const response = await api.post('/coupons/validate', { code });
+      const response = await api.post('/coupons/validate', { code, ...(courseId && { courseId }) });
       return response.data;
     } catch (err) {
       console.error('Failed to validate coupon:', err);

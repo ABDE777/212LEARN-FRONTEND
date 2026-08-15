@@ -3684,6 +3684,7 @@ export default function AdminDashboard() {
     expirationDate: '',
     maxUsage: 100,
     isActive: true,
+    courseId: '',
   });
   const [couponFormLoading, setCouponFormLoading] = useState(false);
   const [couponFormError, setCouponFormError] = useState(null);
@@ -3864,7 +3865,7 @@ export default function AdminDashboard() {
 
   const handleCreateCouponClick = () => {
     setEditingCoupon(null);
-    setCouponFormData({ code: '', discount: '', expirationDate: '', maxUsage: 100, isActive: true });
+    setCouponFormData({ code: '', discount: '', expirationDate: '', maxUsage: 100, isActive: true, courseId: '' });
     setCouponFormError(null);
     setShowCouponForm(true);
   };
@@ -3877,6 +3878,7 @@ export default function AdminDashboard() {
       expirationDate: coupon.expirationDate ? coupon.expirationDate.split('T')[0] : '',
       maxUsage: coupon.maxUsage || 100,
       isActive: coupon.isActive !== undefined ? coupon.isActive : true,
+      courseId: coupon.courseId || '',
     });
     setCouponFormError(null);
     setShowCouponForm(true);
@@ -3895,6 +3897,8 @@ export default function AdminDashboard() {
         expirationDate: new Date(couponFormData.expirationDate).toISOString(),
         maxUsage: parseInt(couponFormData.maxUsage),
         isActive: couponFormData.isActive,
+        // Empty = global coupon (valid for all courses); a value scopes it.
+        courseId: couponFormData.courseId || null,
       };
 
       if (editingCoupon) {
@@ -5402,9 +5406,10 @@ export default function AdminDashboard() {
                               </button>
                             </div>
                           </div>
-                          <div style={{ display: 'flex', gap: '1rem', fontSize: '0.85rem', color: 'var(--secondary)', marginBottom: '0.75rem' }}>
+                          <div style={{ display: 'flex', gap: '1rem', fontSize: '0.85rem', color: 'var(--secondary)', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
                             <span>Utilisations: {coupon.currentUsage || 0}/{coupon.maxUsage || '∞'}</span>
                             <span>Expire: {new Date(coupon.expirationDate).toLocaleDateString('fr-FR')}</span>
+                            <span>Cours: {coupon.course?.title || (coupon.courseId ? '—' : 'Tous les cours')}</span>
                           </div>
                           {(coupon.currentUsage || 0) > 0 && (
                             <button
@@ -6179,6 +6184,28 @@ export default function AdminDashboard() {
                     fontSize: '0.9rem',
                   }}
                 />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.4rem' }}>
+                  Cours (optionnel)
+                </label>
+                <select
+                  value={couponFormData.courseId}
+                  onChange={(e) => setCouponFormData({ ...couponFormData, courseId: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem 0.8rem',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                    fontSize: '0.9rem',
+                  }}
+                >
+                  <option value="">Tous les cours (global)</option>
+                  {courses.map((c) => (
+                    <option key={c.id} value={c.id}>{c.title}</option>
+                  ))}
+                </select>
               </div>
 
               <div style={{ marginBottom: '1rem' }}>
