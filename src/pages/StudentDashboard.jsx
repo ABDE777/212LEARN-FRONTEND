@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Trophy, Target, BookOpen, TrendingUp, Award, LogOut, User, Lock, ShoppingCart, Heart, Trash2, AlertTriangle, X, Video, Calendar, ExternalLink, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { Trophy, Target, BookOpen, TrendingUp, Award, LogOut, User, Lock, Trash2, AlertTriangle, X, Video, Calendar, ExternalLink, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { useStudentDashboardData } from '../hooks/useStudentDashboard';
 import { useAuth } from '../context/AuthContext';
-import { useCartContext } from '../context/CartContext';
 import { useMeetings } from '../hooks/useMeetings';
 import { useCourseSearch } from '../hooks/useCourseSearch';
 import VirtualClassroom from '../components/VirtualClassroom';
@@ -285,7 +284,6 @@ export default function StudentDashboard() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, logout } = useAuth();
-  const { openCart } = useCartContext();
   const { profile, achievements, badges, enrollments, loading, error } = useStudentDashboardData(user?.id);
 
   const [activeTab, setActiveTabState] = useState(() => {
@@ -377,10 +375,6 @@ export default function StudentDashboard() {
               <Trophy size={18} />
               <span>Tableau de bord</span>
             </button>
-            <button onClick={openCart} className="sidebar-menu-btn" title="Mon Panier">
-              <ShoppingCart size={18} />
-              <span>Mon Panier</span>
-            </button>
             <button
               onClick={() => setActiveTab('search')}
               className={`sidebar-menu-btn ${activeTab === 'search' ? 'active' : ''}`}
@@ -396,14 +390,6 @@ export default function StudentDashboard() {
             >
               <Video size={18} />
               <span>Sessions Live</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('wishlist')}
-              className={`sidebar-menu-btn ${activeTab === 'wishlist' ? 'active' : ''}`}
-              title="Mes Souhaits"
-            >
-              <Heart size={18} />
-              <span>Mes Souhaits</span>
             </button>
             <button
               onClick={() => setActiveTab('profile')}
