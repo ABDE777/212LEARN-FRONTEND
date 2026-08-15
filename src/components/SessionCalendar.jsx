@@ -94,22 +94,38 @@ function SessionCalendar({ meetings, onMeetingClick, onEditMeeting, onDeleteMeet
           key={day}
           style={{
             minHeight: '100px',
-            border: '1px solid var(--border-color)',
+            border: isToday ? '2px solid var(--primary)' : '1px solid var(--border-color)',
             padding: '0.5rem',
-            background: isToday ? 'rgba(193,101,47,0.05)' : '#fff',
+            background: isToday ? 'rgba(193,101,47,0.12)' : '#fff',
             cursor: 'pointer',
             transition: 'background 0.2s',
+            position: 'relative',
           }}
-          onMouseEnter={(e) => e.currentTarget.style.background = isToday ? 'rgba(193,101,47,0.1)' : '#f5f5f5'}
-          onMouseLeave={(e) => e.currentTarget.style.background = isToday ? 'rgba(193,101,47,0.05)' : '#fff'}
+          onMouseEnter={(e) => e.currentTarget.style.background = isToday ? 'rgba(193,101,47,0.18)' : '#f5f5f5'}
+          onMouseLeave={(e) => e.currentTarget.style.background = isToday ? 'rgba(193,101,47,0.12)' : '#fff'}
         >
-          <div style={{
-            fontSize: '0.85rem',
-            fontWeight: isToday ? 700 : 400,
-            color: isToday ? 'var(--primary)' : 'var(--text-color)',
-            marginBottom: '0.5rem',
-          }}>
-            {day}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+            <div style={{
+              fontSize: '0.85rem',
+              fontWeight: isToday ? 700 : 400,
+              color: isToday ? '#fff' : 'var(--text-color)',
+              ...(isToday && {
+                background: 'var(--primary)',
+                width: '26px',
+                height: '26px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }),
+            }}>
+              {day}
+            </div>
+            {isToday && (
+              <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                Aujourd'hui
+              </span>
+            )}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
             {dateMeetings.slice(0, 3).map(meeting => (
