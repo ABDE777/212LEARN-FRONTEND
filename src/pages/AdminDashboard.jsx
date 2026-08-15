@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
@@ -3687,6 +3687,10 @@ export default function AdminDashboard() {
   });
   const [couponFormLoading, setCouponFormLoading] = useState(false);
   const [couponFormError, setCouponFormError] = useState(null);
+  // Synchronous re-entrancy guard: the button's disabled state depends on an
+  // async React update, so a rapid double-fire (double-click / Enter+click)
+  // would send two POSTs before it disables. This blocks the 2nd immediately.
+  const couponSubmitLock = useRef(false);
 
   const [updateRequests, setUpdateRequests] = useState([]);
   const [updateRequestsLoading, setUpdateRequestsLoading] = useState(false);
@@ -3880,6 +3884,8 @@ export default function AdminDashboard() {
 
   const handleCouponFormSubmit = async (e) => {
     e.preventDefault();
+    if (couponSubmitLock.current) return; // drop the racing 2nd submit
+    couponSubmitLock.current = true;
     setCouponFormLoading(true);
     setCouponFormError(null);
     try {
@@ -3905,6 +3911,7 @@ export default function AdminDashboard() {
       setCouponFormError(msg);
     } finally {
       setCouponFormLoading(false);
+      couponSubmitLock.current = false;
     }
   };
 
