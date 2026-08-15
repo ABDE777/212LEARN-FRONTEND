@@ -919,148 +919,30 @@ export default function ProfileEditForm() {
         )}
 
         {user?.role === 'instructor' && (
-          <div
-            style={{
-              background: 'var(--surface-color, #ffffff)',
-              borderRadius: '16px',
-              padding: '2rem',
-              marginBottom: '1.5rem',
-              border: '1px solid var(--border-color, #e2e8f0)',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-            }}
-          >
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={cardStyle}>
+            <h3 style={headingStyle}>
               <Briefcase size={20} style={{ color: 'var(--primary)' }} />
               Informations professionnelles
             </h3>
             <div className="pf-grid">
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
-                  Domaine d'expertise
-                </label>
-                <input
-                  type="text"
-                  name="expertiseDomain"
-                  value={formData.expertiseDomain}
-                  onChange={handleChange}
-                  placeholder="ex: Développement Web"
-                  disabled={!isEditing}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-color, #e2e8f0)',
-                    outline: 'none',
-                    background: isEditing ? '#ffffff' : 'var(--bg-color, #f8fafc)',
-                    fontSize: '0.95rem',
-                    color: 'var(--text-color)',
-                    cursor: isEditing ? 'text' : 'not-allowed',
-                  }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
-                  Spécialité
-                </label>
-                <input
-                  type="text"
-                  name="specialization"
-                  value={formData.specialization}
-                  onChange={handleChange}
-                  placeholder="ex: React & Node.js"
-                  disabled={!isEditing}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-color, #e2e8f0)',
-                    outline: 'none',
-                    background: isEditing ? '#ffffff' : 'var(--bg-color, #f8fafc)',
-                    fontSize: '0.95rem',
-                    color: 'var(--text-color)',
-                    cursor: isEditing ? 'text' : 'not-allowed',
-                  }}
-                />
-              </div>
+              {renderText("Domaine d'expertise", 'expertiseDomain', 'ex: Développement Web')}
+              {renderText('Spécialité', 'specialization', 'ex: React & Node.js')}
+              {renderSelect("Années d'expérience", 'experienceYears', [
+                { value: '', label: 'Sélectionnez votre expérience' },
+                { value: '<1', label: "Moins d'un an" },
+                { value: '1-2', label: '1–2 ans' },
+                { value: '3-5', label: '3–5 ans' },
+                { value: '6-10', label: '6–10 ans' },
+                { value: '>10', label: 'Plus de 10 ans' },
+              ])}
+              {renderSelect("Mode d'enseignement", 'teachingMode', [
+                { value: '', label: 'Sélectionnez le mode' },
+                { value: 'online', label: 'En ligne' },
+                { value: 'onsite', label: 'Présentiel' },
+                { value: 'hybrid', label: 'Les deux' },
+              ])}
               <div style={{ gridColumn: '1 / -1' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
-                  Organisation / Entreprise
-                </label>
-                <input
-                  type="text"
-                  name="organization"
-                  value={formData.organization}
-                  onChange={handleChange}
-                  placeholder="Nom de l'organisation"
-                  disabled={!isEditing}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-color, #e2e8f0)',
-                    outline: 'none',
-                    background: isEditing ? '#ffffff' : 'var(--bg-color, #f8fafc)',
-                    fontSize: '0.95rem',
-                    color: 'var(--text-color)',
-                    cursor: isEditing ? 'text' : 'not-allowed',
-                  }}
-                />
-              </div>
-              <div style={{ gridColumn: '1 / -1' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
-                  Années d'expérience
-                </label>
-                <select
-                  name="experienceYears"
-                  value={formData.experienceYears}
-                  onChange={handleChange}
-                  disabled={!isEditing}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-color, #e2e8f0)',
-                    outline: 'none',
-                    background: isEditing ? '#ffffff' : 'var(--bg-color, #f8fafc)',
-                    fontSize: '0.95rem',
-                    color: 'var(--text-color)',
-                    cursor: isEditing ? 'pointer' : 'not-allowed',
-                  }}
-                >
-                  <option value="">Sélectionnez votre expérience</option>
-                  <option value="<1">Moins d'un an</option>
-                  <option value="1-2">1–2 ans</option>
-                  <option value="3-5">3–5 ans</option>
-                  <option value="6-10">6–10 ans</option>
-                  <option value=">10">Plus de 10 ans</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
-                  Mode d'enseignement
-                </label>
-                <select
-                  name="teachingMode"
-                  value={formData.teachingMode}
-                  onChange={handleChange}
-                  disabled={!isEditing}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-color, #e2e8f0)',
-                    outline: 'none',
-                    background: isEditing ? '#ffffff' : 'var(--bg-color, #f8fafc)',
-                    fontSize: '0.95rem',
-                    color: 'var(--text-color)',
-                    cursor: isEditing ? 'pointer' : 'not-allowed',
-                  }}
-                >
-                  <option value="">Sélectionnez le mode</option>
-                  <option value="online">En ligne</option>
-                  <option value="onsite">Présentiel</option>
-                  <option value="hybrid">Les deux</option>
-                </select>
+                {renderText('Organisation / Entreprise', 'organization', "Nom de l'organisation")}
               </div>
             </div>
           </div>
