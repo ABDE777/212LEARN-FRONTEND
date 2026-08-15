@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, ShoppingCart, Heart, BookOpen } from 'lucide-react';
+import { Search, ShoppingCart, Heart, BookOpen, CheckCircle } from 'lucide-react';
 import { useCourses } from '../hooks/useCourses';
 import { useCategories } from '../hooks/useCategories';
 import { useCart } from '../hooks/useCart';
 import { useWishlist } from '../hooks/useWishlist';
 import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -31,6 +32,25 @@ export default function Catalog() {
   const cartCourseIds = new Set(
     cartItems.map((item) => item.course?.id ?? item.courseId ?? item.id)
   );
+  // Courses the signed-in learner is already enrolled in — so we can show
+  // "Déjà inscrit" and block adding them to the cart.
+  const [enrolledCourseIds, setEnrolledCourseIds] = useState(new Set());
+  useEffect(() => {
+    if (!user || isAdmin) { setEnrolledCourseIds(new Set()); return; }
+    let active = true;
+    (async () => {
+      try {
+        const res = await api.get('/enrollments');
+        const list = res.data?.data?.enrollments || res.data?.enrollments || [];
+        const ids = new Set(list.map((e) => e.course?.id ?? e.courseId).filter(Boolean));
+        if (active) setEnrolledCourseIds(ids);
+      } catch {
+        if (active) setEnrolledCourseIds(new Set());
+      }
+    })();
+    return () => { active = false; };
+  }, [user, isAdmin]);
+
   const wishlistCourseIds = new Set(
     wishlistItems.map((item) => item.course?.id ?? item.courseId ?? item.id)
   );
@@ -305,19 +325,21 @@ export default function Catalog() {
                   {!isAdmin && (
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                       {(() => {
+                        const enrolled = enrolledCourseIds.has(course.id);
                         const inCart = cartCourseIds.has(course.id);
                         const inWishlist = wishlistCourseIds.has(course.id);
+                        const cartDisabled = enrolled || inCart;
                         return (
                           <>
-                            <Button 
-                              variant={inCart ? 'ghost' : 'primary'}
+                            <Button
+                              variant={cartDisabled ? 'ghost' : 'primary'}
                               style={{
                                 flex: 1,
                                 display: 'flex',
                                 justifyContent: 'center',
                                 alignItems: 'center',
                                 gap: '0.5rem',
-                                ...(inCart && {
+                                ...(cartDisabled && {
                                   opacity: 0.65,
                                   cursor: 'not-allowed',
                                   background: 'var(--border-color)',
@@ -327,12 +349,12 @@ export default function Catalog() {
                               }}
                               onClick={(e) => {
                                 e.preventDefault();
-                                if (!inCart) addToCart(course.id);
+                                if (!cartDisabled) addToCart(course.id);
                               }}
-                              disabled={cartLoading || inCart}
+                              disabled={cartLoading || cartDisabled}
                             >
-                              <ShoppingCart size={16} />
-                              {inCart ? 'Déjà au panier' : 'Panier'}
+                              {enrolled ? <CheckCircle size={16} /> : <ShoppingCart size={16} />}
+                              {enrolled ? 'Déjà inscrit' : inCart ? 'Déjà au panier' : 'Panier'}
                             </Button>
                             <Button 
                               variant={inWishlist ? 'ghost' : 'outline'}
