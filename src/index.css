@@ -1634,6 +1634,19 @@ button {
   }
 }
 
+/* Responsive field grid for the profile sections: 1 column on mobile,
+   2 columns on wider screens. Full-width fields use `grid-column: 1 / -1`. */
+.pf-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+@media (min-width: 700px) {
+  .pf-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 .profile-avatar-selector {
   display: flex;
   align-items: center;

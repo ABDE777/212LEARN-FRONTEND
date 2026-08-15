@@ -342,7 +342,6 @@ export default function ProfileEditForm() {
     boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
   };
   const headingStyle = { fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' };
-  const gridStyle = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' };
 
   const renderText = (label, name, placeholder = '', type = 'text') => (
     <div key={name}>
@@ -565,7 +564,7 @@ export default function ProfileEditForm() {
             <User size={20} style={{ color: 'var(--primary)' }} />
             Informations personnelles
           </h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
+          <div className="pf-grid">
             <div>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
                 Prénom
@@ -691,7 +690,7 @@ export default function ProfileEditForm() {
               <GraduationCap size={20} style={{ color: 'var(--primary)' }} />
               Informations académiques
             </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
+            <div className="pf-grid">
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
                   École / Université
@@ -892,7 +891,7 @@ export default function ProfileEditForm() {
               <Briefcase size={20} style={{ color: 'var(--primary)' }} />
               Informations professionnelles
             </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
+            <div className="pf-grid">
               {renderText('Entreprise', 'companyName', "Nom de l'entreprise")}
               {renderText('Service / Département', 'department', 'ex: Ressources Humaines')}
               {renderText('Poste', 'position', 'ex: Développeur')}
@@ -911,7 +910,7 @@ export default function ProfileEditForm() {
               <BookOpen size={20} style={{ color: 'var(--primary)' }} />
               Objectifs d'apprentissage
             </h3>
-            <div style={gridStyle}>
+            <div className="pf-grid">
               {renderSelect('Niveau', 'currentLevel', LEVEL_OPTIONS)}
               {renderTextarea("Domaines d'intérêt", 'interests', 'ex: Développement web, Data Science, Design')}
               {renderTextarea("Objectif d'apprentissage", 'learningObjective', 'Décrivez ce que vous souhaitez accomplir...')}
@@ -934,7 +933,7 @@ export default function ProfileEditForm() {
               <Briefcase size={20} style={{ color: 'var(--primary)' }} />
               Informations professionnelles
             </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
+            <div className="pf-grid">
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-color)', marginBottom: '0.5rem' }}>
                   Domaine d'expertise
