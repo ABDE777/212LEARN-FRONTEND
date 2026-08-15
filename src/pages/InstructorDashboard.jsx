@@ -376,9 +376,12 @@ function EditMeetingForm({ meeting, onSave, onCancel }) {
   );
 }
 
-function ScheduleForm({ courses, onScheduled }) {
-  const [step, setStep] = useState(1); // 1 = pick course, 2 = fill details
-  const [courseId, setCourseId] = useState('');
+function ScheduleForm({ courses, initialCourseId, onScheduled }) {
+  // When the tab already has a course in context (its calendar is open), start
+  // straight at the details step for that course instead of re-asking.
+  const hasInitial = Boolean(initialCourseId && courses.some(c => c.id === initialCourseId));
+  const [step, setStep] = useState(hasInitial ? 2 : 1); // 1 = pick course, 2 = fill details
+  const [courseId, setCourseId] = useState(hasInitial ? initialCourseId : '');
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
@@ -394,8 +397,8 @@ function ScheduleForm({ courses, onScheduled }) {
   const minTime = new Date(Date.now() + 5 * 60 * 1000).toISOString().slice(11, 16);
 
   const reset = () => {
-    setStep(1); setCourseId(''); setTitle('');
-    setDate(''); setTime(''); setError(null); setSuccess(false);
+    setStep(hasInitial ? 2 : 1); setCourseId(hasInitial ? initialCourseId : '');
+    setTitle(''); setDate(''); setTime(''); setError(null); setSuccess(false);
   };
 
   const handleSubmit = async (e) => {
@@ -815,6 +818,7 @@ function MeetingsTab({ courses }) {
             <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
               <ScheduleForm
                 courses={courses}
+                initialCourseId={activeCourseId}
                 onScheduled={(cId) => {
                   setActiveCourseId(cId);
                   setView('list');

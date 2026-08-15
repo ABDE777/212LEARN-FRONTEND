@@ -22,6 +22,10 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
   const [participantCount, setParticipantCount] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('connecting'); // connecting | connected | error
+  // The loading overlay sits on top of the Jitsi iframe. If the "joined" event
+  // never fires (e.g. the room shows an auth/pre-join screen), the overlay must
+  // still step aside so the user can see and interact with the real Jitsi UI.
+  const [overlayDismissed, setOverlayDismissed] = useState(false);
   const [jwtToken, setJwtToken] = useState(null);
   const [domain, setDomain] = useState('meet.jit.si');
   const [roomName, setRoomName] = useState(null);
@@ -34,12 +38,11 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
       try {
         const response = await api.get(`/meetings/${meeting.id}/join`);
         const data = response.data?.data;
-        if (data?.jwt) {
-          setJwtToken(data.jwt);
-          // Store domain and roomName from response
-          if (data?.domain) setDomain(data.domain);
-          if (data?.roomName) setRoomName(data.roomName);
-        }
+        // domain + roomName apply whether or not a JWT is issued: public Jitsi
+        // (meet.jit.si) returns them with jwt = null.
+        if (data?.domain) setDomain(data.domain);
+        if (data?.roomName) setRoomName(data.roomName);
+        if (data?.jwt) setJwtToken(data.jwt);
       } catch (err) {
         console.error('Failed to fetch JaaS join info:', err);
         // Continue without JWT for fallback to meet.jit.si
@@ -149,10 +152,15 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
 
     api.addEventListener('videoConferenceJoined', () => {
       setConnectionStatus('connected');
+      setOverlayDismissed(true);
       if (isInstructor) {
         api.executeCommand('subject', meeting.title || 'Session 212Learn');
       }
     });
+
+    // Safety net: reveal the Jitsi iframe even if "joined" never fires (auth or
+    // pre-join screen), so the user is never trapped behind our loading overlay.
+    const revealTimer = setTimeout(() => setOverlayDismissed(true), 9000);
 
     api.addEventListener('participantJoined', () => {
       setParticipantCount((n) => n + 1);
@@ -171,6 +179,7 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
     });
 
     return () => {
+      clearTimeout(revealTimer);
       try { api.dispose(); } catch (_) {}
       apiRef.current = null;
     };
@@ -357,7 +366,7 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
       {/* Jitsi container */}
       <div style={{ flex: 1, position: 'relative' }}>
         {/* Loading overlay */}
-        {connectionStatus === 'connecting' && (
+        {connectionStatus === 'connecting' && !overlayDismissed && (
           <div style={{
             position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
             alignItems: 'center', justifyContent: 'center', background: '#0f1117', zIndex: 1,
