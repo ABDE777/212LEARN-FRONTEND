@@ -2087,85 +2087,119 @@ function PaymentsTab() {
 
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-      const primary = '#1B4B5A';
+      const L = 48;            // left margin
+      const R = 547;           // right edge
       const dark = '#1e293b';
       const gray = '#64748b';
+      const light = '#94a3b8';
+      const isPaid = p.status === 'PAID';
 
+      // ── Header band ───────────────────────────────────────────
+      doc.setFillColor(27, 75, 90); // primary teal
+      doc.rect(0, 0, 595, 96, 'F');
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(24);
-      doc.setTextColor(primary);
-      doc.text('212 Learn', 40, 55);
-
       doc.setFontSize(22);
-      doc.setTextColor(dark);
-      doc.text('FACTURE', 555, 50, { align: 'right' });
-      doc.setFontSize(10);
-      doc.setFont('courier', 'bold');
-      doc.setTextColor(gray);
-      doc.text(`Réf: ${refCode}`, 555, 68, { align: 'right' });
-      doc.text(`Date: ${invoiceDate}`, 555, 82, { align: 'right' });
-
-      doc.setDrawColor(241, 245, 249);
-      doc.setLineWidth(1);
-      doc.line(40, 100, 555, 100);
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11);
-      doc.setTextColor(gray);
-      doc.text('FACTURÉ À', 40, 130);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(12);
-      doc.setTextColor(dark);
-      doc.text(studentName, 40, 150);
-      doc.setFontSize(10);
-      doc.setTextColor(gray);
-      doc.text(studentEmail, 40, 166);
-
-      doc.setFillColor(27, 75, 90);
-      doc.roundedRect(40, 210, 515, 30, 4, 4, 'F');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
       doc.setTextColor('#ffffff');
-      doc.text('DESCRIPTION', 55, 229);
-      doc.text('RÉFÉRENCE', 300, 229);
-      doc.text('MONTANT', 540, 229, { align: 'right' });
+      doc.text('212 Learn', L, 46);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(210, 224, 228);
+      doc.text("Plateforme d'apprentissage en ligne", L, 64);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(26);
+      doc.setTextColor('#ffffff');
+      doc.text('FACTURE', R, 50, { align: 'right' });
 
+      // ── Meta (ref / date / method) ────────────────────────────
+      let y = 140;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(light);
+      doc.text('RÉFÉRENCE', R - 150, y);
+      doc.text('DATE', R - 150, y + 34);
+      doc.text('MÉTHODE', R - 150, y + 68);
+      doc.setFont('courier', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(dark);
+      doc.text(String(refCode), R, y, { align: 'right' });
+      doc.setFont('helvetica', 'normal');
+      doc.text(invoiceDate, R, y + 34, { align: 'right' });
+      doc.text(methodLabel === 'VIREMENT' ? 'Virement bancaire' : 'Wafacash', R, y + 68, { align: 'right' });
+
+      // ── Billed to ─────────────────────────────────────────────
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(light);
+      doc.text('FACTURÉ À', L, y);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      doc.setTextColor(dark);
+      doc.text(studentName, L, y + 22);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(gray);
+      doc.text(studentEmail, L, y + 40);
+
+      // ── Line items table ──────────────────────────────────────
+      y = 268;
+      doc.setFillColor(27, 75, 90);
+      doc.rect(L, y, R - L, 30, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor('#ffffff');
+      doc.text('DESCRIPTION', L + 14, y + 19);
+      doc.text('MONTANT', R - 14, y + 19, { align: 'right' });
+
+      y += 30;
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(11);
       doc.setTextColor(dark);
-      doc.text(courseTitle, 55, 260);
-      doc.setFont('courier', 'normal');
-      doc.setFontSize(10);
-      doc.text(refCode, 300, 260);
+      doc.text(courseTitle.length > 60 ? courseTitle.slice(0, 60) + '…' : courseTitle, L + 14, y + 24);
+      doc.setFont('helvetica', 'bold');
+      doc.text(amountStr, R - 14, y + 24, { align: 'right' });
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(1);
+      doc.line(L, y + 40, R, y + 40);
+
+      // ── Total box ─────────────────────────────────────────────
+      y += 56;
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(R - 250, y, 250, 44, 6, 6, 'F');
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(11);
-      doc.text(amountStr, 540, 260, { align: 'right' });
-
-      doc.setDrawColor(241, 245, 249);
-      doc.setLineWidth(1);
-      doc.line(40, 275, 555, 275);
-
-      doc.setFillColor(248, 250, 252);
-      doc.rect(40, 280, 515, 35, 'F');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12);
-      doc.setTextColor(primary);
-      doc.text('TOTAL REGLÉ :', 400, 302, { align: 'right' });
-      doc.setFontSize(13);
-      doc.text(amountStr, 540, 302, { align: 'right' });
-
-      doc.setFillColor(232, 245, 233);
-      doc.setDrawColor(200, 230, 201);
-      doc.roundedRect(40, 340, 180, 26, 13, 13, 'FD');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
-      doc.setTextColor(46, 125, 50);
-      doc.text(`✓ REGLÉ VIA ${methodLabel}`, 130, 356, { align: 'center' });
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
       doc.setTextColor(gray);
-      doc.text("212 Learn — Plateforme d'apprentissage en ligne • support@212learn.com", 297, 420, { align: 'center' });
+      doc.text('TOTAL', R - 235, y + 27);
+      doc.setFontSize(15);
+      doc.setTextColor(27, 75, 90);
+      doc.text(amountStr, R - 14, y + 28, { align: 'right' });
+
+      // ── Status badge ──────────────────────────────────────────
+      y += 74;
+      if (isPaid) {
+        doc.setFillColor(232, 245, 233);
+        doc.roundedRect(L, y, 210, 30, 15, 15, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(46, 125, 50);
+        doc.text(`PAYÉ VIA ${methodLabel}`, L + 105, y + 20, { align: 'center' });
+      } else {
+        doc.setFillColor(255, 248, 225);
+        doc.roundedRect(L, y, 210, 30, 15, 15, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(178, 106, 0);
+        doc.text('EN ATTENTE DE VALIDATION', L + 105, y + 20, { align: 'center' });
+      }
+
+      // ── Footer ────────────────────────────────────────────────
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(1);
+      doc.line(L, 780, R, 780);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(light);
+      doc.text('212 Learn — support@212learn.com', L, 800);
+      doc.text('Merci de votre confiance.', R, 800, { align: 'right' });
 
       doc.save(`Facture_${refCode}.pdf`);
     } catch (err) {
@@ -2323,6 +2357,8 @@ function PaymentsTab() {
         const refCode = p.transactionReference || p.paymentReference || p.reference || '—';
         const currencyStr = p.currency || 'MAD';
         const isPending = ['WAITING_VERIFICATION', 'PENDING'].includes(p.status);
+        // Virement proofs are stored in transferReceiptUrl; Wafacash in receiptUrl.
+        const proofUrl = p.transferReceiptUrl || p.receiptUrl;
         const providerRow = p.method === 'wafacash'
           ? { label: 'MTCN', value: p.mtcn || '—', mono: true }
           : { label: 'RIB Client', value: p.rib || '—', mono: true };
@@ -2421,13 +2457,13 @@ function PaymentsTab() {
                       <Printer size={16} /> Télécharger la facture (PDF)
                     </button>
 
-                    {p.receiptUrl && (
+                    {proofUrl && (
                       <button
                         type="button"
-                        onClick={() => handleDownloadReceipt(p.receiptUrl, refCode, p.method)}
+                        onClick={() => handleDownloadReceipt(proofUrl, refCode, p.method)}
                         style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px 16px', background: '#fff', color: 'var(--text-color)', border: '1px solid var(--border-color)', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '0.88rem' }}
                       >
-                        <Download size={16} /> Télécharger le reçu
+                        <Download size={16} /> Télécharger le justificatif
                       </button>
                     )}
                   </div>
@@ -2448,18 +2484,21 @@ function PaymentsTab() {
                   </div>
                 )}
 
-                {/* Receipt Preview */}
-                {p.receiptUrl && (
+                {/* Proof preview (click to zoom) */}
+                {proofUrl && (
                   <div>
-                    <div style={{ fontWeight: 600, fontSize: '0.88rem', marginBottom: '0.5rem' }}>Preuve de paiement (Aperçu du reçu)</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.88rem', marginBottom: '0.5rem' }}>Justificatif de paiement (aperçu)</div>
                     <div
-                      onClick={() => setSelectedReceipt(p.receiptUrl)}
+                      onClick={() => setSelectedReceipt(proofUrl)}
                       style={{ cursor: 'zoom-in', borderRadius: '10px', overflow: 'hidden', border: '2px solid var(--border-color)', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '120px', maxHeight: '200px' }}
                     >
-                      <img src={p.receiptUrl} alt="Reçu" style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain' }} />
+                      <img src={proofUrl} alt="Justificatif" style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain' }} />
                     </div>
                     <p style={{ margin: '0.4rem 0 0', fontSize: '0.78rem', color: 'var(--secondary)', textAlign: 'center' }}>Cliquer pour agrandir</p>
                   </div>
+                )}
+                {!proofUrl && (
+                  <p style={{ fontSize: '0.82rem', color: 'var(--secondary)', fontStyle: 'italic' }}>Aucun justificatif téléversé pour ce paiement.</p>
                 )}
               </div>
 
