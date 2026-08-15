@@ -2790,14 +2790,9 @@ function AdminSettingsTab() {
     setSaveError(null);
     try {
       await save({
-        siteName: settings.siteName,
-        supportEmail: settings.supportEmail,
-        currency: settings.currency,
-        wafacashAutoApprove: settings.wafacashAutoApprove,
         requireKyc: settings.requireKyc,
         allowRegistrations: settings.allowRegistrations,
         maintenanceMode: settings.maintenanceMode,
-        emailNotifications: settings.emailNotifications,
       });
       setSavedMsg(true);
       setTimeout(() => setSavedMsg(false), 3000);
@@ -2847,85 +2842,7 @@ function AdminSettingsTab() {
       )}
 
       <form onSubmit={handleSave} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.5rem' }}>
-        {/* Section 1: Informations Générales */}
-        <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '1.5rem', boxShadow: 'var(--shadow-sm)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1.25rem' }}>
-            <Settings size={20} color="var(--primary)" />
-            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>Informations Générales</h3>
-          </div>
-          
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', fontWeight: 600, fontSize: '0.85rem', marginBottom: '0.4rem' }}>Nom de la plateforme</label>
-            <input
-              type="text"
-              className="form-control"
-              value={settings.siteName}
-              onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
-              style={{ width: '100%', padding: '9px 14px', borderRadius: '8px' }}
-            />
-          </div>
-
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', fontWeight: 600, fontSize: '0.85rem', marginBottom: '0.4rem' }}>Email de support</label>
-            <input
-              type="email"
-              className="form-control"
-              value={settings.supportEmail}
-              onChange={(e) => setSettings({ ...settings, supportEmail: e.target.value })}
-              style={{ width: '100%', padding: '9px 14px', borderRadius: '8px' }}
-            />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontWeight: 600, fontSize: '0.85rem', marginBottom: '0.4rem' }}>Devise par défaut</label>
-            <select
-              className="form-control"
-              value={settings.currency}
-              onChange={(e) => setSettings({ ...settings, currency: e.target.value })}
-              style={{ width: '100%', padding: '9px 14px', borderRadius: '8px' }}
-            >
-              <option value="MAD">MAD (Dirham Marocain)</option>
-              <option value="EUR">EUR (€)</option>
-              <option value="USD">USD ($)</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Section 2: Paiements & Wafacash */}
-        <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '1.5rem', boxShadow: 'var(--shadow-sm)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1.25rem' }}>
-            <Wallet size={20} color="var(--primary)" />
-            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>Configuration Wafacash</h3>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.85rem', background: '#f8fafc', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '1rem' }}>
-            <div>
-              <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Auto-Approbation Démo</div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--secondary)' }}>Valider automatiquement les reçus Wafacash en dev</div>
-            </div>
-            <input
-              type="checkbox"
-              checked={settings.wafacashAutoApprove}
-              onChange={(e) => setSettings({ ...settings, wafacashAutoApprove: e.target.checked })}
-              style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-            />
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.85rem', background: '#f8fafc', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-            <div>
-              <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Notifications de paiement</div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--secondary)' }}>Alerter l'admin lors d'une nouvelle preuve reçue</div>
-            </div>
-            <input
-              type="checkbox"
-              checked={settings.emailNotifications}
-              onChange={(e) => setSettings({ ...settings, emailNotifications: e.target.checked })}
-              style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-            />
-          </div>
-        </div>
-
-        {/* Section 3: Sécurité & Accès */}
+        {/* Section: Sécurité & Accès */}
         <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '1.5rem', boxShadow: 'var(--shadow-sm)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1.25rem' }}>
             <ShieldCheck size={20} color="var(--primary)" />
