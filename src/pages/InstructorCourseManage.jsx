@@ -1009,6 +1009,72 @@ export default function InstructorCourseManage() {
     }
   };
 
+  // ── Draft direct-edit (only while the course is a draft) ──────────────────
+  const [draftData, setDraftData] = useState({ title: '', description: '', price: '', level: '', thumbnail: '' });
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [draftError, setDraftError] = useState('');
+  const [draftSaved, setDraftSaved] = useState(false);
+  const [uploadingDraftThumb, setUploadingDraftThumb] = useState(false);
+
+  useEffect(() => {
+    if (course && course.status === 'draft') {
+      setDraftData({
+        title: course.title || '',
+        description: course.description || '',
+        price: course.price ?? '',
+        level: course.level || '',
+        thumbnail: course.thumbnail || '',
+      });
+    }
+  }, [course]);
+
+  const handleDraftThumbChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingDraftThumb(true);
+    try {
+      const signResponse = await api.post('/uploads/cloudinary-sign', { type: 'image', filename: file.name, mimetype: file.type });
+      const { uploadUrl, formFields } = signResponse.data.data;
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('api_key', formFields.api_key);
+      fd.append('timestamp', formFields.timestamp);
+      fd.append('signature', formFields.signature);
+      fd.append('folder', formFields.folder);
+      fd.append('public_id', formFields.public_id);
+      const up = await fetch(uploadUrl, { method: 'POST', body: fd });
+      const result = await up.json();
+      if (result.secure_url) setDraftData((d) => ({ ...d, thumbnail: result.secure_url }));
+    } catch (err) {
+      console.error('Draft thumbnail upload failed:', err);
+    } finally {
+      setUploadingDraftThumb(false);
+    }
+  };
+
+  const handleSaveDraft = async (e) => {
+    e.preventDefault();
+    setDraftError('');
+    setDraftSaved(false);
+    setSavingDraft(true);
+    try {
+      const payload = {
+        title: draftData.title.trim(),
+        description: draftData.description.trim() || undefined,
+        price: draftData.price === '' ? undefined : parseFloat(draftData.price),
+        level: draftData.level || undefined,
+        thumbnail: draftData.thumbnail.trim() || undefined,
+      };
+      const res = await api.patch(`/courses/${id}`, payload);
+      setCourse(res.data?.data?.course || res.data?.data || { ...course, ...payload });
+      setDraftSaved(true);
+    } catch (err) {
+      setDraftError(err.response?.data?.error?.message || err.response?.data?.message || 'Échec de la mise à jour du cours.');
+    } finally {
+      setSavingDraft(false);
+    }
+  };
+
   const sidebarTabs = [
     { key: 'courses',   icon: <BookOpen size={18} />,  label: 'Mes cours' },
     { key: 'analytics', icon: <BarChart3 size={18} />,   label: 'Analytics' },
@@ -1104,13 +1170,69 @@ export default function InstructorCourseManage() {
               <LoadingSpinner />
             ) : !course ? (
               <p style={{ color: 'var(--secondary)' }}>Chargement du cours...</p>
-            ) : course.status !== 'published' ? (
+            ) : course.status === 'draft' ? (
+              <div style={{ padding: '2rem', background: '#fff', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                <h3 style={{ marginBottom: '0.5rem', fontSize: '1.3rem' }}>Modifier le cours (brouillon)</h3>
+                <p style={{ color: 'var(--secondary)', marginBottom: '1.5rem' }}>
+                  Ce cours est en <strong>brouillon</strong> : vous pouvez modifier ses informations directement. Une fois publié, toute modification devra passer par une demande à l'administrateur.
+                </p>
+                {draftError && (
+                  <div style={{ color: '#721c24', background: '#f8d7da', border: '1px solid #f5c6cb', padding: '0.75rem 1rem', borderRadius: '8px', marginBottom: '1rem' }}>{draftError}</div>
+                )}
+                {draftSaved && (
+                  <div style={{ color: '#155724', background: '#d4edda', border: '1px solid #c3e6cb', padding: '0.75rem 1rem', borderRadius: '8px', marginBottom: '1rem' }}>✅ Cours mis à jour avec succès.</div>
+                )}
+                <form onSubmit={handleSaveDraft}>
+                  <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+                    <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem' }}>Titre *</label>
+                    <input type="text" required className="form-control" style={{ padding: '10px 14px', fontSize: '0.9rem' }}
+                      value={draftData.title} onChange={(e) => setDraftData({ ...draftData, title: e.target.value })} />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+                    <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem' }}>Description</label>
+                    <textarea className="form-control" style={{ padding: '10px 14px', fontSize: '0.88rem' }} rows={3}
+                      value={draftData.description} onChange={(e) => setDraftData({ ...draftData, description: e.target.value })} />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
+                    <div className="form-group">
+                      <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem' }}>Prix (MAD)</label>
+                      <input type="number" step="0.01" min="0" className="form-control" style={{ padding: '10px 14px', fontSize: '0.9rem' }}
+                        placeholder="0 = gratuit" value={draftData.price} onChange={(e) => setDraftData({ ...draftData, price: e.target.value })} />
+                    </div>
+                    <div className="form-group">
+                      <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem' }}>Niveau</label>
+                      <select className="form-control" style={{ padding: '10px 14px', fontSize: '0.88rem' }}
+                        value={draftData.level} onChange={(e) => setDraftData({ ...draftData, level: e.target.value })}>
+                        <option value="">-- Sélectionner --</option>
+                        <option value="beginner">Débutant</option>
+                        <option value="intermediate">Intermédiaire</option>
+                        <option value="advanced">Avancé</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                    <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.88rem' }}>Image de couverture</label>
+                    <input type="file" accept="image/*" className="form-control" style={{ padding: '10px 14px', fontSize: '0.9rem' }}
+                      onChange={handleDraftThumbChange} disabled={uploadingDraftThumb} />
+                    {uploadingDraftThumb && (
+                      <p style={{ fontSize: '0.85rem', color: 'var(--secondary)', marginTop: '0.5rem' }}>Téléchargement en cours...</p>
+                    )}
+                    {draftData.thumbnail && !uploadingDraftThumb && (
+                      <div style={{ marginTop: '0.5rem' }}>
+                        <img src={draftData.thumbnail} alt="Aperçu" style={{ maxWidth: '200px', maxHeight: '150px', borderRadius: '8px', border: '1px solid var(--border-color)' }} />
+                      </div>
+                    )}
+                  </div>
+                  <button type="submit" disabled={savingDraft || uploadingDraftThumb} className="btn-primary"
+                    style={{ padding: '0.75rem 1.5rem', cursor: 'pointer', opacity: (savingDraft || uploadingDraftThumb) ? 0.6 : 1 }}>
+                    {savingDraft ? 'Enregistrement...' : 'Enregistrer les modifications'}
+                  </button>
+                </form>
+              </div>
+            ) : course.status === 'archived' ? (
               <div style={{ padding: '2rem', background: '#fff', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
                 <p style={{ color: 'var(--secondary)', fontSize: '1.1rem' }}>
-                  Les demandes de mise à jour ne sont nécessaires que pour les cours publiés.
-                </p>
-                <p style={{ color: 'var(--secondary)', marginTop: '0.5rem' }}>
-                  Statut actuel du cours : <strong>{course.status === 'draft' ? 'Brouillon' : course.status}</strong>
+                  🔒 Ce cours est archivé et ne peut pas être modifié.
                 </p>
               </div>
             ) : (
