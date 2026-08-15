@@ -13,7 +13,8 @@ export default function CourseDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
+  // Admins and instructors run/teach the platform and cannot enroll in courses.
+  const isStaff = ['admin', 'instructor'].includes(user?.role?.toLowerCase());
   const { course, loading: courseLoading, error: courseError } = useCourse(id);
   const { curriculum, loading: curriculumLoading } = useCourseCurriculum(id);
   const { addToCart, loading: cartLoading } = useCart();
@@ -225,16 +226,39 @@ export default function CourseDetails() {
                   </span>
                 </div>
                 
-                <Button 
-                  variant="primary" 
-                  size="large" 
-                  style={{ width: '100%', marginBottom: '1rem' }}
-                  onClick={course.isEnrolled ? handleStartLearning : handleEnroll}
-                >
-                  {course.isEnrolled ? 'Continuer le cours' : "S'inscrire maintenant"}
-                </Button>
+                {course.isEnrolled ? (
+                  <Button
+                    variant="primary"
+                    size="large"
+                    style={{ width: '100%', marginBottom: '1rem' }}
+                    onClick={handleStartLearning}
+                  >
+                    Continuer le cours
+                  </Button>
+                ) : isStaff ? (
+                  <p style={{
+                    textAlign: 'center',
+                    fontSize: '0.9rem',
+                    color: 'var(--secondary)',
+                    background: 'var(--bg-color)',
+                    padding: '0.85rem 1rem',
+                    borderRadius: '10px',
+                    marginBottom: '1rem',
+                  }}>
+                    Les administrateurs et formateurs ne peuvent pas s'inscrire aux cours.
+                  </p>
+                ) : (
+                  <Button
+                    variant="primary"
+                    size="large"
+                    style={{ width: '100%', marginBottom: '1rem' }}
+                    onClick={handleEnroll}
+                  >
+                    S'inscrire maintenant
+                  </Button>
+                )}
 
-                {!course.isEnrolled && !isAdmin && (
+                {!course.isEnrolled && !isStaff && (
                   <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
                     <Button
                       variant="outline"
