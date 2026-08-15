@@ -71,14 +71,14 @@ export default function Checkout() {
     }
 
     try {
-      const response = await validateCoupon(couponCode.trim());
+      const response = await validateCoupon(couponCode.trim(), course.id);
       const couponData = response.data?.data || response;
-      
+
       setDiscount(course.price * (couponData.discountPercent / 100));
       setAppliedCoupon(couponData.code);
       setCouponError('');
     } catch (error) {
-      setCouponError(error.response?.data?.message || error.message || 'Code de coupon invalide.');
+      setCouponError(error.response?.data?.error?.message || error.response?.data?.message || error.message || 'Code de coupon invalide.');
       setDiscount(0);
       setAppliedCoupon(null);
     }
