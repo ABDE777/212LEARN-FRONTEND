@@ -43,13 +43,15 @@ course-completion certificates.
 3. Enroll — free courses grant immediate access; paid courses go through checkout (Wafacash or transfer).
 4. Learn via lessons, quizzes, live sessions; track progress in the student dashboard; earn a certificate on completion.
 
-## Machine-readable endpoints (public JSON APIs on the API host)
-- GET /api/v1/ai/overview — structured overview: positioning, topics, live categories and featured published courses.
-- GET /api/v1/courses — paginated catalog; query params: page, limit, sort, order, search, categoryId, level, language.
-- GET /api/v1/courses/{id} — one course with sections, lessons and reviews.
-- GET /api/v1/categories — course categories.
-- OpenAPI/Swagger docs: /api-docs.
-- AI plugin manifest: /.well-known/ai-plugin.json.
+## Machine-readable endpoints (public JSON APIs)
+API host: https://backend-212learn.vercel.app
+- GET https://backend-212learn.vercel.app/api/v1/ai/overview — structured overview: positioning, topics, categories and featured published courses.
+- GET https://backend-212learn.vercel.app/api/v1/courses — paginated catalog; query params: page, limit, sort, order, search, categoryId, level, language.
+- GET https://backend-212learn.vercel.app/api/v1/courses/{id} — one course with sections, lessons and reviews.
+- GET https://backend-212learn.vercel.app/api/v1/categories — course categories.
+- OpenAPI/Swagger docs: https://backend-212learn.vercel.app/api-docs.
+- AI plugin manifest: https://212-learn.vercel.app/.well-known/ai-plugin.json.
+- Sitemap (all courses): https://212-learn.vercel.app/sitemap.xml.
 
 ## Language & region
 - Primary language: French (fr). Region focus: Morocco (MA) and francophone North/West Africa.
