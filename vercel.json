@@ -1,5 +1,7 @@
 {
   "rewrites": [
+    { "source": "/sitemap.xml", "destination": "https://backend-212learn.vercel.app/sitemap.xml" },
+    { "source": "/.well-known/ai-plugin.json", "destination": "https://backend-212learn.vercel.app/.well-known/ai-plugin.json" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
