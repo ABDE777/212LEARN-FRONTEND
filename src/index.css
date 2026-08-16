@@ -2138,3 +2138,24 @@ pre { overflow-x: auto; }
   .dashboard-sidebar { display: none !important; }
   .dashboard-main-content { padding: 1rem !important; padding-bottom: 5rem !important; }
 }
+
+/* ============================================================================
+   SITE DOCK — Apple-style bottom-center navigation (mobile only)
+   Holds the site links (Accueil, À propos, Cours, Espace/Connexion). The
+   dashboards keep their own bottom-right (+) floating menu for their tabs.
+   ============================================================================ */
+.site-dock { display: none; }
+
+@media (max-width: 768px) {
+  .site-dock {
+    display: block;
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 0.6rem;
+    z-index: 1350;
+    max-width: 100vw;
+  }
+  /* Leave room at the very bottom so the dock never covers page content. */
+  body { padding-bottom: 92px; }
+}
