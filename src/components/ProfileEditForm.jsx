@@ -1,7 +1,15 @@
 import React, { useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { User, Mail, FileText, Save, UploadCloud, Camera, Trash2, CheckCircle2, AlertCircle, Edit2, X, Phone, GraduationCap, Briefcase, Building, Calendar, BookOpen } from 'lucide-react';
+import { User, Mail, FileText, Save, UploadCloud, Camera, Trash2, CheckCircle2, AlertCircle, Edit2, X, Phone, GraduationCap, Briefcase, Building, Calendar, BookOpen, Code2, Globe, AtSign } from 'lucide-react';
+
+// Social links shown in the profile header (top-right). Keys match socialLinks.
+const HEADER_SOCIAL = [
+  { key: 'linkedin', label: 'LinkedIn', Icon: Briefcase },
+  { key: 'github', label: 'GitHub', Icon: Code2 },
+  { key: 'website', label: 'Site web', Icon: Globe },
+  { key: 'twitter', label: 'Twitter / X', Icon: AtSign },
+];
 import api from '../services/api';
 import PortfolioEditor from './PortfolioEditor';
 
@@ -482,6 +490,7 @@ export default function ProfileEditForm() {
               </p>
             </div>
           </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.85rem' }}>
           {!isEditing ? (
             <button
               onClick={handleEdit}
@@ -547,6 +556,35 @@ export default function ProfileEditForm() {
               </button>
             </div>
           )}
+
+          {/* Liens (social links) — top-right of the header */}
+          {(() => {
+            const items = HEADER_SOCIAL.filter((s) => formData.socialLinks?.[s.key]);
+            if (items.length === 0) return null;
+            return (
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                {items.map(({ key, label, Icon }) => (
+                  <a
+                    key={key}
+                    href={formData.socialLinks[key]}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={label}
+                    aria-label={label}
+                    style={{
+                      width: 38, height: 38, borderRadius: '10px',
+                      background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: '#fff', textDecoration: 'none', backdropFilter: 'blur(10px)',
+                    }}
+                  >
+                    <Icon size={17} />
+                  </a>
+                ))}
+              </div>
+            );
+          })()}
+          </div>
         </div>
       </div>
 
