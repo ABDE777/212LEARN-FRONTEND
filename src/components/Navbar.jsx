@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LogOut, ShoppingCart, Heart, Home, BookOpen, Info, LayoutDashboard } from 'lucide-react';
+import { LogOut, LogIn, ShoppingCart, Heart, Home, BookOpen, Info, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCartContext } from '../context/CartContext';
 import { useWishlistContext } from '../context/WishlistContext';
-import FloatingActionMenu from './FloatingActionMenu';
+import { Dock, DockItem, DockIcon, DockLabel } from './Dock';
 
 
 const NAV_LINKS = [
@@ -67,12 +67,20 @@ function Navbar() {
     || user?.email?.[0]
     || 'U'
   ).toUpperCase();
-  // Dashboards render their own floating menu (tabs), so the Navbar's global
-  // one is skipped there to avoid two floating buttons.
-  const isDashboardRoute = /^\/(student|instructor|admin)\/dashboard/.test(location.pathname);
   const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
   const isInstructor = user?.role?.toUpperCase() === 'INSTRUCTOR';
   const isStudent = user?.role?.toUpperCase() === 'STUDENT';
+
+  // Site links shown in the bottom dock (mobile). Dashboard tabs stay in each
+  // dashboard's own (+) floating menu.
+  const siteDockItems = [
+    { label: 'Accueil', icon: <Home size={22} />, onClick: () => navigate('/') },
+    { label: 'Cours', icon: <BookOpen size={22} />, onClick: () => navigate('/courses') },
+    { label: 'À propos', icon: <Info size={22} />, onClick: () => navigate('/about') },
+    isAuthenticated
+      ? { label: 'Espace', icon: <LayoutDashboard size={22} />, onClick: () => navigate(getDashboardPath(user?.role)) }
+      : { label: 'Connexion', icon: <LogIn size={22} />, onClick: () => navigate('/login') },
+  ];
 
   const navStyle = {
     display: 'flex',
@@ -373,28 +381,18 @@ function Navbar() {
         </div>
       </nav>
 
-      {/* Primary mobile navigation — floating action menu. On the dashboards the
-          page renders its own FAB (with tabs), so skip it there to avoid two. */}
-      {!isDashboardRoute && (
-        <FloatingActionMenu
-          className="fab-mobile-only"
-          options={
-            isAuthenticated
-              ? [
-                  { label: 'Accueil', Icon: <Home size={16} />, onClick: () => navigate('/') },
-                  { label: 'Cours', Icon: <BookOpen size={16} />, onClick: () => navigate('/courses') },
-                  { label: 'À propos', Icon: <Info size={16} />, onClick: () => navigate('/about') },
-                  { label: 'Tableau de bord', Icon: <LayoutDashboard size={16} />, onClick: () => navigate(getDashboardPath(user?.role)) },
-                ]
-              : [
-                  { label: 'Accueil', Icon: <Home size={16} />, onClick: () => navigate('/') },
-                  { label: 'Cours', Icon: <BookOpen size={16} />, onClick: () => navigate('/courses') },
-                  { label: 'À propos', Icon: <Info size={16} />, onClick: () => navigate('/about') },
-                  { label: 'Se connecter', Icon: <LogOut size={16} />, onClick: () => navigate('/login') },
-                ]
-          }
-        />
-      )}
+      {/* Primary mobile site navigation — Apple-style dock (bottom-center).
+          Dashboards keep their own floating (+) menu for their tabs. */}
+      <div className="site-dock">
+        <Dock>
+          {siteDockItems.map((item) => (
+            <DockItem key={item.label} onClick={item.onClick} title={item.label}>
+              <DockLabel>{item.label}</DockLabel>
+              <DockIcon>{item.icon}</DockIcon>
+            </DockItem>
+          ))}
+        </Dock>
+      </div>
 
       <style>{`
         @keyframes dropdownIn {
