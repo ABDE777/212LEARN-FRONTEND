@@ -286,7 +286,8 @@ button {
 .auth-container {
   display: flex;
   width: 100%;
-  max-width: 1040px;
+  max-width: 1240px;
+  max-height: calc(100vh - 2.5rem);
   background: var(--bg-color);
   border-radius: 24px;
   overflow: hidden;
@@ -300,33 +301,43 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1.5rem;
+  padding: 1.25rem;
   box-shadow: var(--neu-shadow-inset);
-  margin: 1.25rem;
+  margin: 1rem;
   border-radius: 18px;
 }
 
 .auth-form-wrapper {
-  flex: 1;
-  padding: 1.5rem 1.75rem;
+  flex: 1.35;
+  padding: 1.25rem 2rem;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
+  overflow-y: auto;
+}
+
+.auth-form-wrapper::-webkit-scrollbar {
+  width: 6px;
+}
+
+.auth-form-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(27, 75, 90, 0.15);
+  border-radius: 999px;
 }
 
 .auth-form-wrapper .form-group {
-  margin-bottom: 0.85rem;
+  margin-bottom: 0.55rem;
 }
 
 .auth-form-wrapper .form-control {
-  padding: 0.55rem 0.85rem;
-  font-size: 0.88rem;
+  padding: 0.5rem 0.8rem;
+  font-size: 0.86rem;
   border-radius: 10px;
 }
 
 .auth-form-wrapper label {
-  margin-bottom: 0.3rem;
-  font-size: 0.84rem;
+  margin-bottom: 0.25rem;
+  font-size: 0.82rem;
   font-weight: 600;
 }
 

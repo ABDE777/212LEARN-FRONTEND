@@ -734,7 +734,10 @@ export default function Signup() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
         <div
-          onClick={() => setFormData({ ...formData, role: 'learner' })}
+          onClick={() => {
+            setFormData((prev) => ({ ...prev, role: 'learner' }));
+            setStep(3);
+          }}
           style={{
             padding: '2rem',
             border: `2px solid ${formData.role === 'learner' ? 'var(--primary)' : 'var(--border-color)'}`,
@@ -750,12 +753,15 @@ export default function Signup() {
           <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎓</div>
           <h3 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-color)' }}>Apprenant</h3>
           <p style={{ margin: 0, color: 'var(--secondary)', fontSize: '0.9rem', lineHeight: '1.4' }}>
-            Je souhaite apprendre, développer mes compétences et suivre des formations.
+            Je souhaite développer mes compétences et suivre des formations.
           </p>
         </div>
 
         <div
-          onClick={() => setFormData({ ...formData, role: 'instructor' })}
+          onClick={() => {
+            setFormData((prev) => ({ ...prev, role: 'instructor' }));
+            setStep(3);
+          }}
           style={{
             padding: '2rem',
             border: `2px solid ${formData.role === 'instructor' ? 'var(--primary)' : 'var(--border-color)'}`,
@@ -769,9 +775,9 @@ export default function Signup() {
           onMouseLeave={(e) => e.currentTarget.style.borderColor = formData.role === 'instructor' ? 'var(--primary)' : 'var(--border-color)'}
         >
           <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>👨‍🏫</div>
-          <h3 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-color)' }}>Instructeur / Formateur</h3>
+          <h3 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-color)' }}>Formateur</h3>
           <p style={{ margin: 0, color: 'var(--secondary)', fontSize: '0.9rem', lineHeight: '1.4' }}>
-            Je souhaite partager mes connaissances, enseigner et accompagner les apprenants.
+            Je souhaite enseigner et accompagner les apprenants.
           </p>
         </div>
       </div>
@@ -780,19 +786,19 @@ export default function Signup() {
 
   const renderStep3A = () => (
     <div>
-      <h2 style={{ marginBottom: '0.5rem', color: 'var(--primary)' }}>Votre situation actuelle</h2>
-      <p style={{ marginBottom: '2rem', color: 'var(--secondary)' }}>
+      <h2 style={{ marginBottom: '0.35rem', color: 'var(--primary)', fontSize: '1.4rem' }}>Votre situation actuelle</h2>
+      <p style={{ marginBottom: '1rem', color: 'var(--secondary)', fontSize: '0.88rem' }}>
         Sélectionnez votre situation pour continuer.
       </p>
 
       {!formData.learnerSituation ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
           <div
             onClick={() => setFormData({ ...formData, learnerSituation: 'student' })}
             style={{
-              padding: '2rem',
+              padding: '1.25rem 1rem',
               border: `2px solid ${formData.learnerSituation === 'student' ? 'var(--primary)' : 'var(--border-color)'}`,
-              borderRadius: '16px',
+              borderRadius: '14px',
               cursor: 'pointer',
               background: formData.learnerSituation === 'student' ? 'rgba(27,75,90,0.05)' : '#fff',
               transition: 'all 0.2s ease',
@@ -801,16 +807,16 @@ export default function Signup() {
             onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--primary)'}
             onMouseLeave={(e) => e.currentTarget.style.borderColor = formData.learnerSituation === 'student' ? 'var(--primary)' : 'var(--border-color)'}
           >
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎓</div>
-            <h3 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-color)' }}>Étudiant</h3>
+            <div style={{ fontSize: '2.2rem', marginBottom: '0.5rem' }}>🎓</div>
+            <h3 style={{ margin: '0', color: 'var(--text-color)', fontSize: '1rem' }}>Étudiant</h3>
           </div>
 
           <div
             onClick={() => setFormData({ ...formData, learnerSituation: 'employee' })}
             style={{
-              padding: '2rem',
+              padding: '1.25rem 1rem',
               border: `2px solid ${formData.learnerSituation === 'employee' ? 'var(--primary)' : 'var(--border-color)'}`,
-              borderRadius: '16px',
+              borderRadius: '14px',
               cursor: 'pointer',
               background: formData.learnerSituation === 'employee' ? 'rgba(27,75,90,0.05)' : '#fff',
               transition: 'all 0.2s ease',
@@ -819,16 +825,16 @@ export default function Signup() {
             onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--primary)'}
             onMouseLeave={(e) => e.currentTarget.style.borderColor = formData.learnerSituation === 'employee' ? 'var(--primary)' : 'var(--border-color)'}
           >
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>💼</div>
-            <h3 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-color)' }}>Employé</h3>
+            <div style={{ fontSize: '2.2rem', marginBottom: '0.5rem' }}>💼</div>
+            <h3 style={{ margin: '0', color: 'var(--text-color)', fontSize: '1rem' }}>Employé</h3>
           </div>
 
           <div
             onClick={() => setFormData({ ...formData, learnerSituation: 'both' })}
             style={{
-              padding: '2rem',
+              padding: '1.25rem 1rem',
               border: `2px solid ${formData.learnerSituation === 'both' ? 'var(--primary)' : 'var(--border-color)'}`,
-              borderRadius: '16px',
+              borderRadius: '14px',
               cursor: 'pointer',
               background: formData.learnerSituation === 'both' ? 'rgba(27,75,90,0.05)' : '#fff',
               transition: 'all 0.2s ease',
@@ -837,16 +843,16 @@ export default function Signup() {
             onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--primary)'}
             onMouseLeave={(e) => e.currentTarget.style.borderColor = formData.learnerSituation === 'both' ? 'var(--primary)' : 'var(--border-color)'}
           >
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎓💼</div>
-            <h3 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-color)' }}>Étudiant + Employé</h3>
+            <div style={{ fontSize: '2.2rem', marginBottom: '0.5rem' }}>🎓💼</div>
+            <h3 style={{ margin: '0', color: 'var(--text-color)', fontSize: '1rem' }}>Étudiant + Employé</h3>
           </div>
 
           <div
             onClick={() => setFormData({ ...formData, learnerSituation: 'self_directed' })}
             style={{
-              padding: '2rem',
+              padding: '1.25rem 1rem',
               border: `2px solid ${formData.learnerSituation === 'self_directed' ? 'var(--primary)' : 'var(--border-color)'}`,
-              borderRadius: '16px',
+              borderRadius: '14px',
               cursor: 'pointer',
               background: formData.learnerSituation === 'self_directed' ? 'rgba(27,75,90,0.05)' : '#fff',
               transition: 'all 0.2s ease',
@@ -855,8 +861,8 @@ export default function Signup() {
             onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--primary)'}
             onMouseLeave={(e) => e.currentTarget.style.borderColor = formData.learnerSituation === 'self_directed' ? 'var(--primary)' : 'var(--border-color)'}
           >
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📚</div>
-            <h3 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-color)' }}>En auto-formation</h3>
+            <div style={{ fontSize: '2.2rem', marginBottom: '0.5rem' }}>📚</div>
+            <h3 style={{ margin: '0', color: 'var(--text-color)', fontSize: '1rem' }}>En auto-formation</h3>
           </div>
         </div>
       ) : (
@@ -865,73 +871,73 @@ export default function Signup() {
           
           {/* Student Fields */}
           {(formData.learnerSituation === 'student' || formData.learnerSituation === 'both') && (
-            <div style={{ marginBottom: '2rem' }}>
-              <h3 style={{ marginBottom: '1rem', color: 'var(--primary)' }}>🎓 Informations de formation</h3>
-              <div className="form-group">
-                <label>Établissement</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Ex: ISFO Sidi Maarouf"
-                  value={formData.school}
-                  onChange={e => setFormData({ ...formData, school: e.target.value })}
-                  style={validationErrors.school ? { borderColor: 'var(--error-color)' } : {}}
-                />
-                {validationErrors.school && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.school}</div>}
-              </div>
-
-              <div className="form-group">
-                <label>Filière / Spécialité</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Ex: Développement Digital"
-                  value={formData.fieldOfStudy}
-                  onChange={e => setFormData({ ...formData, fieldOfStudy: e.target.value })}
-                  style={validationErrors.fieldOfStudy ? { borderColor: 'var(--error-color)' } : {}}
-                />
-                {validationErrors.fieldOfStudy && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.fieldOfStudy}</div>}
-              </div>
-
-              <div className="form-group">
-                <label>Niveau d'étude</label>
-                <select
-                  className="form-control"
-                  value={formData.educationLevel}
-                  onChange={e => setFormData({ ...formData, educationLevel: e.target.value, customEducationLevel: '' })}
-                  style={validationErrors.educationLevel ? { borderColor: 'var(--error-color)' } : {}}
-                >
-                  <option value="">Sélectionnez votre niveau</option>
-                  <option value="Collège">Collège</option>
-                  <option value="Lycée">Lycée</option>
-                  <option value="Bac">Bac</option>
-                  <option value="Bac+1">Bac+1</option>
-                  <option value="Bac+2">Bac+2</option>
-                  <option value="Bac+3">Bac+3</option>
-                  <option value="Bac+4">Bac+4</option>
-                  <option value="Bac+5">Bac+5</option>
-                  <option value="Autre">Autre</option>
-                </select>
-                {validationErrors.educationLevel && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.educationLevel}</div>}
-              </div>
-
-              {formData.educationLevel === 'Autre' && (
+            <div style={{ marginBottom: '1.25rem' }}>
+              <h3 style={{ marginBottom: '0.65rem', color: 'var(--primary)', fontSize: '1.1rem' }}>🎓 Informations de formation</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.45rem 0.85rem' }}>
                 <div className="form-group">
-                  <label>Précisez votre niveau d'étude</label>
+                  <label>Établissement</label>
                   <input
                     type="text"
                     className="form-control"
-                    placeholder="Ex: Doctorat, Formation professionnelle..."
-                    value={formData.customEducationLevel}
-                    onChange={e => setFormData({ ...formData, customEducationLevel: e.target.value })}
-                    style={validationErrors.customEducationLevel ? { borderColor: 'var(--error-color)' } : {}}
+                    placeholder="Ex: ISFO Sidi Maarouf"
+                    value={formData.school}
+                    onChange={e => setFormData({ ...formData, school: e.target.value })}
+                    style={validationErrors.school ? { borderColor: 'var(--error-color)' } : {}}
                   />
-                  {validationErrors.customEducationLevel && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.customEducationLevel}</div>}
+                  {validationErrors.school && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.school}</div>}
                 </div>
-              )}
 
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <div className="form-group" style={{ flex: 1 }}>
+                <div className="form-group">
+                  <label>Filière / Spécialité</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Ex: Développement Digital"
+                    value={formData.fieldOfStudy}
+                    onChange={e => setFormData({ ...formData, fieldOfStudy: e.target.value })}
+                    style={validationErrors.fieldOfStudy ? { borderColor: 'var(--error-color)' } : {}}
+                  />
+                  {validationErrors.fieldOfStudy && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.fieldOfStudy}</div>}
+                </div>
+
+                <div className="form-group">
+                  <label>Niveau d'étude</label>
+                  <select
+                    className="form-control"
+                    value={formData.educationLevel}
+                    onChange={e => setFormData({ ...formData, educationLevel: e.target.value, customEducationLevel: '' })}
+                    style={validationErrors.educationLevel ? { borderColor: 'var(--error-color)' } : {}}
+                  >
+                    <option value="">Sélectionnez votre niveau</option>
+                    <option value="Collège">Collège</option>
+                    <option value="Lycée">Lycée</option>
+                    <option value="Bac">Bac</option>
+                    <option value="Bac+1">Bac+1</option>
+                    <option value="Bac+2">Bac+2</option>
+                    <option value="Bac+3">Bac+3</option>
+                    <option value="Bac+4">Bac+4</option>
+                    <option value="Bac+5">Bac+5</option>
+                    <option value="Autre">Autre</option>
+                  </select>
+                  {validationErrors.educationLevel && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.educationLevel}</div>}
+                </div>
+
+                {formData.educationLevel === 'Autre' && (
+                  <div className="form-group">
+                    <label>Précisez votre niveau d'étude</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Ex: Doctorat, Formation..."
+                      value={formData.customEducationLevel}
+                      onChange={e => setFormData({ ...formData, customEducationLevel: e.target.value })}
+                      style={validationErrors.customEducationLevel ? { borderColor: 'var(--error-color)' } : {}}
+                    />
+                    {validationErrors.customEducationLevel && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.customEducationLevel}</div>}
+                  </div>
+                )}
+
+                <div className="form-group">
                   <label>Date de début</label>
                   <input
                     type="date"
@@ -942,7 +948,8 @@ export default function Signup() {
                   />
                   {validationErrors.academicYearStart && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.academicYearStart}</div>}
                 </div>
-                <div className="form-group" style={{ flex: 1 }}>
+
+                <div className="form-group">
                   <label>Date de fin</label>
                   <input
                     type="date"
@@ -953,113 +960,100 @@ export default function Signup() {
                   />
                   {validationErrors.academicYearEnd && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.academicYearEnd}</div>}
                 </div>
-              </div>
 
-              <div className="form-group">
-                <label>Niveau</label>
-                <select
-                  className="form-control"
-                  value={formData.currentLevel}
-                  onChange={e => setFormData({ ...formData, currentLevel: e.target.value })}
-                  style={validationErrors.currentLevel ? { borderColor: 'var(--error-color)' } : {}}
-                >
-                  <option value="">Sélectionnez votre niveau</option>
-                  <option value="beginner">Débutant</option>
-                  <option value="intermediate">Intermédiaire</option>
-                  <option value="advanced">Avancé</option>
-                </select>
-                {validationErrors.currentLevel && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.currentLevel}</div>}
-              </div>
-
-              <div style={{ marginTop: '1rem', padding: '1rem', background: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                <p style={{ margin: 0, color: 'var(--secondary)', fontSize: '0.9rem' }}>
-                  <strong>Groupe / Classe:</strong> Non attribué
-                </p>
-                <p style={{ margin: '0.5rem 0 0 0', color: 'var(--secondary)', fontSize: '0.85rem' }}>
-                  Votre groupe sera attribué ultérieurement par un instructeur ou un administrateur.
-                </p>
+                <div className="form-group">
+                  <label>Niveau</label>
+                  <select
+                    className="form-control"
+                    value={formData.currentLevel}
+                    onChange={e => setFormData({ ...formData, currentLevel: e.target.value })}
+                    style={validationErrors.currentLevel ? { borderColor: 'var(--error-color)' } : {}}
+                  >
+                    <option value="">Sélectionnez votre niveau</option>
+                    <option value="beginner">Débutant</option>
+                    <option value="intermediate">Intermédiaire</option>
+                    <option value="advanced">Avancé</option>
+                  </select>
+                  {validationErrors.currentLevel && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.currentLevel}</div>}
+                </div>
               </div>
             </div>
           )}
 
           {/* Employee Fields */}
           {(formData.learnerSituation === 'employee' || formData.learnerSituation === 'both') && (
-            <div style={{ marginBottom: '2rem' }}>
-              <h3 style={{ marginBottom: '1rem', color: 'var(--primary)' }}>💼 Informations professionnelles</h3>
-              <div className="form-group">
-                <label>Nom de l'entreprise</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Ex: ABC Maroc"
-                  value={formData.companyName}
-                  onChange={e => setFormData({ ...formData, companyName: e.target.value })}
-                  style={validationErrors.companyName ? { borderColor: 'var(--error-color)' } : {}}
-                />
-                {validationErrors.companyName && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.companyName}</div>}
-              </div>
+            <div style={{ marginBottom: '1.25rem' }}>
+              <h3 style={{ marginBottom: '0.65rem', color: 'var(--primary)', fontSize: '1.1rem' }}>💼 Informations professionnelles</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.45rem 0.85rem' }}>
+                <div className="form-group">
+                  <label>Nom de l'entreprise</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Ex: ABC Maroc"
+                    value={formData.companyName}
+                    onChange={e => setFormData({ ...formData, companyName: e.target.value })}
+                    style={validationErrors.companyName ? { borderColor: 'var(--error-color)' } : {}}
+                  />
+                  {validationErrors.companyName && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.companyName}</div>}
+                </div>
 
-              <div className="form-group">
-                <label>Service / Département</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Ex: IT"
-                  value={formData.department}
-                  onChange={e => setFormData({ ...formData, department: e.target.value })}
-                  style={validationErrors.department ? { borderColor: 'var(--error-color)' } : {}}
-                />
-                {validationErrors.department && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.department}</div>}
-              </div>
+                <div className="form-group">
+                  <label>Service / Département</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Ex: IT"
+                    value={formData.department}
+                    onChange={e => setFormData({ ...formData, department: e.target.value })}
+                    style={validationErrors.department ? { borderColor: 'var(--error-color)' } : {}}
+                  />
+                  {validationErrors.department && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.department}</div>}
+                </div>
 
-              <div className="form-group">
-                <label>Poste / Fonction</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Ex: Développeur Web"
-                  value={formData.position}
-                  onChange={e => setFormData({ ...formData, position: e.target.value })}
-                  style={validationErrors.position ? { borderColor: 'var(--error-color)' } : {}}
-                />
-                {validationErrors.position && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.position}</div>}
-              </div>
+                <div className="form-group">
+                  <label>Poste / Fonction</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Ex: Développeur Web"
+                    value={formData.position}
+                    onChange={e => setFormData({ ...formData, position: e.target.value })}
+                    style={validationErrors.position ? { borderColor: 'var(--error-color)' } : {}}
+                  />
+                  {validationErrors.position && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.position}</div>}
+                </div>
 
-              <div className="form-group">
-                <label>Domaine / Secteur d'activité</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Ex: Technologie"
-                  value={formData.sector}
-                  onChange={e => setFormData({ ...formData, sector: e.target.value })}
-                  style={validationErrors.sector ? { borderColor: 'var(--error-color)' } : {}}
-                />
-                {validationErrors.sector && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.sector}</div>}
-              </div>
+                <div className="form-group">
+                  <label>Domaine / Secteur d'activité</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Ex: Technologie"
+                    value={formData.sector}
+                    onChange={e => setFormData({ ...formData, sector: e.target.value })}
+                    style={validationErrors.sector ? { borderColor: 'var(--error-color)' } : {}}
+                  />
+                  {validationErrors.sector && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.sector}</div>}
+                </div>
 
-              <div className="form-group">
-                <label>Années d'expérience</label>
-                <select
-                  className="form-control"
-                  value={formData.experienceYears}
-                  onChange={e => setFormData({ ...formData, experienceYears: e.target.value })}
-                  style={validationErrors.experienceYears ? { borderColor: 'var(--error-color)' } : {}}
-                >
-                  <option value="">Sélectionnez votre expérience</option>
-                  <option value="1">Moins d'un an</option>
-                  <option value="2">1–2 ans</option>
-                  <option value="4">3–5 ans</option>
-                  <option value="8">6–10 ans</option>
-                  <option value="11">Plus de 10 ans</option>
-                </select>
-                {validationErrors.experienceYears && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.experienceYears}</div>}
-              </div>
-
-              <div style={{ marginTop: '1rem', padding: '1rem', background: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                <p style={{ margin: 0, color: 'var(--secondary)', fontSize: '0.9rem' }}>
-                  Groupe non attribué — il sera attribué par un instructeur ou un administrateur.
-                </p>
+                <div className="form-group">
+                  <label>Années d'expérience</label>
+                  <select
+                    className="form-control"
+                    value={formData.experienceYears}
+                    onChange={e => setFormData({ ...formData, experienceYears: e.target.value })}
+                    style={validationErrors.experienceYears ? { borderColor: 'var(--error-color)' } : {}}
+                  >
+                    <option value="">Sélectionnez votre expérience</option>
+                    <option value="1">Moins d'un an</option>
+                    <option value="2">1–2 ans</option>
+                    <option value="4">3–5 ans</option>
+                    <option value="8">6–10 ans</option>
+                    <option value="11">Plus de 10 ans</option>
+                  </select>
+                  {validationErrors.experienceYears && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.experienceYears}</div>}
+                </div>
               </div>
             </div>
           )}
@@ -1109,12 +1103,6 @@ export default function Signup() {
                 </select>
                 {validationErrors.currentLevel && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.currentLevel}</div>}
               </div>
-
-              <div style={{ marginTop: '1rem', padding: '1rem', background: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                <p style={{ margin: 0, color: 'var(--secondary)', fontSize: '0.9rem' }}>
-                  Groupe non attribué — il sera attribué ultérieurement par un instructeur ou un administrateur.
-                </p>
-              </div>
             </div>
           )}
 
@@ -1140,19 +1128,19 @@ export default function Signup() {
 
   const renderStep3B = () => (
     <div>
-      <h2 style={{ marginBottom: '0.5rem', color: 'var(--primary)' }}>Votre situation professionnelle</h2>
-      <p style={{ marginBottom: '2rem', color: 'var(--secondary)' }}>
+      <h2 style={{ marginBottom: '0.35rem', color: 'var(--primary)', fontSize: '1.4rem' }}>Votre situation professionnelle</h2>
+      <p style={{ marginBottom: '1rem', color: 'var(--secondary)', fontSize: '0.88rem' }}>
         Sélectionnez votre situation pour continuer.
       </p>
 
       {!formData.instructorSituation ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
           <div
             onClick={() => setFormData({ ...formData, instructorSituation: 'employed' })}
             style={{
-              padding: '2rem',
+              padding: '1.25rem 1rem',
               border: `2px solid ${formData.instructorSituation === 'employed' ? 'var(--primary)' : 'var(--border-color)'}`,
-              borderRadius: '16px',
+              borderRadius: '14px',
               cursor: 'pointer',
               background: formData.instructorSituation === 'employed' ? 'rgba(27,75,90,0.05)' : '#fff',
               transition: 'all 0.2s ease',
@@ -1161,16 +1149,16 @@ export default function Signup() {
             onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--primary)'}
             onMouseLeave={(e) => e.currentTarget.style.borderColor = formData.instructorSituation === 'employed' ? 'var(--primary)' : 'var(--border-color)'}
           >
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>👔</div>
-            <h3 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-color)' }}>Employé / En poste</h3>
+            <div style={{ fontSize: '2.2rem', marginBottom: '0.5rem' }}>👔</div>
+            <h3 style={{ margin: '0', color: 'var(--text-color)', fontSize: '1rem' }}>Employé / En poste</h3>
           </div>
 
           <div
             onClick={() => setFormData({ ...formData, instructorSituation: 'freelance' })}
             style={{
-              padding: '2rem',
+              padding: '1.25rem 1rem',
               border: `2px solid ${formData.instructorSituation === 'freelance' ? 'var(--primary)' : 'var(--border-color)'}`,
-              borderRadius: '16px',
+              borderRadius: '14px',
               cursor: 'pointer',
               background: formData.instructorSituation === 'freelance' ? 'rgba(27,75,90,0.05)' : '#fff',
               transition: 'all 0.2s ease',
@@ -1179,16 +1167,16 @@ export default function Signup() {
             onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--primary)'}
             onMouseLeave={(e) => e.currentTarget.style.borderColor = formData.instructorSituation === 'freelance' ? 'var(--primary)' : 'var(--border-color)'}
           >
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>💻</div>
-            <h3 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-color)' }}>Freelance / Indépendant</h3>
+            <div style={{ fontSize: '2.2rem', marginBottom: '0.5rem' }}>💻</div>
+            <h3 style={{ margin: '0', color: 'var(--text-color)', fontSize: '1rem' }}>Freelance / Indépendant</h3>
           </div>
 
           <div
             onClick={() => setFormData({ ...formData, instructorSituation: 'unemployed' })}
             style={{
-              padding: '2rem',
+              padding: '1.25rem 1rem',
               border: `2px solid ${formData.instructorSituation === 'unemployed' ? 'var(--primary)' : 'var(--border-color)'}`,
-              borderRadius: '16px',
+              borderRadius: '14px',
               cursor: 'pointer',
               background: formData.instructorSituation === 'unemployed' ? 'rgba(27,75,90,0.05)' : '#fff',
               transition: 'all 0.2s ease',
@@ -1197,8 +1185,8 @@ export default function Signup() {
             onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--primary)'}
             onMouseLeave={(e) => e.currentTarget.style.borderColor = formData.instructorSituation === 'unemployed' ? 'var(--primary)' : 'var(--border-color)'}
           >
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔎</div>
-            <h3 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-color)' }}>Sans emploi</h3>
+            <div style={{ fontSize: '2.2rem', marginBottom: '0.5rem' }}>🔎</div>
+            <h3 style={{ margin: '0', color: 'var(--text-color)', fontSize: '1rem' }}>Sans emploi</h3>
           </div>
         </div>
       ) : (
@@ -1206,137 +1194,135 @@ export default function Signup() {
           {validationErrors.instructorSituation && <div style={{ color: 'var(--error-color)', marginBottom: '1rem' }}>{validationErrors.instructorSituation}</div>}
 
           {/* Common Instructor Fields */}
-          <div style={{ marginBottom: '2rem' }}>
-            <h3 style={{ marginBottom: '1rem', color: 'var(--primary)' }}>Expertise professionnelle</h3>
+          <div style={{ marginBottom: '1.25rem' }}>
+            <h3 style={{ marginBottom: '0.65rem', color: 'var(--primary)', fontSize: '1.1rem' }}>Expertise professionnelle</h3>
 
-            {formData.instructorSituation === 'employed' && (
-              <>
-                <div className="form-group">
-                  <label>Nom de l'entreprise / Organisation</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Ex: 212Learn"
-                    value={formData.organization}
-                    onChange={e => setFormData({ ...formData, organization: e.target.value })}
-                    style={validationErrors.organization ? { borderColor: 'var(--error-color)' } : {}}
-                  />
-                  {validationErrors.organization && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.organization}</div>}
-                </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.45rem 0.85rem' }}>
+              {formData.instructorSituation === 'employed' && (
+                <>
+                  <div className="form-group">
+                    <label>Nom de l'entreprise / Organisation</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Ex: 212Learn"
+                      value={formData.organization}
+                      onChange={e => setFormData({ ...formData, organization: e.target.value })}
+                      style={validationErrors.organization ? { borderColor: 'var(--error-color)' } : {}}
+                    />
+                    {validationErrors.organization && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.organization}</div>}
+                  </div>
 
-                <div className="form-group">
-                  <label>Service / Département</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Ex: IT"
-                    value={formData.department}
-                    onChange={e => setFormData({ ...formData, department: e.target.value })}
-                  />
-                </div>
+                  <div className="form-group">
+                    <label>Service / Département</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Ex: IT"
+                      value={formData.department}
+                      onChange={e => setFormData({ ...formData, department: e.target.value })}
+                    />
+                  </div>
 
-                <div className="form-group">
-                  <label>Poste / Fonction</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Ex: Lead Developer"
-                    value={formData.position}
-                    onChange={e => setFormData({ ...formData, position: e.target.value })}
-                    style={validationErrors.position ? { borderColor: 'var(--error-color)' } : {}}
-                  />
-                  {validationErrors.position && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.position}</div>}
-                </div>
+                  <div className="form-group">
+                    <label>Poste / Fonction</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Ex: Lead Developer"
+                      value={formData.position}
+                      onChange={e => setFormData({ ...formData, position: e.target.value })}
+                      style={validationErrors.position ? { borderColor: 'var(--error-color)' } : {}}
+                    />
+                    {validationErrors.position && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.position}</div>}
+                  </div>
 
-                <div className="form-group">
-                  <label>Domaine / Secteur d'activité</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Ex: Technologie"
-                    value={formData.sector}
-                    onChange={e => setFormData({ ...formData, sector: e.target.value })}
-                    style={validationErrors.sector ? { borderColor: 'var(--error-color)' } : {}}
-                  />
-                  {validationErrors.sector && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.sector}</div>}
-                </div>
-              </>
-            )}
+                  <div className="form-group">
+                    <label>Domaine / Secteur d'activité</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Ex: Technologie"
+                      value={formData.sector}
+                      onChange={e => setFormData({ ...formData, sector: e.target.value })}
+                      style={validationErrors.sector ? { borderColor: 'var(--error-color)' } : {}}
+                    />
+                    {validationErrors.sector && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.sector}</div>}
+                  </div>
+                </>
+              )}
 
-            <div className="form-group">
-              <label>Domaine d'expertise</label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Ex: Développement Web"
-                value={formData.expertiseDomain}
-                onChange={e => setFormData({ ...formData, expertiseDomain: e.target.value })}
-                style={validationErrors.expertiseDomain ? { borderColor: 'var(--error-color)' } : {}}
-              />
-              {validationErrors.expertiseDomain && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.expertiseDomain}</div>}
-            </div>
+              <div className="form-group">
+                <label>Domaine d'expertise</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Ex: Développement Web"
+                  value={formData.expertiseDomain}
+                  onChange={e => setFormData({ ...formData, expertiseDomain: e.target.value })}
+                  style={validationErrors.expertiseDomain ? { borderColor: 'var(--error-color)' } : {}}
+                />
+                {validationErrors.expertiseDomain && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.expertiseDomain}</div>}
+              </div>
 
-            <div className="form-group">
-              <label>Spécialité</label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Ex: React & Node.js"
-                value={formData.specialization}
-                onChange={e => setFormData({ ...formData, specialization: e.target.value })}
-                style={validationErrors.specialization ? { borderColor: 'var(--error-color)' } : {}}
-              />
-              {validationErrors.specialization && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.specialization}</div>}
-            </div>
+              <div className="form-group">
+                <label>Spécialité</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Ex: React & Node.js"
+                  value={formData.specialization}
+                  onChange={e => setFormData({ ...formData, specialization: e.target.value })}
+                  style={validationErrors.specialization ? { borderColor: 'var(--error-color)' } : {}}
+                />
+                {validationErrors.specialization && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.specialization}</div>}
+              </div>
 
-            <div className="form-group">
-              <label>Années d'expérience</label>
-              <select
-                className="form-control"
-                value={formData.experienceYears}
-                onChange={e => setFormData({ ...formData, experienceYears: e.target.value })}
-                style={validationErrors.experienceYears ? { borderColor: 'var(--error-color)' } : {}}
-              >
-                <option value="">Sélectionnez votre expérience</option>
-                <option value="1">Moins d'un an</option>
-                <option value="2">1–2 ans</option>
-                <option value="4">3–5 ans</option>
-                <option value="8">6–10 ans</option>
-                <option value="11">Plus de 10 ans</option>
-              </select>
-              {validationErrors.experienceYears && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.experienceYears}</div>}
-            </div>
+              <div className="form-group">
+                <label>Années d'expérience</label>
+                <select
+                  className="form-control"
+                  value={formData.experienceYears}
+                  onChange={e => setFormData({ ...formData, experienceYears: e.target.value })}
+                  style={validationErrors.experienceYears ? { borderColor: 'var(--error-color)' } : {}}
+                >
+                  <option value="">Sélectionnez votre expérience</option>
+                  <option value="1">Moins d'un an</option>
+                  <option value="2">1–2 ans</option>
+                  <option value="4">3–5 ans</option>
+                  <option value="8">6–10 ans</option>
+                  <option value="11">Plus de 10 ans</option>
+                </select>
+                {validationErrors.experienceYears && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.experienceYears}</div>}
+              </div>
 
-            <div className="form-group">
-              <label>Domaines / Matières enseignés</label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Ex: JavaScript, React, Node.js"
-                value={formData.teachingDomains}
-                onChange={e => setFormData({ ...formData, teachingDomains: e.target.value })}
-                style={validationErrors.teachingDomains ? { borderColor: 'var(--error-color)' } : {}}
-              />
-              {validationErrors.teachingDomains && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.teachingDomains}</div>}
-            </div>
-          </div>
+              <div className="form-group">
+                <label>Domaines d'enseignement souhaités</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Ex: HTML, CSS, JavaScript, React"
+                  value={formData.teachingDomains}
+                  onChange={e => setFormData({ ...formData, teachingDomains: e.target.value })}
+                  style={validationErrors.teachingDomains ? { borderColor: 'var(--error-color)' } : {}}
+                />
+                {validationErrors.teachingDomains && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.teachingDomains}</div>}
+              </div>
 
-          {/* Common Teaching Mode */}
-          <div style={{ marginBottom: '2rem' }}>
-            <h3 style={{ marginBottom: '1rem', color: 'var(--primary)' }}>Mode d'enseignement</h3>
-            <div className="form-group">
-              <select
-                className="form-control"
-                value={formData.teachingMode}
-                onChange={e => setFormData({ ...formData, teachingMode: e.target.value })}
-                style={validationErrors.teachingMode ? { borderColor: 'var(--error-color)' } : {}}
-              >
-                <option value="">Sélectionnez le mode d'enseignement</option>
-                <option value="online">En ligne</option>
-                <option value="in-person">Présentiel</option>
-                <option value="both">Les deux</option>
-              </select>
-              {validationErrors.teachingMode && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.teachingMode}</div>}
+              <div className="form-group">
+                <label>Mode d'enseignement préféré</label>
+                <select
+                  className="form-control"
+                  value={formData.teachingMode}
+                  onChange={e => setFormData({ ...formData, teachingMode: e.target.value })}
+                  style={validationErrors.teachingMode ? { borderColor: 'var(--error-color)' } : {}}
+                >
+                  <option value="online">En ligne</option>
+                  <option value="in-person">Présentiel</option>
+                  <option value="hybrid">Les deux (Hybride)</option>
+                </select>
+                {validationErrors.teachingMode && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.teachingMode}</div>}
+              </div>
             </div>
           </div>
 
@@ -1446,14 +1432,6 @@ export default function Signup() {
               </div>
             </div>
           )}
-
-          <div style={{ background: 'var(--bg-color)', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem' }}>
-            <h3 style={{ margin: '0 0 1rem 0', color: 'var(--text-color)', fontSize: '1.1rem' }}>Groupe</h3>
-            <div style={{ color: 'var(--secondary)', lineHeight: '1.8' }}>
-              <p style={{ margin: 0 }}><strong>Statut:</strong> Non attribué</p>
-              <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.85rem' }}>Votre groupe sera attribué ultérieurement par un instructeur ou un administrateur.</p>
-            </div>
-          </div>
         </>
       )}
 
@@ -1544,20 +1522,79 @@ export default function Signup() {
             <img src={logoImg} alt="212LEARN Logo" style={{ height: '48px', objectFit: 'contain' }} />
           </div>
 
-          {/* Progress indicator */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem', fontSize: '0.85rem', color: 'var(--secondary)' }}>
-            {getProgressSteps().map((s, index) => (
-              <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ 
-                  fontWeight: step === s.id ? 700 : 400, 
-                  color: step === s.id ? 'var(--primary)' : 'var(--secondary)' 
-                }}>
-                  {s.id}
-                </span>
-                <span>{s.label}</span>
-                {index < getProgressSteps().length - 1 && <span style={{ color: 'var(--border-color)' }}>──</span>}
-              </div>
-            ))}
+          {/* Interactive Progress indicator */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '1.25rem', fontSize: '0.85rem', color: 'var(--secondary)', flexWrap: 'wrap' }}>
+            {getProgressSteps().map((s, index) => {
+              const isCurrent = step === s.id;
+              const isComplete = (
+                (s.id === 1 && isStep1Valid) ||
+                (s.id === 2 && Boolean(formData.role)) ||
+                (s.id === 3 && ((formData.role === 'learner' && Boolean(formData.learnerSituation)) || (formData.role === 'instructor' && Boolean(formData.instructorSituation))))
+              );
+              const isNavigable = s.id <= step || isStep1Valid;
+
+              return (
+                <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isNavigable || s.id <= step) {
+                        setStep(s.id);
+                      }
+                    }}
+                    style={{
+                      background: isCurrent ? 'rgba(193, 101, 47, 0.08)' : isComplete ? 'rgba(22, 163, 74, 0.08)' : 'transparent',
+                      border: 'none',
+                      padding: '0.25rem 0.55rem',
+                      borderRadius: '8px',
+                      cursor: isNavigable ? 'pointer' : 'default',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.38rem',
+                      fontSize: '0.85rem',
+                      fontWeight: isCurrent || isComplete ? 700 : 500,
+                      color: isCurrent ? 'var(--primary)' : isComplete ? '#15803d' : '#94a3b8',
+                      transition: 'all 0.15s ease',
+                    }}
+                    title={isNavigable ? `Étape ${s.id}: ${s.label} (${isComplete ? 'Validée' : isCurrent ? 'En cours' : 'À compléter'})` : ''}
+                    onMouseEnter={(e) => {
+                      if (isNavigable && !isCurrent && !isComplete) e.currentTarget.style.color = 'var(--primary)';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isCurrent) e.currentTarget.style.color = isComplete ? '#15803d' : '#94a3b8';
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '20px',
+                        height: '20px',
+                        borderRadius: '50%',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        background: isCurrent
+                          ? 'var(--primary)'
+                          : isComplete
+                          ? '#16a34a'
+                          : '#e2e8f0',
+                        color: isCurrent || isComplete ? '#ffffff' : '#64748b',
+                        boxShadow: isComplete ? '0 2px 6px rgba(22,163,74,0.3)' : isCurrent ? '0 2px 6px rgba(193,101,47,0.3)' : 'none',
+                      }}
+                    >
+                      {isComplete ? <Check size={12} strokeWidth={3} /> : s.id}
+                    </span>
+                    <span>{s.label}</span>
+                  </button>
+                  {index < getProgressSteps().length - 1 && (
+                    <span style={{ color: isComplete ? '#16a34a' : 'var(--border-color)', opacity: isComplete ? 0.8 : 0.5, fontWeight: 700 }}>
+                      ──
+                    </span>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           {error && <div style={{ color: 'var(--error-color)', marginBottom: '1rem', background: '#fff0f0', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #fcc' }}>{error}</div>}
@@ -1594,7 +1631,7 @@ export default function Signup() {
               </button>
             )}
 
-            {step < 4 ? (
+            {step < 4 && step !== 2 && (
               <button
                 type="button"
                 onClick={handleContinue}
@@ -1618,7 +1655,9 @@ export default function Signup() {
               >
                 Continuer <ChevronRight size={18} />
               </button>
-            ) : (
+            )}
+
+            {step === 4 && (
               <button
                 type="button"
                 onClick={handleSubmit}
@@ -1714,33 +1753,11 @@ export default function Signup() {
                 {/* Welcome Heading */}
                 <div className="mockup-welcome-head">
                   <h4 className="mockup-user-title">
-                    Bienvenue, {formData.firstName?.trim() || 'Étudiant'} 👋
+                    Aperçu de votre compte {formData.role === 'instructor' ? 'Formateur' : 'Apprenant'} 👋
                   </h4>
                   <p className="mockup-user-sub">
-                    Suivez vos progrès et continuez votre apprentissage sur 212Learn.
+                    Voici comment apparaîtra votre profil une fois votre compte créé.
                   </p>
-                </div>
-
-                {/* 4 Stat Cards Grid (Exact replica of 212Learn StudentDashboard) */}
-                <div className="mockup-stats-grid">
-                  <div className="mockup-stat-card">
-                    <span className="stat-card-title">📚 Cours</span>
-                    <span className="stat-card-val">1 / 3</span>
-                  </div>
-                  <div className="mockup-stat-card">
-                    <span className="stat-card-title">⚡ Profil</span>
-                    <span className="stat-card-val highlight">
-                      {step === 1 ? (isStep1Valid ? '35%' : '15%') : step === 2 ? '55%' : step === 3 ? '85%' : '100%'}
-                    </span>
-                  </div>
-                  <div className="mockup-stat-card">
-                    <span className="stat-card-title">🏆 Badges</span>
-                    <span className="stat-card-val">1</span>
-                  </div>
-                  <div className="mockup-stat-card">
-                    <span className="stat-card-title">🏅 Certificats</span>
-                    <span className="stat-card-val">0</span>
-                  </div>
                 </div>
 
                 {/* Live User Profile Card */}
@@ -1760,7 +1777,7 @@ export default function Signup() {
                       </span>
                     </div>
                     <span className="profile-role-tag">
-                      {formData.role === 'instructor' ? 'Formateur' : 'Étudiant'}
+                      {formData.role === 'instructor' ? 'Formateur' : 'Apprenant'}
                     </span>
                   </div>
 
@@ -1772,6 +1789,27 @@ export default function Signup() {
                       {formData.companyName && <div><strong>Entreprise:</strong> {formData.companyName}</div>}
                     </div>
                   )}
+                </div>
+
+                {/* Included Onboarding Advantages Checklist */}
+                <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '0.75rem 0.85rem', border: '1px solid rgba(0,0,0,0.05)' }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--secondary)', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>
+                    Avantages de votre espace 212Learn:
+                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.76rem', color: 'var(--text-color)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <CheckCircle size={13} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+                      <span>Accès illimité aux cours & ateliers</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <CheckCircle size={13} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+                      <span>Classes virtuelles & Sessions Live</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <CheckCircle size={13} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+                      <span>Certificats officiels de complétion</span>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Live Readiness Indicator */}
