@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Mail, Phone, MapPin, Clock, Send, CheckCircle, AlertCircle, MessageSquare, HelpCircle, Sparkles } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Mail, Phone, Send, CheckCircle, AlertCircle, MessageSquare, HelpCircle, Sparkles } from 'lucide-react';
+import { motion } from 'framer-motion';
 import CountryPhonePicker, { DEFAULT_COUNTRIES } from '../components/CountryPhonePicker';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -65,7 +65,7 @@ export default function Contact() {
         });
         setFormData({ name: '', email: '', phone: '', subject: 'Information cours', message: '' });
       }
-    } catch (err) {
+    } catch {
       // Fallback response for offline / dev preview
       setStatus({
         loading: false,

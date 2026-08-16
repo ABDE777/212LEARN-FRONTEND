@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { FileText, Download, Trash2, Plus, X, Link as LinkIcon, Video, File, Image } from 'lucide-react';
+import { FileText, Download, Trash2, Plus, Link as LinkIcon, Video, File, Image } from 'lucide-react';
 import { useLessonResources } from '../hooks/useLessonResources';
 
 export default function LessonResources({ lessonId }) {
-  const { resources, loading, error, refetch, addResource, deleteResource } = useLessonResources(lessonId);
+  const { resources, loading, error, addResource, deleteResource } = useLessonResources(lessonId);
   const [showAddForm, setShowAddForm] = useState(false);
   const [formData, setFormData] = useState({ title: '', url: '', type: 'link' });
   const [formError, setFormError] = useState('');

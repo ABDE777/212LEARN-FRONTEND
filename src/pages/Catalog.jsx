@@ -9,7 +9,6 @@ import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import Card from '../components/Card';
 import Button from '../components/Button';
-import LoadingSpinner from '../components/LoadingSpinner';
 import Navbar from '../components/Navbar';
 import { CourseCardSkeleton } from '../components/SkeletonLoader';
 
@@ -24,7 +23,7 @@ export default function Catalog() {
 
 
   const { courses, loading: coursesLoading, error: coursesError } = useCourses(filters);
-  const { categories, loading: categoriesLoading } = useCategories();
+  const { categories } = useCategories();
   const { addToCart, loading: cartLoading, items: cartItems } = useCart();
   const { addToWishlist, loading: wishlistLoading, items: wishlistItems } = useWishlist();
 

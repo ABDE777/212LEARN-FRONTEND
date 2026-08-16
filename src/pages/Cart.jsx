@@ -12,7 +12,7 @@ import { useAuth } from '../context/AuthContext';
 export default function Cart() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { cart, items: cartItems, fetchCart, removeFromCart, validateCoupon, loading, error } = useCartContext();
+  const { items: cartItems, fetchCart, removeFromCart, validateCoupon, loading, error } = useCartContext();
   const [couponCode, setCouponCode] = useState('');
   const [couponError, setCouponError] = useState('');
   const [couponSuccess, setCouponSuccess] = useState('');
@@ -44,7 +44,7 @@ export default function Cart() {
         setDiscount(10);
         setCouponSuccess('Coupon appliqué ! -10%');
       }
-    } catch (err) {
+    } catch {
       setCouponError('Code promo invalide ou expiré.');
     }
   };

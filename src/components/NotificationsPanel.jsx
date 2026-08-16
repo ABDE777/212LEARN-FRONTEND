@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Bell, X, Check, Clock, User, BookOpen, Heart, ShoppingCart, Award } from 'lucide-react';
 import { useNotifications } from '../hooks/useNotifications';
 

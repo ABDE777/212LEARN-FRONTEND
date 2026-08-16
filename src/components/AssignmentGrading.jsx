@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { FileText, Check, X, Star, MessageSquare, Clock, User, Award } from 'lucide-react';
+import { FileText, Check, X, Star, MessageSquare, Clock, Award } from 'lucide-react';
 import { useAssignmentSubmissions } from '../hooks/useAssignments';
 
 export default function AssignmentGrading({ assignmentId }) {
-  const { submissions, loading, error, refetch, gradeSubmission } = useAssignmentSubmissions(assignmentId);
+  const { submissions, loading, error, gradeSubmission } = useAssignmentSubmissions(assignmentId);
   const [gradingId, setGradingId] = useState(null);
   const [grade, setGrade] = useState('');
   const [feedback, setFeedback] = useState('');

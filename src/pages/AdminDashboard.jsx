@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { Users, BookOpen, Folder, Settings, User, LogOut, FileText, Pencil, Trash2, BarChart3, TrendingUp, DollarSign, ShieldCheck, ShieldAlert, ChevronLeft, ChevronRight, RotateCcw, Lock, Plus, Mail, X, Loader, Wallet, CheckCircle, XCircle, Clock, Activity, Server, Search, Award, Download, Printer, Code, Database, Globe, Video, Building2, Check } from 'lucide-react';
+import { Users, BookOpen, Folder, Settings, User, LogOut, FileText, Pencil, Trash2, BarChart3, TrendingUp, DollarSign, ShieldCheck, ShieldAlert, ChevronLeft, ChevronRight, RotateCcw, Plus, Mail, X, Loader, Wallet, CheckCircle, XCircle, Clock, Activity, Server, Search, Award, Download, Printer, Code, Database, Globe, Video, Building2, Check } from 'lucide-react';
 import { useWafacash } from '../hooks/useWafacash';
 import { useTransfer } from '../hooks/useTransfer';
 import {
@@ -22,13 +22,11 @@ import { useAdminMeetings } from '../hooks/useAdminMeetings';
 import { useAdminGroups } from '../hooks/useAdminGroups';
 import { useCoupons } from '../hooks/useCoupons';
 import { useAdminSettings } from '../hooks/useAdminSettings';
-import { useGroups } from '../hooks/useGroups';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useAuth } from '../context/AuthContext';
 import ProfileEditForm from '../components/ProfileEditForm';
 import ChangePasswordForm from '../components/ChangePasswordForm';
 import CloudinaryImageUpload from '../components/CloudinaryImageUpload';
-import Modal from '../components/Modal';
 import SessionCalendar from '../components/SessionCalendar';
 import AdminContactMessages from '../components/AdminContactMessages';
 import api from '../services/api';
@@ -392,14 +390,6 @@ function normalizeCourseForm(course) {
     level: course.level || '',
     status: course.status || 'draft',
     instructorId: getAssignedInstructor(course)?.id || '',
-  };
-}
-
-function normalizeCategoryForm(category) {
-  return {
-    name: category.name || '',
-    description: category.description || '',
-    parentId: category.parentId || '',
   };
 }
 
@@ -1464,9 +1454,6 @@ function AdminEditCourseDrawer({
 
 function AdminCourseCard({
   course,
-  flatCategories,
-  instructors,
-  instructorsLoading,
   onPublish,
   publishLoading,
   onEdit,
@@ -1474,7 +1461,6 @@ function AdminCourseCard({
   deleteLoading,
   isDraft = false,
 }) {
-  const isPublished = course.status === 'published';
   const levelLabel = course.level === 'beginner' ? 'Débutant' : course.level === 'intermediate' ? 'Intermédiaire' : course.level === 'advanced' ? 'Avancé' : (course.level || 'Général');
 
 
@@ -3041,7 +3027,6 @@ export default function AdminDashboard() {
   };
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [userSubTab, setUserSubTab] = useState('active');
-  const [profileSubTab, setProfileSubTab] = useState('all'); // 'all' | 'profile' | 'security'
   const [userPage, setUserPage] = useState(1);
   const [userRoleFilter, setUserRoleFilter] = useState('all');
   const [userSearch, setUserSearch] = useState('');
@@ -3076,7 +3061,7 @@ export default function AdminDashboard() {
     refreshPendingKyc,
   } = usePendingKyc();
   const { courses, loading: coursesLoading, error: coursesError, refreshCourses } = useAdminCourses();
-  const { instructors, loading: instructorsLoading, error: instructorsError } = useAdminInstructors();
+  const { instructors, loading: instructorsLoading } = useAdminInstructors();
   const {
     categories,
     loading: categoriesLoading,
@@ -3090,7 +3075,7 @@ export default function AdminDashboard() {
   const { updateCourse, loading: updateCourseLoading, error: updateCourseError } = useAdminUpdateCourse();
   const { deleteCourse, loading: deleteCourseLoading, error: deleteCourseError } = useAdminDeleteCourse();
   const { publishCourse, loading: publishLoading, error: publishError } = usePublishCourse();
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const { meetings, loading: meetingsLoading, fetchMeetings, deleteMeeting: adminDeleteMeeting, updateMeeting: adminUpdateMeeting } = useAdminMeetings();
   const { 
     groups, 
@@ -3099,7 +3084,6 @@ export default function AdminDashboard() {
     refetch: refetchGroups,
     createGroup,
     updateGroup,
-    assignFormateur,
     addStudentToGroup,
     removeStudentFromGroup,
   } = useAdminGroups();
@@ -3169,22 +3153,13 @@ export default function AdminDashboard() {
     });
   }, [courses, adminCourseSearch, adminCourseCategoryFilter, adminCourseStatusFilter]);
 
-  const draftCourses = useMemo(
-    () => filteredAllCourses.filter((course) => (course.status || '').toLowerCase() === 'draft'),
-    [filteredAllCourses]
-  );
-  const publishedCourses = useMemo(
-    () => filteredAllCourses.filter((course) => (course.status || '').toLowerCase() !== 'draft'),
-    [filteredAllCourses]
-  );
-
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [, setShowAddForm] = useState(false);
   const [catName, setCatName] = useState('');
   const [catDesc, setCatDesc] = useState('');
   const [catParentId, setCatParentId] = useState('');
-  const [createLoading, setCreateLoading] = useState(false);
-  const [createError, setCreateError] = useState(null);
-  const [createSuccess, setCreateSuccess] = useState(false);
+  const [, setCreateLoading] = useState(false);
+  const [, setCreateError] = useState(null);
+  const [, setCreateSuccess] = useState(false);
   const [categoryActionError, setCategoryActionError] = useState(null);
   const [categorySuccess, setCategorySuccess] = useState('');
 
@@ -3195,7 +3170,6 @@ export default function AdminDashboard() {
   const [categoryDrawerLoading, setCategoryDrawerLoading] = useState(false);
   const [categoryDrawerError, setCategoryDrawerError] = useState(null);
 
-  const [showCreateCourseForm, setShowCreateCourseForm] = useState(false);
   const [showCreateCourseDrawer, setShowCreateCourseDrawer] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
   const [courseTitle, setCourseTitle] = useState('');
@@ -3206,7 +3180,7 @@ export default function AdminDashboard() {
   const [courseLevel, setCourseLevel] = useState('');
   const [courseInstructorId, setCourseInstructorId] = useState('');
   const [createCourseError, setCreateCourseError] = useState(null);
-  const [createCourseSuccess, setCreateCourseSuccess] = useState(false);
+  const [, setCreateCourseSuccess] = useState(false);
   const [courseActionSuccess, setCourseActionSuccess] = useState('');
 
   const [showUserForm, setShowUserForm] = useState(false);
@@ -3222,9 +3196,9 @@ export default function AdminDashboard() {
   const [userFormLoading, setUserFormLoading] = useState(false);
   const [userFormError, setUserFormError] = useState(null);
 
-  const [selectedCouponForUsage, setSelectedCouponForUsage] = useState(null);
-  const [couponUsageLoading, setCouponUsageLoading] = useState(false);
-  const [couponUsageData, setCouponUsageData] = useState([]);
+  const [, setSelectedCouponForUsage] = useState(null);
+  const [, setCouponUsageLoading] = useState(false);
+  const [, setCouponUsageData] = useState([]);
 
   const [showGroupForm, setShowGroupForm] = useState(false);
   const [editingGroup, setEditingGroup] = useState(null);
@@ -3721,7 +3695,7 @@ export default function AdminDashboard() {
     setUserActionMsg(null);
   };
 
-  const handleCreateCategory = async (e) => {
+  const _handleCreateCategory = async (e) => {
     e.preventDefault();
     setCreateLoading(true);
     setCreateError(null);
@@ -3749,7 +3723,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleUpdateCategory = async (categoryId, form) => {
+  const _handleUpdateCategory = async (categoryId, form) => {
     setCategoryActionError(null);
     setCategorySuccess('');
     try {
@@ -3842,7 +3816,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleCreateCourse = async (e) => {
+  const _handleCreateCourse = async (e) => {
     e.preventDefault();
     setCreateCourseError(null);
     setCreateCourseSuccess(false);
@@ -3899,25 +3873,21 @@ export default function AdminDashboard() {
 
   const handleUpdateCourse = async (courseId, form) => {
     setCourseActionSuccess('');
-    try {
-      const payload = {
-        title: form.title.trim(),
-        categoryId: form.categoryId,
-        price: parseFloat(form.price),
-      };
+    const payload = {
+      title: form.title.trim(),
+      categoryId: form.categoryId,
+      price: parseFloat(form.price),
+    };
 
-      if (form.description.trim()) payload.description = form.description.trim();
-      if (form.thumbnail.trim()) payload.thumbnail = form.thumbnail.trim();
-      if (form.level) payload.level = form.level;
-      if (form.status) payload.status = form.status;
-      if (form.instructorId) payload.instructorId = form.instructorId;
+    if (form.description.trim()) payload.description = form.description.trim();
+    if (form.thumbnail.trim()) payload.thumbnail = form.thumbnail.trim();
+    if (form.level) payload.level = form.level;
+    if (form.status) payload.status = form.status;
+    if (form.instructorId) payload.instructorId = form.instructorId;
 
-      await updateCourse(courseId, payload);
-      await refreshCourses();
-      setCourseActionSuccess('Cours mis à jour avec succès.');
-    } catch (err) {
-      throw err;
-    }
+    await updateCourse(courseId, payload);
+    await refreshCourses();
+    setCourseActionSuccess('Cours mis à jour avec succès.');
   };
 
   const handleDeleteCourse = async (courseId, courseTitle) => {

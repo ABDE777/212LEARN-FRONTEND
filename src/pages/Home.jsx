@@ -1,11 +1,8 @@
 import { Link } from 'react-router-dom';
 import TinderSwipeCategories from '../components/TinderSwipeCategories';
 import { useEffect } from 'react';
-import LottieRaw from 'lottie-react';
-const Lottie = LottieRaw.default || LottieRaw;
-import heroAnimation from '../lotties/Hero section.json';
 import {
-  BookOpen, Users, Video, Code, Database, Globe, Award, Zap,
+  BookOpen, Users, Globe, Award,
   ArrowRight, GraduationCap, ShieldCheck, PlayCircle, Laptop,
   ClipboardCheck, MonitorPlay, Info
 } from 'lucide-react';
@@ -14,7 +11,6 @@ import { useCourses } from '../hooks/useCourses';
 import { usePublicStats } from '../hooks/usePublicStats';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Navbar from '../components/Navbar';
-import AnimatedLogo from '../components/AnimatedLogo';
 import { useAuth } from '../context/AuthContext';
 import bannerImg from '../assets/banner.png';
 
@@ -54,16 +50,6 @@ export default function Home() {
   };
 
   const allCategories = flattenCategories(categories || []);
-
-  const getCategoryIcon = (categoryName) => {
-    const name = categoryName?.toLowerCase() || '';
-    if (name.includes('programmation') || name.includes('code') || name.includes('développement')) return Code;
-    if (name.includes('base de données') || name.includes('data')) return Database;
-    if (name.includes('web') || name.includes('internet') || name.includes('réseau')) return Globe;
-    if (name.includes('vidéo') || name.includes('conférence')) return Video;
-    if (name.includes('pédagogique') || name.includes('suivi')) return Users;
-    return BookOpen;
-  };
 
   const featuredCourses = courses?.length > 0 ? courses.slice(0, 3) : [
     {

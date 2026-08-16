@@ -4,9 +4,6 @@ import {
   Target, Heart, Zap, Globe, Quote, ArrowRight, MapPin,
   Lightbulb, Handshake, Eye, Flag, Users
 } from 'lucide-react';
-import LottieRaw from 'lottie-react';
-const Lottie = LottieRaw.default || LottieRaw;
-import aboutAnimation from '../lotties/Education2.json';
 import Navbar from '../components/Navbar';
 import AnimatedLogo from '../components/AnimatedLogo';
 import SEOHead from '../components/SEOHead';
@@ -21,7 +18,6 @@ import TeamShowcase from '../components/TeamShowcase';
 
 const BG_SAND = '#F5EDE4';
 const BG_WHITE = '#ffffff';
-const BG_CTA = '#C1652F';
 
 const DEFAULT_INSTRUCTOR_SLIDES = [
   {

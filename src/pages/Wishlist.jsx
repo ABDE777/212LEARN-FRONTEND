@@ -10,8 +10,8 @@ import Navbar from '../components/Navbar';
 import SEOHead from '../components/SEOHead';
 import { CourseCardSkeleton } from '../components/SkeletonLoader';
 
-export function WishlistContent({ embedded = false }) {
-  const { wishlist, fetchWishlist, removeFromWishlist, loading, items: wishlistItems } = useWishlistContext();
+export function WishlistContent() {
+  const { fetchWishlist, removeFromWishlist, loading, items: wishlistItems } = useWishlistContext();
   const { addToCart, loading: cartLoading } = useCartContext();
 
   useEffect(() => {

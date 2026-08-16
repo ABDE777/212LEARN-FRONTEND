@@ -1,5 +1,5 @@
 import AnimatedLogo from './AnimatedLogo';
-import { Mail, Phone, ExternalLink, Globe, Share2, Link as LinkIcon } from 'lucide-react';
+import { Mail, Phone, Globe, Share2, Link as LinkIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Footer() {

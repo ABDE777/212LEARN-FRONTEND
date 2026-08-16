@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Video, Clock, Pencil, Trash2, X, Zap } from 'lucide-react';
 
 function SessionCalendar({ meetings, onMeetingClick, onEditMeeting, onDeleteMeeting, readOnly = false }) {

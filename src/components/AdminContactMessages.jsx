@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, CheckCircle, Clock, Trash2, Search, Filter, Eye, MessageSquare, AlertCircle, RefreshCw, Send, Check } from 'lucide-react';
+import { Trash2, Search, Eye, MessageSquare, RefreshCw, Send, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function AdminContactMessages() {
