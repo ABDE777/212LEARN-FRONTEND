@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Trophy, Target, BookOpen, TrendingUp, Award, LogOut, User, Lock, Trash2, AlertTriangle, X, Video, Calendar, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trophy, Target, BookOpen, TrendingUp, Award, LogOut, User, Lock, Trash2, AlertTriangle, X, Video, Calendar, ExternalLink, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react';
 import { useStudentDashboardData } from '../hooks/useStudentDashboard';
 import { useAuth } from '../context/AuthContext';
 import { useMeetings } from '../hooks/useMeetings';
@@ -13,7 +13,96 @@ import ProfileEditForm from '../components/ProfileEditForm';
 import ChangePasswordForm from '../components/ChangePasswordForm';
 import SEOHead from '../components/SEOHead';
 import LoadingSpinner from '../components/LoadingSpinner';
+import GroupChatRoom from '../components/GroupChatRoom';
 import { WishlistContent } from './Wishlist';
+
+/* ─── Student Group Chat Tab ────────────────────────────────────── */
+function StudentGroupChatSection() {
+  const [groups, setGroups] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedGroup, setSelectedGroup] = useState(null);
+
+  useEffect(() => {
+    const fetchGroups = async () => {
+      try {
+        const { default: api } = await import('../services/api');
+        const res = await api.get('/groups/mine');
+        const list = res.data?.data?.groups || res.data?.data || [];
+        setGroups(list);
+        if (list.length > 0) setSelectedGroup(list[0]);
+      } catch (err) {
+        console.warn('Error fetching student groups:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchGroups();
+  }, []);
+
+  if (loading) return <div style={{ textAlign: 'center', padding: '3rem' }}><LoadingSpinner /></div>;
+
+  return (
+    <div>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.3rem', color: 'var(--text-color)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <MessageSquare size={22} style={{ color: 'var(--primary)' }} /> Discussion & Espace Groupe Chat
+        </h2>
+        <p style={{ color: 'var(--secondary)', fontSize: '0.92rem' }}>
+          Échangez avec votre Formateur et vos camarades de classe en toute sécurité (Modération IA automatique).
+        </p>
+      </div>
+
+      {groups.length > 0 ? (
+        <>
+          {/* Group Selector Tabs */}
+          <div style={{ display: 'flex', gap: '0.6rem', marginBottom: '1.25rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
+            {groups.map((g) => {
+              const gId = g.groupId || g.id;
+              const isSelected = selectedGroup && (selectedGroup.groupId === gId || selectedGroup.id === gId);
+              return (
+                <button
+                  key={gId}
+                  type="button"
+                  onClick={() => setSelectedGroup(g)}
+                  style={{
+                    padding: '0.55rem 1rem',
+                    borderRadius: '12px',
+                    border: '1.5px solid',
+                    borderColor: isSelected ? 'var(--primary)' : '#cbd5e1',
+                    background: isSelected ? 'rgba(193, 101, 47, 0.08)' : '#ffffff',
+                    color: isSelected ? 'var(--primary)' : 'var(--secondary)',
+                    fontWeight: 600,
+                    fontSize: '0.86rem',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  💬 {g.name || 'Mon Groupe'}
+                </button>
+              );
+            })}
+          </div>
+
+          {selectedGroup && (
+            <GroupChatRoom
+              groupId={selectedGroup.groupId || selectedGroup.id}
+              groupName={selectedGroup.name}
+              formateurName={selectedGroup.formateur ? `${selectedGroup.formateur.firstName} ${selectedGroup.formateur.lastName || ''}` : 'Formateur'}
+            />
+          )}
+        </>
+      ) : (
+        <div style={{ padding: '2.5rem', textAlign: 'center', background: '#f8fafc', borderRadius: '16px', border: '1px dashed #cbd5e1' }}>
+          <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>👥</div>
+          <h3 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-color)' }}>Aucun groupe attribué</h3>
+          <p style={{ margin: 0, color: 'var(--secondary)', fontSize: '0.9rem' }}>
+            Dès que vous serez inscrit à un cours avec un groupe attribué, vous pourrez discuter ici avec votre formateur.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* ─── Student Live Sessions Component ────────────────────────── */
 function StudentLiveSessionsTab({ enrollments = [], currentUser }) {
@@ -238,6 +327,7 @@ export default function StudentDashboard() {
       <Navbar
         extraDockOptions={[
           { label: 'Tableau de bord', Icon: <Trophy size={16} />, onClick: () => setActiveTab('dashboard') },
+          { label: 'Chat Groupe', Icon: <MessageSquare size={16} />, onClick: () => setActiveTab('chat') },
           { label: 'Sessions Live', Icon: <Video size={16} />, onClick: () => setActiveTab('lives') },
           { label: 'Mon Profil', Icon: <User size={16} />, onClick: () => setActiveTab('profile') },
           { label: 'Sécurité', Icon: <Lock size={16} />, onClick: () => setActiveTab('security') },
@@ -263,6 +353,14 @@ export default function StudentDashboard() {
             >
               <Trophy size={18} />
               <span>Tableau de bord</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('chat')}
+              className={`sidebar-menu-btn ${activeTab === 'chat' ? 'active' : ''}`}
+              title="Chat Groupe (IA)"
+            >
+              <MessageSquare size={18} />
+              <span>Chat Groupe (IA)</span>
             </button>
             <button
               onClick={() => setActiveTab('lives')}
@@ -310,6 +408,8 @@ export default function StudentDashboard() {
             <div key="wishlist" className="tab-panel"><WishlistContent embedded={true} /></div>
           ) : activeTab === 'lives' ? (
             <div key="lives" className="tab-panel"><StudentLiveSessionsTab enrollments={enrollments} currentUser={user} /></div>
+          ) : activeTab === 'chat' ? (
+            <div key="chat" className="tab-panel"><StudentGroupChatSection /></div>
           ) : (
             <div key={activeTab} className="tab-panel">
               {/* Welcome Section */}
