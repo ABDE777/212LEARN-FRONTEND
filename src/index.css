@@ -2125,3 +2125,16 @@ pre { overflow-x: auto; }
 @media (min-width: 1600px) {
   .dashboard-main-content > * { max-width: 1600px; margin-left: auto; margin-right: auto; }
 }
+
+/* ============================================================================
+   FLOATING ACTION MENU — mobile navigation
+   On phones the dashboard sidebar is hidden and replaced by a floating action
+   button (bottom-right) that expands into the full list of links.
+   ============================================================================ */
+.fab-mobile-only { display: none; }
+
+@media (max-width: 768px) {
+  .fab-mobile-only { display: block; }
+  .dashboard-sidebar { display: none !important; }
+  .dashboard-main-content { padding: 1rem !important; padding-bottom: 5rem !important; }
+}

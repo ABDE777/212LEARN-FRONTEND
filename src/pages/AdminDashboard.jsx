@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import FloatingActionMenu from '../components/FloatingActionMenu';
 import { Users, BookOpen, Folder, Settings, User, LogOut, FileText, Pencil, Trash2, BarChart3, TrendingUp, DollarSign, ShieldCheck, ShieldAlert, ChevronLeft, ChevronRight, RotateCcw, Lock, Plus, Mail, X, Loader, Wallet, CheckCircle, XCircle, Clock, Activity, Server, Search, Award, Download, Printer, Code, Database, Globe, Video, Building2, Check } from 'lucide-react';
 import { useWafacash } from '../hooks/useWafacash';
 import { useTransfer } from '../hooks/useTransfer';
@@ -4035,6 +4036,26 @@ export default function AdminDashboard() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-color)' }}>
       <Navbar />
+
+      <FloatingActionMenu
+        className="fab-mobile-only"
+        options={[
+          { label: 'Users', Icon: <Users size={16} />, onClick: () => setActiveTab('users') },
+          { label: 'Courses', Icon: <BookOpen size={16} />, onClick: () => setActiveTab('courses') },
+          { label: 'Categories', Icon: <Folder size={16} />, onClick: () => setActiveTab('categories') },
+          { label: 'Groupes', Icon: <Users size={16} />, onClick: () => setActiveTab('groups') },
+          { label: 'Coupons', Icon: <Award size={16} />, onClick: () => setActiveTab('coupons') },
+          { label: 'Sessions', Icon: <Video size={16} />, onClick: () => setActiveTab('meetings') },
+          { label: 'Statistiques', Icon: <BarChart3 size={16} />, onClick: () => setActiveTab('stats') },
+          { label: 'Paiements', Icon: <Wallet size={16} />, onClick: () => setActiveTab('payments') },
+          { label: 'Demandes', Icon: <FileText size={16} />, onClick: () => setActiveTab('update-requests') },
+          { label: "Journal d'audit", Icon: <FileText size={16} />, onClick: () => setActiveTab('audit') },
+          { label: 'Santé système', Icon: <Activity size={16} />, onClick: () => setActiveTab('health') },
+          { label: 'Settings', Icon: <Settings size={16} />, onClick: () => setActiveTab('settings') },
+          { label: 'Mon Profil', Icon: <User size={16} />, onClick: () => setActiveTab('profile') },
+          { label: 'Déconnexion', Icon: <LogOut size={16} />, onClick: () => { logout(); window.location.href = '/login'; } },
+        ]}
+      />
 
       <div className="dashboard-layout">
         <aside className={`dashboard-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
