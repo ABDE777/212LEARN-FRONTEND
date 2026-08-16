@@ -395,24 +395,25 @@ export default function ProfileEditForm() {
         style={{
           background: 'linear-gradient(135deg, var(--primary, #4f46e5) 0%, var(--accent, #818cf8) 100%)',
           borderRadius: '20px',
-          padding: '2.5rem',
+          padding: 'clamp(1.25rem, 4vw, 2.5rem)',
           marginBottom: '2rem',
           color: '#ffffff',
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: 1 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(0.9rem, 3vw, 1.5rem)', flex: '1 1 240px', minWidth: 0 }}>
             <div style={{ position: 'relative' }}>
               {formData.avatar ? (
                 <img
                   src={formData.avatar}
                   alt={`Photo de profil de ${formData.firstName}`}
                   style={{
-                    width: '100px',
-                    height: '100px',
+                    width: 'clamp(72px, 20vw, 100px)',
+                    height: 'clamp(72px, 20vw, 100px)',
                     borderRadius: '50%',
                     objectFit: 'cover',
                     border: '4px solid rgba(255,255,255,0.3)',
+                    flexShrink: 0,
                   }}
                   onError={(e) => {
                     e.currentTarget.src = 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
@@ -421,16 +422,17 @@ export default function ProfileEditForm() {
               ) : (
                 <div
                   style={{
-                    width: '100px',
-                    height: '100px',
+                    width: 'clamp(72px, 20vw, 100px)',
+                    height: 'clamp(72px, 20vw, 100px)',
                     borderRadius: '50%',
                     background: 'rgba(255,255,255,0.2)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '2.5rem',
+                    fontSize: 'clamp(1.8rem, 7vw, 2.5rem)',
                     fontWeight: 700,
                     border: '4px solid rgba(255,255,255,0.3)',
+                    flexShrink: 0,
                   }}
                 >
                   {formData.firstName ? formData.firstName.charAt(0).toUpperCase() : '?'}
@@ -468,14 +470,14 @@ export default function ProfileEditForm() {
                 style={{ display: 'none' }}
               />
             </div>
-            <div>
-              <h1 style={{ fontSize: '2rem', fontWeight: 700, margin: '0 0 0.5rem 0' }}>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <h1 style={{ fontSize: 'clamp(1.4rem, 5vw, 2rem)', fontWeight: 700, margin: '0 0 0.5rem 0', lineHeight: 1.15, overflowWrap: 'anywhere' }}>
                 {formData.firstName} {formData.lastName}
               </h1>
-              <p style={{ margin: 0, opacity: 0.9, fontSize: '1rem' }}>
+              <p style={{ margin: 0, opacity: 0.9, fontSize: 'clamp(0.85rem, 2.6vw, 1rem)' }}>
                 {roleLabel}
               </p>
-              <p style={{ margin: '0.25rem 0 0 0', opacity: 0.8, fontSize: '0.9rem' }}>
+              <p style={{ margin: '0.25rem 0 0 0', opacity: 0.8, fontSize: 'clamp(0.78rem, 2.4vw, 0.9rem)', overflowWrap: 'anywhere', maxWidth: '100%' }}>
                 {user?.email}
               </p>
             </div>
