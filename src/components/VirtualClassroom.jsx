@@ -93,7 +93,7 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
           const appId = pathParts[0];
           scriptSrc = `https://8x8.vc/${appId}/external_api.js`;
         }
-      } catch (_) {}
+      } catch {}
     }
     
     const script = document.createElement('script');
@@ -123,7 +123,7 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
           const url = new URL(meeting.meetingUrl);
           jitsiDomain = url.hostname;
           jitsiRoomName = url.pathname.replace(/^\//, '') || meeting.roomName;
-        } catch (_) {
+        } catch {
           jitsiDomain = 'meet.jit.si';
           jitsiRoomName = meeting.roomName || meeting.meetingUrl.split('/').pop();
         }
@@ -182,7 +182,7 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
         if (!recordingStartedRef.current) {
           recordingStartedRef.current = true;
           setTimeout(() => {
-            try { api.executeCommand('startRecording', { mode: 'file' }); } catch (_) {}
+            try { api.executeCommand('startRecording', { mode: 'file' }); } catch {}
           }, 2500);
         }
       }
@@ -222,7 +222,7 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
 
     return () => {
       clearTimeout(revealTimer);
-      try { api.dispose(); } catch (_) {}
+      try { api.dispose(); } catch {}
       apiRef.current = null;
     };
   }, [apiLoaded, domain, roomName, meeting?.meetingUrl, meeting?.roomName, meeting?.title, displayName, isInstructor, onClose, jwtToken]);
@@ -405,7 +405,7 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
                 if (window.confirm('Êtes-vous sûr de vouloir terminer cette session ? Cela enregistrera la session pour les étudiants.')) {
                   // Explicitly stop recording first so JaaS finalizes the upload,
                   // then end the meeting after a short grace period.
-                  try { apiRef.current?.executeCommand('stopRecording', 'file'); } catch (_) {}
+                  try { apiRef.current?.executeCommand('stopRecording', 'file'); } catch {}
                   setTimeout(() => onEndMeeting?.(meeting.id), 2000);
                 }
               }}

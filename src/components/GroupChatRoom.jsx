@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Image, Video, FileText, Trash2, AlertTriangle, ShieldCheck, RefreshCw, X, Paperclip, Check, Loader, User, Sparkles } from 'lucide-react';
+import { Send, FileText, Trash2, AlertTriangle, ShieldCheck, RefreshCw, X, Paperclip, Loader } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import CloudinaryImageUpload from './CloudinaryImageUpload';

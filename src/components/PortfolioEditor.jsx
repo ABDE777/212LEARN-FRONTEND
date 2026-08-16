@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
-  Award, GraduationCap, Languages as LanguagesIcon, Sparkles, Link2,
-  Globe, Briefcase, Code2, AtSign, Plus, X, Upload, FileText, Loader,
+  Award, GraduationCap, Languages as LanguagesIcon, Sparkles,
+  Plus, X, Upload, FileText, Loader,
 } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { uploadToCloudinary } from '../services/upload';
@@ -14,13 +14,6 @@ const LEVELS = [
   { value: 'native', label: 'Natif' },
 ];
 const LEVEL_LABEL = { basic: 'Basique', intermediate: 'Intermédiaire', fluent: 'Courant', native: 'Natif' };
-
-const SOCIAL = [
-  { key: 'linkedin', label: 'LinkedIn', icon: Briefcase, placeholder: 'https://linkedin.com/in/…' },
-  { key: 'github', label: 'GitHub', icon: Code2, placeholder: 'https://github.com/…' },
-  { key: 'website', label: 'Site web', icon: Globe, placeholder: 'https://…' },
-  { key: 'twitter', label: 'Twitter / X', icon: AtSign, placeholder: 'https://x.com/…' },
-];
 
 const cardStyle = {
   background: 'var(--surface-color, #ffffff)',

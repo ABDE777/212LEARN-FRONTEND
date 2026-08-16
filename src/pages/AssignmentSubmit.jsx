@@ -5,12 +5,10 @@ import { useAssignmentSubmissions } from '../hooks/useProgress';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { useAuth } from '../context/AuthContext';
 
 export default function AssignmentSubmit() {
   const { courseId, assignmentId } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const { submitAssignment, loading: submitting, error: submitError } = useAssignmentSubmissions();
   
   const [assignment, setAssignment] = useState(null);
@@ -20,7 +18,7 @@ export default function AssignmentSubmit() {
   const [filePreview, setFilePreview] = useState(null);
   const [dragActive, setDragActive] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [submissionResult, setSubmissionResult] = useState(null);
+  const [, setSubmissionResult] = useState(null);
 
   useEffect(() => {
     const fetchAssignment = async () => {

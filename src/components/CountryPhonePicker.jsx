@@ -124,7 +124,7 @@ export default function CountryPhonePicker({ selectedCountry, onChange }) {
           });
           setCountries(sorted);
         }
-      } catch (e) {
+      } catch {
         // Fallback to DEFAULT_COUNTRIES silently if API fails or offline
       }
     }

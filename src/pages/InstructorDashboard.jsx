@@ -3,9 +3,9 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import {
   BookOpen, Plus, Video, Users, User, LogOut,
-  Calendar, Clock, Link, ExternalLink, Copy, Check,
-  CheckCircle, ChevronRight, ChevronLeft, Zap, Mail, Search,
-  HelpCircle, Brain, Pencil, Trash2, X, Save, LayoutGrid,
+  Calendar, Check,
+  CheckCircle, ChevronRight, ChevronLeft, Mail, Search,
+  HelpCircle, Brain, Pencil, Trash2, X, Save,
   TrendingUp, TrendingDown, DollarSign, Award, BarChart3, RefreshCw, Tag,
   GraduationCap, Target, Activity, UserPlus, MessageSquare,
 } from 'lucide-react';
@@ -125,236 +125,12 @@ function flattenCategories(categories = [], level = 0) {
   });
 }
 
-const PLATFORMS = [
-  { id: 'zoom',   label: 'Zoom',         color: '#2D8CFF', pattern: 'zoom.us' },
-  { id: 'meet',   label: 'Google Meet',  color: '#34A853', pattern: 'meet.google' },
-  { id: 'teams',  label: 'Teams',        color: '#6264A7', pattern: 'teams.microsoft' },
-  { id: 'custom', label: 'Autre lien',   color: '#C1652F', pattern: '' },
-];
-
-function detectPlatform(url = '') {
-  return PLATFORMS.find(p => p.pattern && url.includes(p.pattern)) || PLATFORMS[3];
-}
 
 function formatDate(iso) {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString('fr-FR', {
     weekday: 'short', day: 'numeric', month: 'long', year: 'numeric',
   });
-}
-
-function formatTime(iso) {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-}
-
-function useCountdown(targetIso) {
-  const [diff, setDiff] = useState(() => new Date(targetIso) - Date.now());
-
-  useEffect(() => {
-    const id = setInterval(() => setDiff(new Date(targetIso) - Date.now()), 1000);
-    return () => clearInterval(id);
-  }, [targetIso]);
-
-  if (diff <= 0) return null;
-  const totalSec = Math.floor(diff / 1000);
-  const d = Math.floor(totalSec / 86400);
-  const h = Math.floor((totalSec % 86400) / 3600);
-  const m = Math.floor((totalSec % 3600) / 60);
-  const s = totalSec % 60;
-  if (d > 0) return `${d}j ${h}h`;
-  if (h > 0) return `${h}h ${m}min`;
-  return `${m}min ${s}s`;
-}
-
-function CopyButton({ text }) {
-  const [copied, setCopied] = useState(false);
-  const handleCopy = () => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
-  return (
-    <button
-      onClick={handleCopy}
-      title="Copier le lien"
-      style={{ background: 'none', border: 'none', cursor: 'pointer', color: copied ? 'var(--success-color)' : 'var(--secondary)', padding: '2px' }}
-    >
-      {copied ? <Check size={14} /> : <Copy size={14} />}
-    </button>
-  );
-}
-
-/* ─── Meeting card ─────────────────────────── */
-function MeetingCard({ meeting, onStart, onEnd, onJoin, onEdit }) {
-  const isPast = meeting.status === 'COMPLETED' || new Date(meeting.meetingDate) < Date.now();
-  const isLive = meeting.status === 'LIVE';
-  const isScheduled = meeting.status === 'SCHEDULED';
-  const countdown = useCountdown(meeting.meetingDate);
-  const isImminent = !isPast && !isLive && countdown && !countdown.includes('j') && !countdown.includes('h');
-  const [actionLoading, setActionLoading] = useState(false);
-
-  const handleStart = async () => {
-    setActionLoading(true);
-    try {
-      await onStart?.(meeting.id);
-      onJoin?.(meeting);
-    } catch (_) {}
-    setActionLoading(false);
-  };
-
-  const handleEnd = async () => {
-    setActionLoading(true);
-    try {
-      await onEnd?.(meeting.id);
-    } catch (_) {}
-    setActionLoading(false);
-  };
-
-  const handleEdit = () => {
-    onEdit?.(meeting);
-  };
-
-  return (
-    <div style={{
-      borderRadius: '16px',
-      overflow: 'hidden',
-      border: `1px solid ${isLive ? '#28a745' : isPast ? 'var(--border-color)' : 'var(--primary)33'}`,
-      background: isLive ? '#f6fff8' : isPast ? '#f9f9f9' : '#fff',
-      opacity: isPast && !meeting.recordingUrl ? 0.75 : 1,
-      transition: 'transform 0.2s, box-shadow 0.2s',
-      boxShadow: isLive ? '0 4px 14px rgba(40,167,69,0.18)' : isPast ? 'none' : 'var(--shadow-sm)',
-    }}
-      onMouseEnter={e => !isPast && (e.currentTarget.style.transform = 'translateY(-3px)', e.currentTarget.style.boxShadow = 'var(--shadow-md)')}
-      onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)', e.currentTarget.style.boxShadow = isLive ? '0 4px 14px rgba(40,167,69,0.18)' : isPast ? 'none' : 'var(--shadow-sm)')}
-    >
-      {/* Colored top bar */}
-      <div style={{ height: '4px', background: isLive ? '#28a745' : isPast ? 'var(--border-color)' : 'var(--primary)' }} />
-
-      <div style={{ padding: '1.25rem' }}>
-        {/* Platform badge + status */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-            padding: '0.2rem 0.6rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 700,
-            background: isLive ? 'rgba(40,167,69,0.15)' : isPast ? '#eee' : 'rgba(193,101,47,0.18)',
-            color: isLive ? '#28a745' : isPast ? '#999' : 'var(--primary)',
-          }}>
-            <Video size={11} />
-            Classe Virtuelle 212Learn
-          </span>
-
-          {isLive ? (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem', fontWeight: 700, color: '#28a745' }}>
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#28a745', animation: 'pulse 1s infinite' }} />
-              EN DIRECT
-            </span>
-          ) : isPast ? (
-            <span style={{ fontSize: '0.75rem', color: 'var(--secondary)', fontStyle: 'italic' }}>Terminée</span>
-          ) : isImminent ? (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem', fontWeight: 700, color: '#e74c3c' }}>
-              <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#e74c3c', animation: 'pulse 1s infinite' }} />
-              BIENTÔT
-            </span>
-          ) : countdown ? (
-            <span style={{ fontSize: '0.78rem', color: 'var(--secondary)', fontWeight: 600 }}>
-              dans {countdown}
-            </span>
-          ) : null}
-        </div>
-
-        {/* Title */}
-        <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-color)', marginBottom: '0.6rem', lineHeight: 1.3 }}>
-          {meeting.title}
-        </h3>
-
-        {/* Date / time */}
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.85rem', flexWrap: 'wrap' }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.82rem', color: 'var(--secondary)' }}>
-            <Calendar size={13} /> {formatDate(meeting.meetingDate)}
-          </span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.82rem', color: 'var(--secondary)' }}>
-            <Clock size={13} /> {formatTime(meeting.meetingDate)}
-          </span>
-        </div>
-
-        {/* Actions */}
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          {isLive ? (
-            <>
-              <button
-                type="button"
-                onClick={() => onJoin?.(meeting)}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                  padding: '0.45rem 1rem', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600,
-                  background: '#28a745', color: '#fff', border: 'none', cursor: 'pointer',
-                }}
-              >
-                <Video size={14} /> Rejoindre la salle
-              </button>
-              <button
-                type="button"
-                onClick={handleEnd}
-                disabled={actionLoading}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                  padding: '0.45rem 0.85rem', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600,
-                  background: 'rgba(220,53,69,0.1)', color: '#dc3545', border: '1px solid rgba(220,53,69,0.2)', cursor: 'pointer',
-                }}
-              >
-                Terminer la classe
-              </button>
-            </>
-          ) : isScheduled ? (
-            <>
-              <button
-                type="button"
-                onClick={handleStart}
-                disabled={actionLoading}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                  padding: '0.45rem 1rem', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600,
-                  background: 'var(--primary)', color: '#fff', border: 'none', cursor: 'pointer',
-                }}
-              >
-                <Zap size={14} /> Démarrer la classe
-              </button>
-              <button
-                type="button"
-                onClick={handleEdit}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                  padding: '0.45rem 0.85rem', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600,
-                  background: 'rgba(193,101,47,0.1)', color: '#C1652F', border: '1px solid rgba(193,101,47,0.2)', cursor: 'pointer',
-                }}
-              >
-                <Pencil size={14} /> Modifier
-              </button>
-            </>
-          ) : meeting.recordingUrl ? (
-            <a
-              href={meeting.recordingUrl}
-              target="_blank"
-              rel="noreferrer"
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                padding: '0.45rem 1rem', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600,
-                background: 'var(--secondary)', color: '#fff', textDecoration: 'none',
-              }}
-            >
-              <Video size={14} /> Voir le replay
-            </a>
-          ) : (
-            <span style={{ fontSize: '0.8rem', color: 'var(--secondary)', fontStyle: 'italic' }}>
-              Session terminée
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
-  );
 }
 
 /* ─── Edit meeting form ─────────────────────── */
@@ -367,7 +143,6 @@ function EditMeetingForm({ meeting, onSave, onCancel }) {
 
   // minimum datetime = now + 5 min
   const minDate = new Date(Date.now() + 5 * 60 * 1000).toISOString().slice(0, 10);
-  const minTime = new Date(Date.now() + 5 * 60 * 1000).toISOString().slice(11, 16);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -482,7 +257,6 @@ function ScheduleForm({ courses, initialCourseId, onScheduled }) {
 
   // minimum datetime = now + 5 min
   const minDate = new Date(Date.now() + 5 * 60 * 1000).toISOString().slice(0, 10);
-  const minTime = new Date(Date.now() + 5 * 60 * 1000).toISOString().slice(11, 16);
 
   const reset = () => {
     setStep(hasInitial ? 2 : 1); setCourseId(hasInitial ? initialCourseId : '');
@@ -715,7 +489,6 @@ function MeetingsTab({ courses }) {
   const { meetings, loading, error, fetchMeetings, startMeeting, endMeeting, updateMeeting, deleteMeeting } = useMeetings(activeCourseId);
   const [activeVirtualMeeting, setActiveVirtualMeeting] = useState(null);
   const [editingMeeting, setEditingMeeting] = useState(null);
-  const { user } = useAuth();
 
   useEffect(() => {
     if (activeCourseId) fetchMeetings();
@@ -1150,7 +923,7 @@ function QuizzesTab({ courses }) {
       setSelectedLessonId('');
       setQuizMsg({ type: 'success', text: 'Quiz créé avec succès.' });
       await refreshQuizzes();
-    } catch (_) {}
+    } catch {}
   };
 
   const handleAiGenerate = async (e) => {
@@ -1164,7 +937,7 @@ function QuizzesTab({ courses }) {
       setAiLessonId('');
       setQuizMsg({ type: 'success', text: 'Quiz généré avec succès.' });
       await refreshQuizzes();
-    } catch (_) {}
+    } catch {}
   };
 
   const handleAddQuestion = async (e) => {
@@ -1180,7 +953,7 @@ function QuizzesTab({ courses }) {
       setQuestionOptions(['', '', '', '']);
       setQuestionCorrect('');
       setQuizMsg({ type: 'success', text: 'Question ajoutée avec succès.' });
-    } catch (_) {}
+    } catch {}
   };
 
   const handleOptionChange = (idx, val) => {
@@ -1197,7 +970,7 @@ function QuizzesTab({ courses }) {
       setQuizMsg({ type: 'success', text: `Statut du quiz défini sur "${status}".` });
       await refreshQuizzes();
       if (viewingQuizId === quizId) await refreshQuiz();
-    } catch (_) {}
+    } catch {}
   };
 
   const startEditQuiz = (quiz) => {
@@ -1214,7 +987,7 @@ function QuizzesTab({ courses }) {
       setQuizMsg({ type: 'success', text: 'Titre du quiz mis à jour.' });
       await refreshQuizzes();
       if (viewingQuizId === editingQuizId) await refreshQuiz();
-    } catch (_) {}
+    } catch {}
   };
 
   const handleDeleteQuiz = async (quiz) => {
@@ -1225,7 +998,7 @@ function QuizzesTab({ courses }) {
       if (viewingQuizId === quiz.id) setViewingQuizId(null);
       setQuizMsg({ type: 'success', text: 'Quiz supprimé avec succès.' });
       await refreshQuizzes();
-    } catch (_) {}
+    } catch {}
   };
 
   const startEditQuestion = (q) => {
@@ -1256,7 +1029,7 @@ function QuizzesTab({ courses }) {
       setEditingQuestionId(null);
       setQuizMsg({ type: 'success', text: 'Question mise à jour avec succès.' });
       await refreshQuiz();
-    } catch (_) {}
+    } catch {}
   };
 
   const handleDeleteQuestion = async (question) => {
@@ -1266,7 +1039,7 @@ function QuizzesTab({ courses }) {
       await deleteQuestion(question.id);
       setQuizMsg({ type: 'success', text: 'Question supprimée avec succès.' });
       await refreshQuiz();
-    } catch (_) {}
+    } catch {}
   };
 
   return (
@@ -2096,7 +1869,7 @@ export default function InstructorDashboard() {
   };
   const { courses, loading, error } = useInstructorCourses();
   const { createCourse, loading: createLoading, error: createError } = useCreateCourse();
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const { revenueData, studentsData, completionData, loading: analyticsLoading, error: analyticsError, refetch: refetchAnalytics } = useInstructorAnalytics();
 
   const [createCourseDrawerOpen, setCreateCourseDrawerOpen] = useState(false);
@@ -2105,7 +1878,7 @@ export default function InstructorDashboard() {
   const [newCourseCategoryId, setNewCourseCategoryId] = useState('');
   const [newCoursePrice, setNewCoursePrice] = useState('');
   const [newCourseLevel, setNewCourseLevel] = useState('');
-  const [newCourseThumbnailFile, setNewCourseThumbnailFile] = useState(null);
+  const [, setNewCourseThumbnailFile] = useState(null);
   const [newCourseThumbnailUrl, setNewCourseThumbnailUrl] = useState('');
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
   const [categories, setCategories] = useState([]);
@@ -2149,7 +1922,7 @@ export default function InstructorDashboard() {
         mimetype: file.type,
       });
 
-      const { uploadUrl, formFields, cloudName } = signResponse.data.data;
+      const { uploadUrl, formFields } = signResponse.data.data;
 
       // Upload directly to Cloudinary
       const formData = new FormData();

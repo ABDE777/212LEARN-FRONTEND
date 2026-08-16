@@ -57,7 +57,7 @@ export async function uploadLessonResource({ lessonId, file, onProgress }) {
         try {
           const body = JSON.parse(xhr.response);
           if (body?.error?.message) msg = body.error.message;
-        } catch (_) {
+        } catch {
           /* ignore non-JSON body */
         }
         reject(new Error(msg));

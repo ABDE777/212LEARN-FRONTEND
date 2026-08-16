@@ -15,7 +15,7 @@ const NAV_LINKS = [
   { to: '/contact', label: 'Contact' },
 ];
 
-function Navbar({ extraDockOptions = [] }) {
+function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -75,8 +75,6 @@ function Navbar({ extraDockOptions = [] }) {
     || user?.email?.[0]
     || 'U'
   ).toUpperCase();
-  const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
-  const isInstructor = user?.role?.toUpperCase() === 'INSTRUCTOR';
   const isStudent = user?.role?.toUpperCase() === 'STUDENT';
 
   const handleDockActionClick = (tabKey) => {

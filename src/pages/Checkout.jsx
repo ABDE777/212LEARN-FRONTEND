@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { Lock, CheckCircle, Wallet, Upload, AlertCircle, Tag, Building2 } from 'lucide-react';
+import { CheckCircle, Wallet, Upload, Tag, Building2 } from 'lucide-react';
 import { useCourse } from '../hooks/useCourses';
 import { useWafacash } from '../hooks/useWafacash';
 import { useTransfer } from '../hooks/useTransfer';
@@ -11,7 +11,6 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { useAuth } from '../context/AuthContext';
 import { useCartContext } from '../context/CartContext';
 import Navbar from '../components/Navbar';
-import SEOHead from '../components/SEOHead';
 import api from '../services/api';
 
 export default function Checkout() {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Upload, X, Check, AlertCircle, Image as ImageIcon, File, Video } from 'lucide-react';
+import { Upload, X, AlertCircle, Image as ImageIcon, File, Video } from 'lucide-react';
 import { useCloudinaryUpload } from '../hooks/useCloudinaryUpload';
 
 export default function CloudinaryDirectUpload({ onUploadSuccess, accept = 'image/*', maxSize = 10 }) {

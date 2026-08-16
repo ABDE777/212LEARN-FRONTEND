@@ -28,13 +28,6 @@ function resourceIcon(type = '') {
   return RESOURCE_ICONS[type.toLowerCase()] || <FileIcon size={15} color="var(--secondary)" />;
 }
 
-function formatBytes(bytes) {
-  if (!bytes) return '';
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / 1048576).toFixed(1)} MB`;
-}
-
 function Alert({ type = 'error', children, onClose }) {
   const colors = {
     error: { bg: '#f8d7da', border: '#f5c6cb', text: '#721c24' },
@@ -192,7 +185,7 @@ function ResourcePanel({ lesson, addResource, deleteResource }) {
     setError(null);
     try {
       await deleteResource(resourceId);
-    } catch (err) {
+    } catch {
       setError('Impossible de supprimer la ressource.');
     }
   };
@@ -970,7 +963,7 @@ export default function InstructorCourseManage() {
     level: '',
     thumbnail: '',
   });
-  const [updateThumbnailFile, setUpdateThumbnailFile] = useState(null);
+  const [, setUpdateThumbnailFile] = useState(null);
   const [uploadingUpdateThumbnail, setUploadingUpdateThumbnail] = useState(false);
   const [submittingUpdate, setSubmittingUpdate] = useState(false);
   const [updateError, setUpdateError] = useState('');
@@ -1030,7 +1023,7 @@ export default function InstructorCourseManage() {
         mimetype: file.type,
       });
 
-      const { uploadUrl, formFields, cloudName } = signResponse.data.data;
+      const { uploadUrl, formFields } = signResponse.data.data;
 
       const formData = new FormData();
       formData.append('file', file);

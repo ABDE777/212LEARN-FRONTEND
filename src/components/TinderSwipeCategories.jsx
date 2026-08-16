@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { BookOpen, ChevronLeft, ChevronRight, Sparkles, ArrowRight, Code, Database, Globe, Video, Users } from 'lucide-react';
 
-export default function TinderSwipeCategories({ categories = [], onSelectCategory, getIcon }) {
+export default function TinderSwipeCategories({ categories = [], onSelectCategory }) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [slideDirection, setSlideDirection] = useState('');
+  const [, setSlideDirection] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [dragX, setDragX] = useState(0);
   const [startX, setStartX] = useState(0);
@@ -193,7 +193,6 @@ export default function TinderSwipeCategories({ categories = [], onSelectCategor
           borderRadius: '1.5rem',
           border: '1px solid #FDE68A',
           boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-          transform: 'scale(0.95) translateY(16px)',
           zIndex: -1,
           opacity: 0.6,
           display: 'flex',

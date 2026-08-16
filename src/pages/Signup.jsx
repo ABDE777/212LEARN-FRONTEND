@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import logoImg from '../assets/navbarlogo.png';
-import { ArrowLeft, GraduationCap, User, Eye, EyeOff, ChevronLeft, ChevronRight, CheckCircle, Loader, Check, X, ShieldCheck, Sparkles, Trophy, Video, Lock } from 'lucide-react';
+import { ArrowLeft, User, Eye, EyeOff, ChevronLeft, ChevronRight, CheckCircle, Loader, Check, X, Trophy, Video, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import CountryPhonePicker, { DEFAULT_COUNTRIES } from '../components/CountryPhonePicker';
@@ -493,7 +493,7 @@ export default function Signup() {
     hasUpper: /[A-Z]/.test(pwd),
     hasLower: /[a-z]/.test(pwd),
     hasNumber: /[0-9]/.test(pwd),
-    hasSpecial: /[!@#$%^&*(),.?":{}|<>_\-]/.test(pwd),
+    hasSpecial: /[!@#$%^&*(),.?":{}|<>_-]/.test(pwd),
   };
 
   const pwdPassedCount = Object.values(pwdRules).filter(Boolean).length;

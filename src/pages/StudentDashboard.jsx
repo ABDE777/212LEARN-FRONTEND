@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Trophy, Target, BookOpen, TrendingUp, Award, LogOut, User, Lock, Trash2, AlertTriangle, X, Video, Calendar, ExternalLink, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react';
+import { Trophy, Target, BookOpen, TrendingUp, Award, LogOut, User, Lock, Video, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react';
 import { useStudentDashboardData } from '../hooks/useStudentDashboard';
 import { useAuth } from '../context/AuthContext';
 import { useMeetings } from '../hooks/useMeetings';
@@ -255,7 +255,7 @@ export default function StudentDashboard() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, logout } = useAuth();
-  const { profile, achievements, badges, enrollments, loading, error } = useStudentDashboardData(user?.id);
+  const { achievements, badges, enrollments, loading } = useStudentDashboardData(user?.id);
 
   const [activeTab, setActiveTabState] = useState(() => {
     const tabFromUrl = searchParams.get('tab');
@@ -274,31 +274,6 @@ export default function StudentDashboard() {
   const handleLogout = () => {
     logout();
     navigate('/login');
-  };
-
-  // ── Delete own account ────────────────────────────────────────────────────
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleteConfirmText, setDeleteConfirmText] = useState('');
-  const [deleteLoading, setDeleteLoading] = useState(false);
-  const [deleteError, setDeleteError] = useState(null);
-
-  const handleDeleteAccount = async () => {
-    if (deleteConfirmText !== 'SUPPRIMER') return;
-    setDeleteLoading(true);
-    setDeleteError(null);
-    try {
-      const { default: api } = await import('../services/api');
-      await api.delete('/users/me');
-      logout();
-      navigate('/login');
-    } catch (err) {
-      setDeleteError(
-        err.response?.data?.error?.message ||
-        err.response?.data?.message ||
-        'Impossible de supprimer le compte. Veuillez réessayer.'
-      );
-      setDeleteLoading(false);
-    }
   };
 
   const handleContinueCourse = (courseId, lessonId) => {

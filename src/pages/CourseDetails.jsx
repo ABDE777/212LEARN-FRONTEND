@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Clock, Users, Star, BookOpen, PlayCircle, CheckCircle, Heart, ShoppingCart } from 'lucide-react';
+import { Clock, Users, Star, BookOpen, PlayCircle, Heart, ShoppingCart } from 'lucide-react';
 import { useCourse, useCourseCurriculum } from '../hooks/useCourses';
 import { useCart } from '../hooks/useCart';
 import { useWishlist } from '../hooks/useWishlist';

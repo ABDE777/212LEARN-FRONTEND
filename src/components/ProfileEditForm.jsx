@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { User, Mail, FileText, Save, UploadCloud, Camera, Trash2, CheckCircle2, AlertCircle, Edit2, X, Phone, GraduationCap, Briefcase, Building, Calendar, BookOpen, Code2, Globe, AtSign, Link2 } from 'lucide-react';
+import { User, Save, Camera, AlertCircle, Edit2, X, GraduationCap, Briefcase, BookOpen, Code2, Globe, AtSign, Link2 } from 'lucide-react';
 
 // Social links shown in the profile header (top-right). Keys match socialLinks.
 const HEADER_SOCIAL = [
@@ -107,8 +107,7 @@ export default function ProfileEditForm() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [isDragOver, setIsDragOver] = useState(false);
+  const [, setUploadProgress] = useState(0);
   const fileInputRef = useRef(null);
 
   const validateField = (name, value) => {
@@ -246,13 +245,6 @@ export default function ProfileEditForm() {
       setUploadProgress(0);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) handleFileUpload(file);
   };
 
   const handleSubmit = async (e) => {
