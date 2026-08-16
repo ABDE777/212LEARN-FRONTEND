@@ -4,7 +4,6 @@ import { User, LogOut, ChevronDown, ShoppingCart, Heart, Menu, X, LayoutDashboar
 import { useAuth } from '../context/AuthContext';
 import { useCartContext } from '../context/CartContext';
 import { useWishlistContext } from '../context/WishlistContext';
-import MobileBottomNav from './MobileBottomNav';
 
 function NavIconButton({ to, onClick, icon, count, label }) {
   const [hovered, setHovered] = useState(false);
@@ -610,9 +609,6 @@ function Navbar() {
           .nav-mobile-menu { display: none !important; }
         }
       `}</style>
-
-      {/* Native-app-style bottom tab bar (mobile only, CSS-gated) */}
-      <MobileBottomNav />
     </>
   );
 }
