@@ -60,9 +60,35 @@ api.interceptors.response.use(
     return response;
   },
   async error => {
-    if (error.response && error.response.status === 401) {
+    const status = error.response?.status;
+    const url = error.config?.url || '';
+    // Auth endpoints legitimately return 401 (wrong password, expired reset
+    // link…) — those belong to the calling form, don't force a logout/redirect.
+    const isAuthEndpoint = /\/auth\/(login|register|forgot-password|reset-password|verify-email|restore-account)/.test(url);
+
+    if (status === 401 && !isAuthEndpoint) {
       window.__AUTH_TOKEN__ = null;
       localStorage.removeItem('token');
+
+      // Single-session: the account was used elsewhere. Tell the user why.
+      const code = error.response?.data?.error?.code;
+      try {
+        sessionStorage.setItem(
+          'auth_notice',
+          code === 'SESSION_REPLACED'
+            ? 'Vous avez été déconnecté car votre compte a été utilisé sur un autre appareil.'
+            : 'Votre session a expiré. Veuillez vous reconnecter.'
+        );
+      } catch { /* ignore storage failure */ }
+
+      // Keep the UI honest: leave the half-logged-in state and go to login,
+      // unless we're already on a public auth page (avoids redirect loops).
+      const path = window.location.pathname;
+      const onAuthPage = ['/login', '/signup', '/forgot-password'].some((p) => path.startsWith(p))
+        || path.startsWith('/reset-password') || path.startsWith('/verify-email');
+      if (!onAuthPage) {
+        window.location.assign('/login');
+      }
     }
     return Promise.reject(error);
   }

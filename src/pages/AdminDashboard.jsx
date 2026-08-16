@@ -3062,7 +3062,6 @@ export default function AdminDashboard() {
     error: usersError,
     refreshUsers,
     verifyInstructor,
-    verifyStudent,
     restoreUser,
     createUser,
     updateUser,
@@ -3242,6 +3241,9 @@ export default function AdminDashboard() {
   const [groupStudentsLoading, setGroupStudentsLoading] = useState(false);
   // The course's PAID students — the pool eligible to be assigned to the group.
   const [groupCoursePaidStudents, setGroupCoursePaidStudents] = useState([]);
+  // Bulk selection: ids of students checked in the picker, + in-flight flag.
+  const [selectedGroupStudentIds, setSelectedGroupStudentIds] = useState([]);
+  const [bulkAdding, setBulkAdding] = useState(false);
 
   const [showCouponForm, setShowCouponForm] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState(null);
@@ -3332,15 +3334,46 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleAddStudentToGroup = async (groupId, userId) => {
-    try {
-      await addStudentToGroup(groupId, userId);
-      setUserActionMsg({ type: 'success', text: 'Étudiant ajouté au groupe avec succès.' });
-      await refetchGroups();
-    } catch (err) {
-      const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Impossible d\'ajouter l\'étudiant au groupe.';
-      setUserActionMsg({ type: 'error', text: msg });
+  const toggleGroupStudent = (userId) => {
+    setSelectedGroupStudentIds((prev) =>
+      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
+    );
+  };
+
+  // Add every checked student to the group. Uses the single-add endpoint per
+  // student so per-student rejections (e.g. already in another group for this
+  // course) are surfaced individually rather than failing the whole batch.
+  const handleAddSelectedToGroup = async (groupId) => {
+    const ids = [...selectedGroupStudentIds];
+    if (ids.length === 0) return;
+    setBulkAdding(true);
+    setUserActionMsg(null);
+    let added = 0;
+    const failures = [];
+    for (const userId of ids) {
+      try {
+        await addStudentToGroup(groupId, userId);
+        added += 1;
+      } catch (err) {
+        const name = getAvailableStudentsForGroup().find((s) => s.id === userId);
+        failures.push(`${name ? `${name.firstName} ${name.lastName}` : userId}: ${err.response?.data?.error?.message || err.response?.data?.message || 'échec'}`);
+      }
     }
+    setSelectedGroupStudentIds([]);
+    await refetchGroups();
+    // Refresh the open picker's membership so added students leave the pool.
+    if (selectedGroupForStudents?.id === groupId) {
+      try {
+        const response = await api.get(`/groups/${groupId}`);
+        setSelectedGroupForStudents(response.data?.data?.group || response.data?.group || selectedGroupForStudents);
+      } catch { /* keep current view */ }
+    }
+    setUserActionMsg(
+      failures.length === 0
+        ? { type: 'success', text: `${added} étudiant(s) ajouté(s) au groupe.` }
+        : { type: added ? 'success' : 'error', text: `${added} ajouté(s). Échecs — ${failures.join(' ; ')}` }
+    );
+    setBulkAdding(false);
   };
 
   const handleRemoveStudentFromGroup = async (groupId, userId) => {
@@ -3357,6 +3390,7 @@ export default function AdminDashboard() {
   const handleManageGroupStudents = async (group) => {
     setSelectedGroupForStudents(group);
     setGroupCoursePaidStudents([]);
+    setSelectedGroupStudentIds([]);
     setGroupStudentsLoading(true);
     try {
       const response = await api.get(`/groups/${group.id}`);
@@ -3516,22 +3550,23 @@ export default function AdminDashboard() {
     setUserActionLoading(userId);
     setUserActionMsg(null);
     try {
-      const effectiveRole = (role || '').toLowerCase() || (userSubTab === 'kyc' ? 'instructor' : 'student');
-      if (effectiveRole === 'instructor') {
-        await verifyInstructor(userId, isVerified);
-      } else {
-        await verifyStudent(userId, isVerified);
+      const effectiveRole = (role || '').toLowerCase() || 'instructor';
+      // Students self-verify by email; admins only verify instructors (KYC).
+      if (effectiveRole !== 'instructor') {
+        setUserActionMsg({ type: 'error', text: 'Les étudiants confirment leur email eux-mêmes — aucune action admin requise.' });
+        return;
       }
+      await verifyInstructor(userId, isVerified);
       await refreshUsers();
       await refreshPendingKyc();
-      setUserActionMsg({ type: 'success', text: isVerified ? 'Utilisateur vérifié avec succès.' : 'Vérification retirée.' });
+      setUserActionMsg({ type: 'success', text: isVerified ? 'Instructeur vérifié avec succès.' : 'Vérification retirée.' });
     } catch (err) {
       const status = err.response?.status;
       const msg = err.response?.data?.error?.message || err.response?.data?.message;
       if (status === 404) {
-        setUserActionMsg({ type: 'error', text: 'Endpoint de vérification non disponible. Vérifiez que le backend implémente les routes PATCH /admin/users/:id/verify et PATCH /admin/users/:id/verify-student.' });
+        setUserActionMsg({ type: 'error', text: 'Endpoint de vérification non disponible. Vérifiez que le backend implémente PATCH /admin/users/:id/verify.' });
       } else {
-        setUserActionMsg({ type: 'error', text: msg || 'Impossible de vérifier cet utilisateur.' });
+        setUserActionMsg({ type: 'error', text: msg || 'Impossible de vérifier cet instructeur.' });
       }
     } finally {
       setUserActionLoading(null);
@@ -4386,7 +4421,7 @@ export default function AdminDashboard() {
                                 ) : null}
                                 <td style={{ padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-color)', textAlign: 'right' }}>
                                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                                    {(userSubTab === 'unverified' || userSubTab === 'kyc') && (
+                                    {(userSubTab === 'unverified' || userSubTab === 'kyc') && listedUser.role === 'instructor' && (
                                       <button
                                         onClick={() => handleVerifyUser(listedUser.id, listedUser.role, true)}
                                         disabled={userActionLoading === listedUser.id}
@@ -4420,7 +4455,7 @@ export default function AdminDashboard() {
                                     )}
                                     {userSubTab === 'active' && (
                                       <>
-                                        {(listedUser.role === 'instructor' || listedUser.role === 'student') && (
+                                        {listedUser.role === 'instructor' && (
                                           <button
                                             onClick={() => handleVerifyUser(listedUser.id, listedUser.role, !listedUser.isVerified)}
                                             disabled={userActionLoading === listedUser.id}
@@ -5883,51 +5918,62 @@ export default function AdminDashboard() {
                         </span>
                       )}
                     </label>
-                    <select
-                      id="add-student-select"
-                      style={{
-                        width: '100%',
-                        padding: '0.6rem 0.8rem',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '8px',
-                        fontSize: '0.9rem',
-                        marginBottom: '0.5rem',
-                      }}
-                    >
-                      <option value="">Sélectionner un étudiant</option>
-                      {getAvailableStudentsForGroup().map((user) => (
-                        <option key={user.id} value={user.id}>
-                          {user.firstName} {user.lastName} ({user.email})
-                        </option>
-                      ))}
-                    </select>
-                    {selectedGroupForStudents.course && getAvailableStudentsForGroup().length === 0 && (
-                      <p style={{ fontSize: '0.8rem', color: 'var(--secondary)', marginTop: '0.5rem' }}>
-                        Aucun étudiant inscrit à ce cours disponible
-                      </p>
-                    )}
-                    <button
-                      onClick={() => {
-                        const select = document.getElementById('add-student-select');
-                        const userId = select?.value;
-                        if (userId) {
-                          handleAddStudentToGroup(selectedGroupForStudents.id, userId);
-                          select.value = '';
-                        }
-                      }}
-                      style={{
-                        padding: '0.5rem 1rem',
-                        border: 'none',
-                        borderRadius: '6px',
-                        background: 'var(--primary)',
-                        color: '#fff',
-                        cursor: 'pointer',
-                        fontWeight: 600,
-                        fontSize: '0.85rem',
-                      }}
-                    >
-                      Ajouter
-                    </button>
+                    {(() => {
+                      const available = getAvailableStudentsForGroup();
+                      const allChecked = available.length > 0 && selectedGroupStudentIds.length === available.length;
+                      return (
+                        <>
+                          {available.length === 0 ? (
+                            <p style={{ fontSize: '0.8rem', color: 'var(--secondary)', marginTop: '0.25rem' }}>
+                              {selectedGroupForStudents.course ? 'Aucun étudiant inscrit à ce cours disponible' : 'Aucun étudiant disponible'}
+                            </p>
+                          ) : (
+                            <>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.82rem', fontWeight: 600, color: 'var(--secondary)', cursor: 'pointer' }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={allChecked}
+                                    onChange={(e) => setSelectedGroupStudentIds(e.target.checked ? available.map((s) => s.id) : [])}
+                                  />
+                                  Tout sélectionner
+                                </label>
+                                <span style={{ fontSize: '0.78rem', color: 'var(--secondary)' }}>
+                                  {selectedGroupStudentIds.length}/{available.length} sélectionné(s)
+                                </span>
+                              </div>
+                              <div style={{ maxHeight: 220, overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: 8, padding: '0.35rem', marginBottom: '0.6rem' }}>
+                                {available.map((user) => (
+                                  <label key={user.id} style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', padding: '0.4rem 0.5rem', borderRadius: 6, cursor: 'pointer', fontSize: '0.88rem' }}>
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedGroupStudentIds.includes(user.id)}
+                                      onChange={() => toggleGroupStudent(user.id)}
+                                    />
+                                    <span style={{ color: 'var(--text-color)' }}>
+                                      {user.firstName} {user.lastName}
+                                      <span style={{ color: 'var(--secondary)', marginLeft: '0.4rem', fontSize: '0.8rem' }}>({user.email})</span>
+                                    </span>
+                                  </label>
+                                ))}
+                              </div>
+                              <button
+                                onClick={() => handleAddSelectedToGroup(selectedGroupForStudents.id)}
+                                disabled={bulkAdding || selectedGroupStudentIds.length === 0}
+                                style={{
+                                  padding: '0.5rem 1rem', border: 'none', borderRadius: '6px',
+                                  background: selectedGroupStudentIds.length === 0 || bulkAdding ? 'var(--border-color)' : 'var(--primary)',
+                                  color: '#fff', cursor: selectedGroupStudentIds.length === 0 || bulkAdding ? 'not-allowed' : 'pointer',
+                                  fontWeight: 600, fontSize: '0.85rem',
+                                }}
+                              >
+                                {bulkAdding ? 'Ajout…' : `Ajouter la sélection${selectedGroupStudentIds.length ? ` (${selectedGroupStudentIds.length})` : ''}`}
+                              </button>
+                            </>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
 
                   <div>

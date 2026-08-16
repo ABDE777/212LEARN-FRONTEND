@@ -94,9 +94,9 @@ export default function Signup() {
     return '/student/dashboard'; // Both student and employee go to student dashboard
   };
 
-  const validateStep1 = () => {
+  // ── Pure error computations (no state writes) so we can re-check live ──────
+  const computeStep1Errors = () => {
     const errors = {};
-    
     if (!formData.firstName.trim()) {
       errors.firstName = 'Le prénom est requis.';
     }
@@ -121,18 +121,21 @@ export default function Signup() {
     } else if (formData.password !== formData.confirmPassword) {
       errors.confirmPassword = 'Les mots de passe ne correspondent pas.';
     }
+    return errors;
+  };
 
+  const validateStep1 = () => {
+    const errors = computeStep1Errors();
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
-  const validateStep3A = () => {
+  const computeStep3AErrors = () => {
     const errors = {};
-    
+
     if (!formData.learnerSituation) {
       errors.learnerSituation = 'Veuillez sélectionner votre situation.';
-      setValidationErrors(errors);
-      return false;
+      return errors;
     }
 
     // Student-specific validation
@@ -192,17 +195,21 @@ export default function Signup() {
       }
     }
 
+    return errors;
+  };
+
+  const validateStep3A = () => {
+    const errors = computeStep3AErrors();
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
-  const validateStep3B = () => {
+  const computeStep3BErrors = () => {
     const errors = {};
-    
+
     if (!formData.instructorSituation) {
       errors.instructorSituation = 'Veuillez sélectionner votre situation professionnelle.';
-      setValidationErrors(errors);
-      return false;
+      return errors;
     }
 
     if (!formData.expertiseDomain.trim()) {
@@ -234,9 +241,34 @@ export default function Signup() {
       }
     }
 
+    return errors;
+  };
+
+  const validateStep3B = () => {
+    const errors = computeStep3BErrors();
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
+
+  // Live feedback: once a step's errors are shown, drop each one as soon as the
+  // user fixes that field — so validation reacts within every step, not only
+  // when Continue is pressed. Never surfaces *new* errors before Continue.
+  useEffect(() => {
+    setValidationErrors((prev) => {
+      const shownKeys = Object.keys(prev);
+      if (shownKeys.length === 0) return prev;
+      const fresh = step === 1 ? computeStep1Errors()
+        : step === 3 && formData.role === 'learner' ? computeStep3AErrors()
+        : step === 3 && formData.role === 'instructor' ? computeStep3BErrors()
+        : {};
+      const next = {};
+      for (const k of shownKeys) {
+        if (fresh[k]) next[k] = fresh[k];
+      }
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData, step]);
 
   const handleContinue = () => {
     setError(null);
