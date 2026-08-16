@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { Users, BookOpen, Folder, Settings, User, LogOut, FileText, Pencil, Trash2, BarChart3, TrendingUp, DollarSign, ShieldCheck, ShieldAlert, ChevronLeft, ChevronRight, RotateCcw, Lock, Plus, Mail, X, Loader, Wallet, CheckCircle, XCircle, Clock, Activity, Server, Search, Award, Download, Printer, Code, Database, Globe, Video, Building2, Check } from 'lucide-react';
+import { Users, BookOpen, Folder, Settings, User, LogOut, FileText, Pencil, Trash2, BarChart3, TrendingUp, DollarSign, ShieldCheck, ShieldAlert, ChevronLeft, ChevronRight, RotateCcw, Lock, Plus, Mail, X, Loader, Wallet, CheckCircle, XCircle, Clock, Activity, Server, Search, Award, Download, Printer, Code, Database, Globe, Video, Building2, Check, Menu } from 'lucide-react';
 import { useWafacash } from '../hooks/useWafacash';
 import { useTransfer } from '../hooks/useTransfer';
 import {
@@ -4037,7 +4037,16 @@ export default function AdminDashboard() {
       <Navbar />
 
       <div className="dashboard-layout">
-        <aside className={`dashboard-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
+        {sidebarCollapsed && (
+          <button className="dashboard-mobile-fab" onClick={() => setSidebarCollapsed(false)} aria-label="Ouvrir le menu">
+            <Menu size={18} /> Menu
+          </button>
+        )}
+        {!sidebarCollapsed && <div className="dashboard-mobile-backdrop" onClick={() => setSidebarCollapsed(true)} />}
+        <aside
+          className={`dashboard-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}
+          onClick={(e) => { if (window.innerWidth <= 768 && e.target.closest('.sidebar-menu-btn')) setSidebarCollapsed(true); }}
+        >
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             className="sidebar-toggle-btn"

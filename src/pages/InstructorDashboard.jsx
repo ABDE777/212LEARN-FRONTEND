@@ -7,7 +7,7 @@ import {
   CheckCircle, ChevronRight, ChevronLeft, Zap, Mail, Search,
   HelpCircle, Brain, Pencil, Trash2, X, Save, LayoutGrid,
   TrendingUp, TrendingDown, DollarSign, Award, BarChart3, RefreshCw, Tag,
-  GraduationCap, Target, Activity, UserPlus,
+  GraduationCap, Target, Activity, UserPlus, Menu,
 } from 'lucide-react';
 import { useInstructorCourses, useCreateCourse, useCourseCurriculum, useCourseQuizzes, useCreateQuiz, useGenerateAiQuiz, useAddQuizQuestion, useQuiz, useUpdateQuiz, useDeleteQuiz, useUpdateQuestion, useDeleteQuestion } from '../hooks/useInstructorCourses';
 import { useMeetings } from '../hooks/useMeetings';
@@ -2143,7 +2143,16 @@ export default function InstructorDashboard() {
     <div style={{ minHeight: '100vh', background: 'var(--bg-color)' }}>
       <Navbar />
       <div className="dashboard-layout">
-        <aside className={`dashboard-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
+        {sidebarCollapsed && (
+          <button className="dashboard-mobile-fab" onClick={() => setSidebarCollapsed(false)} aria-label="Ouvrir le menu">
+            <Menu size={18} /> Menu
+          </button>
+        )}
+        {!sidebarCollapsed && <div className="dashboard-mobile-backdrop" onClick={() => setSidebarCollapsed(true)} />}
+        <aside
+          className={`dashboard-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}
+          onClick={(e) => { if (window.innerWidth <= 768 && e.target.closest('.sidebar-menu-btn')) setSidebarCollapsed(true); }}
+        >
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             className="sidebar-toggle-btn"

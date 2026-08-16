@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Trophy, Target, BookOpen, TrendingUp, Award, LogOut, User, Lock, Trash2, AlertTriangle, X, Video, Calendar, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trophy, Target, BookOpen, TrendingUp, Award, LogOut, User, Lock, Trash2, AlertTriangle, X, Video, Calendar, ExternalLink, ChevronLeft, ChevronRight, Menu } from 'lucide-react';
 import { useStudentDashboardData } from '../hooks/useStudentDashboard';
 import { useAuth } from '../context/AuthContext';
 import { useMeetings } from '../hooks/useMeetings';
@@ -238,8 +238,18 @@ export default function StudentDashboard() {
       <Navbar />
 
       <div className="dashboard-layout">
+        {/* Mobile: one button opens the full menu drawer */}
+        {sidebarCollapsed && (
+          <button className="dashboard-mobile-fab" onClick={() => setSidebarCollapsed(false)} aria-label="Ouvrir le menu">
+            <Menu size={18} /> Menu
+          </button>
+        )}
+        {!sidebarCollapsed && <div className="dashboard-mobile-backdrop" onClick={() => setSidebarCollapsed(true)} />}
         {/* Sidebar Panel */}
-        <aside className={`dashboard-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
+        <aside
+          className={`dashboard-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}
+          onClick={(e) => { if (window.innerWidth <= 768 && e.target.closest('.sidebar-menu-btn')) setSidebarCollapsed(true); }}
+        >
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             className="sidebar-toggle-btn"
