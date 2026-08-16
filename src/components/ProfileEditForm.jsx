@@ -211,6 +211,15 @@ export default function ProfileEditForm() {
   const sp = user?.studentProfile || {};
   const ip = user?.instructorProfile || {};
   const detailItem = (Icon, label, value) => (value ? { Icon, label, value } : null);
+
+  const memberSince = user?.createdAt ? new Date(user.createdAt).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }) : '';
+  const personalDetails = [
+    detailItem(User, 'Prénom', user?.firstName),
+    detailItem(User, 'Nom', user?.lastName),
+    detailItem(Mail, 'Email', user?.email),
+    detailItem(Phone, 'Téléphone', user?.phone),
+    detailItem(Clock, 'Membre depuis', memberSince),
+  ].filter(Boolean);
   const details = (
     isInstructor ? [
       detailItem(Sparkles, "Domaine d'expertise", ip.expertiseDomain),
@@ -390,7 +399,19 @@ export default function ProfileEditForm() {
               </div>
             )}
             <div className="pv-sec">
-              <h3 className="pv-sec-title">{isInstructor ? <Briefcase size={15} /> : <GraduationCap size={15} />} {isInstructor ? 'Profil professionnel' : showProfessional && !showAcademic ? 'Parcours professionnel' : showSelfDirected ? "Objectifs d'apprentissage" : 'Parcours'}</h3>
+              <h3 className="pv-sec-title"><User size={15} /> Informations personnelles</h3>
+              <div className="pv-details">
+                {personalDetails.map((d, i) => (
+                  <div className="pv-item" key={i}>
+                    <div className="pv-item-ic"><d.Icon size={16} /></div>
+                    <div style={{ minWidth: 0 }}><div className="pv-k">{d.label}</div><div className="pv-v">{d.value}</div></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {(details.length > 0 || showAcademic || showProfessional || showSelfDirected || isInstructor) && (
+            <div className="pv-sec">
+              <h3 className="pv-sec-title">{isInstructor ? <Briefcase size={15} /> : <GraduationCap size={15} />} {isInstructor ? 'Profil professionnel' : showProfessional && !showAcademic ? 'Parcours professionnel' : showSelfDirected ? "Objectifs d'apprentissage" : 'Parcours académique'}</h3>
               {details.length ? (
                 <div className="pv-details">
                   {details.map((d, i) => (
@@ -408,6 +429,7 @@ export default function ProfileEditForm() {
                 </div>
               ) : emptyNote('Complétez votre profil pour afficher votre parcours ici.')}
             </div>
+            )}
           </div>
 
           {showPortfolio && (
