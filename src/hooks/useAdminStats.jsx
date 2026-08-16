@@ -10,8 +10,11 @@ export function useAdminStats() {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.get('/admin/stats');
-      // Backend returns: { success: true, data: { stats: {...} } }
+      // /admin/overview is the consolidated, briefly-cached snapshot (stats +
+      // pendingKycCount + recentUsers). We read the same `stats` shape as the
+      // old /admin/stats, so this is a drop-in with fewer round-trips + caching.
+      const response = await api.get('/admin/overview');
+      // Backend returns: { success: true, data: { stats: {...}, ... } }
       const payload = response.data?.data?.stats ?? response.data?.data ?? null;
       setStats(payload);
     } catch (err) {
