@@ -3062,7 +3062,6 @@ export default function AdminDashboard() {
     error: usersError,
     refreshUsers,
     verifyInstructor,
-    verifyStudent,
     restoreUser,
     createUser,
     updateUser,
@@ -3516,22 +3515,23 @@ export default function AdminDashboard() {
     setUserActionLoading(userId);
     setUserActionMsg(null);
     try {
-      const effectiveRole = (role || '').toLowerCase() || (userSubTab === 'kyc' ? 'instructor' : 'student');
-      if (effectiveRole === 'instructor') {
-        await verifyInstructor(userId, isVerified);
-      } else {
-        await verifyStudent(userId, isVerified);
+      const effectiveRole = (role || '').toLowerCase() || 'instructor';
+      // Students self-verify by email; admins only verify instructors (KYC).
+      if (effectiveRole !== 'instructor') {
+        setUserActionMsg({ type: 'error', text: 'Les étudiants confirment leur email eux-mêmes — aucune action admin requise.' });
+        return;
       }
+      await verifyInstructor(userId, isVerified);
       await refreshUsers();
       await refreshPendingKyc();
-      setUserActionMsg({ type: 'success', text: isVerified ? 'Utilisateur vérifié avec succès.' : 'Vérification retirée.' });
+      setUserActionMsg({ type: 'success', text: isVerified ? 'Instructeur vérifié avec succès.' : 'Vérification retirée.' });
     } catch (err) {
       const status = err.response?.status;
       const msg = err.response?.data?.error?.message || err.response?.data?.message;
       if (status === 404) {
-        setUserActionMsg({ type: 'error', text: 'Endpoint de vérification non disponible. Vérifiez que le backend implémente les routes PATCH /admin/users/:id/verify et PATCH /admin/users/:id/verify-student.' });
+        setUserActionMsg({ type: 'error', text: 'Endpoint de vérification non disponible. Vérifiez que le backend implémente PATCH /admin/users/:id/verify.' });
       } else {
-        setUserActionMsg({ type: 'error', text: msg || 'Impossible de vérifier cet utilisateur.' });
+        setUserActionMsg({ type: 'error', text: msg || 'Impossible de vérifier cet instructeur.' });
       }
     } finally {
       setUserActionLoading(null);
@@ -4386,7 +4386,7 @@ export default function AdminDashboard() {
                                 ) : null}
                                 <td style={{ padding: '0.85rem 1rem', borderBottom: '1px solid var(--border-color)', textAlign: 'right' }}>
                                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                                    {(userSubTab === 'unverified' || userSubTab === 'kyc') && (
+                                    {(userSubTab === 'unverified' || userSubTab === 'kyc') && listedUser.role === 'instructor' && (
                                       <button
                                         onClick={() => handleVerifyUser(listedUser.id, listedUser.role, true)}
                                         disabled={userActionLoading === listedUser.id}
@@ -4420,7 +4420,7 @@ export default function AdminDashboard() {
                                     )}
                                     {userSubTab === 'active' && (
                                       <>
-                                        {(listedUser.role === 'instructor' || listedUser.role === 'student') && (
+                                        {listedUser.role === 'instructor' && (
                                           <button
                                             onClick={() => handleVerifyUser(listedUser.id, listedUser.role, !listedUser.isVerified)}
                                             disabled={userActionLoading === listedUser.id}

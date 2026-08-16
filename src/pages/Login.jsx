@@ -37,6 +37,17 @@ export default function Login() {
     }
   }, [user, navigate]);
 
+  // Surface the reason we were bounced here (session expired / used elsewhere).
+  useEffect(() => {
+    try {
+      const notice = sessionStorage.getItem('auth_notice');
+      if (notice) {
+        setError(notice);
+        sessionStorage.removeItem('auth_notice');
+      }
+    } catch { /* ignore */ }
+  }, []);
+
   // Countdown timer for OTP
   useEffect(() => {
     if (!restoreStep) return;
