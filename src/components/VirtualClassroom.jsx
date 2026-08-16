@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, Wifi, WifiOff, Users, Maximize2, Minimize2, ExternalLink, PhoneOff } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { X, Wifi, WifiOff, Users, Maximize2, Minimize2, ExternalLink, PhoneOff, AlertTriangle } from 'lucide-react';
 import api from '../services/api';
 
 /**
@@ -21,6 +22,8 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
   const [apiLoaded, setApiLoaded] = useState(!!window.JitsiMeetExternalAPI);
   const [participantCount, setParticipantCount] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
+  const [recordingError, setRecordingError] = useState(null); // instructor: plan/permission issue
+  const [recNoticeDismissed, setRecNoticeDismissed] = useState(false); // student consent notice
   const recordingStartedRef = useRef(false); // guard: only auto-start once
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('connecting'); // connecting | connected | error
@@ -185,9 +188,16 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
       }
     });
 
-    // Reflect the real recording state (also covers manual start/stop).
+    // Reflect the real recording state (also covers manual start/stop) and
+    // surface failures — e.g. a JaaS plan without recording reports an error
+    // here instead of turning recording on.
     api.addEventListener('recordingStatusChanged', (e) => {
       setIsRecording(Boolean(e?.on));
+      if (e?.error) {
+        setRecordingError(String(e.error));
+      } else if (e?.on) {
+        setRecordingError(null);
+      }
     });
 
     // Safety net: reveal the Jitsi iframe even if "joined" never fires (auth or
@@ -249,7 +259,12 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
     }
   };
 
-  return (
+  // Render through a portal to <body> so the overlay escapes the dashboard's
+  // animated tab panel (a transformed ancestor would otherwise box this fixed
+  // element inside the tab, leaving the sidebar clickable — switching tabs then
+  // unmounts the live and disconnects the user). At the body level it truly
+  // covers the whole viewport, so navigation can't drop the session.
+  return createPortal(
     <div
       onContextMenu={(e) => e.preventDefault()}
       style={{
@@ -388,7 +403,10 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
             <button
               onClick={() => {
                 if (window.confirm('Êtes-vous sûr de vouloir terminer cette session ? Cela enregistrera la session pour les étudiants.')) {
-                  onEndMeeting?.(meeting.id);
+                  // Explicitly stop recording first so JaaS finalizes the upload,
+                  // then end the meeting after a short grace period.
+                  try { apiRef.current?.executeCommand('stopRecording', 'file'); } catch (_) {}
+                  setTimeout(() => onEndMeeting?.(meeting.id), 2000);
                 }
               }}
               title="Terminer la session"
@@ -409,6 +427,38 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
           )}
         </div>
       </div>
+
+      {/* Instructor: recording failed to start (e.g. plan without recording) */}
+      {isInstructor && recordingError && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '0.6rem', flexShrink: 0,
+          padding: '0.6rem 1.25rem', background: 'rgba(220,53,69,0.14)',
+          borderBottom: '1px solid rgba(220,53,69,0.3)', color: '#ffb3ba', fontSize: '0.83rem',
+        }}>
+          <AlertTriangle size={15} style={{ color: '#dc3545', flexShrink: 0 }} />
+          <span style={{ flex: 1 }}>
+            L'enregistrement n'a pas pu démarrer ({recordingError}). Vérifiez que votre offre Jitsi/JaaS inclut l'enregistrement et qu'un stockage est configuré.
+          </span>
+          <button onClick={() => setRecordingError(null)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', padding: 2 }} aria-label="Fermer">
+            <X size={15} />
+          </button>
+        </div>
+      )}
+
+      {/* Student: transparency/consent notice that the session is recorded */}
+      {!isInstructor && isRecording && !recNoticeDismissed && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '0.6rem', flexShrink: 0,
+          padding: '0.6rem 1.25rem', background: 'rgba(220,53,69,0.12)',
+          borderBottom: '1px solid rgba(220,53,69,0.25)', color: 'rgba(255,255,255,0.85)', fontSize: '0.83rem',
+        }}>
+          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#dc3545', animation: 'glowPulse 1s ease infinite', display: 'inline-block', flexShrink: 0 }} />
+          <span style={{ flex: 1 }}>Cette session est enregistrée.</span>
+          <button onClick={() => setRecNoticeDismissed(true)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', padding: 2 }} aria-label="Fermer">
+            <X size={15} />
+          </button>
+        </div>
+      )}
 
       {/* Jitsi container */}
       <div style={{ flex: 1, position: 'relative' }}>
@@ -476,6 +526,7 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
