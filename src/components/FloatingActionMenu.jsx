@@ -17,13 +17,19 @@ import { Plus } from 'lucide-react';
 export default function FloatingActionMenu({ options = [], className = '', style, ariaLabel = 'Menu' }) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const glass = {
-    background: 'rgba(17,17,17,0.62)',
-    backdropFilter: 'blur(8px)',
-    WebkitBackdropFilter: 'blur(8px)',
+  // App theme: primary-gradient main button, light surface option chips.
+  const mainStyle = {
+    background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
     color: '#fff',
     border: 'none',
-    boxShadow: '0 0 20px rgba(0,0,0,0.22)',
+    boxShadow: '0 6px 20px rgba(193,101,47,0.45)',
+    cursor: 'pointer',
+  };
+  const optionStyle = {
+    background: 'var(--surface-color, #fff)',
+    color: 'var(--text-color)',
+    border: '1px solid var(--border-color)',
+    boxShadow: '0 6px 18px rgba(43,38,34,0.16)',
     cursor: 'pointer',
   };
 
@@ -34,7 +40,7 @@ export default function FloatingActionMenu({ options = [], className = '', style
         aria-label={ariaLabel}
         aria-expanded={isOpen}
         style={{
-          ...glass,
+          ...mainStyle,
           width: 54,
           height: 54,
           borderRadius: '9999px',
@@ -73,7 +79,7 @@ export default function FloatingActionMenu({ options = [], className = '', style
                   <button
                     onClick={() => { option.onClick?.(); setIsOpen(false); }}
                     style={{
-                      ...glass,
+                      ...optionStyle,
                       display: 'flex',
                       alignItems: 'center',
                       gap: '0.55rem',
@@ -84,7 +90,7 @@ export default function FloatingActionMenu({ options = [], className = '', style
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    {option.Icon}
+                    <span style={{ display: 'inline-flex', color: 'var(--primary)' }}>{option.Icon}</span>
                     <span>{option.label}</span>
                   </button>
                 </motion.div>

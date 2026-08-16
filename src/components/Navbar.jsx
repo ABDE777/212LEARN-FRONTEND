@@ -1,95 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { User, LogOut, ChevronDown, ShoppingCart, Heart, Menu, X, LayoutDashboard } from 'lucide-react';
+import { LogOut, ShoppingCart, Heart, Menu, X, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCartContext } from '../context/CartContext';
 import { useWishlistContext } from '../context/WishlistContext';
 
-function NavIconButton({ to, onClick, icon, count, label }) {
-  const [hovered, setHovered] = useState(false);
-  const [pressed, setPressed] = useState(false);
-  const content = (
-    <>
-      {icon}
-      {count > 0 && (
-        <span
-          style={{
-            position: 'absolute',
-            top: '-5px',
-            right: '-5px',
-            minWidth: '18px',
-            height: '18px',
-            padding: '0 4px',
-            borderRadius: '999px',
-            background: 'var(--primary)',
-            color: '#fff',
-            fontSize: '0.65rem',
-            fontWeight: 700,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            lineHeight: 1,
-            boxShadow: '0 2px 6px rgba(193, 101, 47, 0.5)',
-            animation: 'scaleIn 0.2s ease',
-          }}
-        >
-          {count > 99 ? '99+' : count}
-        </span>
-      )}
-    </>
-  );
-
-  const style = {
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '40px',
-    height: '40px',
-    borderRadius: '12px',
-    background: hovered ? 'rgba(193, 101, 47, 0.08)' : 'transparent',
-    border: '1px solid ' + (hovered ? 'rgba(193,101,47,0.2)' : 'transparent'),
-    color: hovered ? 'var(--primary)' : 'var(--secondary)',
-    textDecoration: 'none',
-    transition: 'all 0.2s cubic-bezier(0.22, 1, 0.36, 1)',
-    flexShrink: 0,
-    cursor: 'pointer',
-    transform: hovered ? 'translateY(-1px)' : 'translateY(0)',
-  };
-
-  if (onClick) {
-    return (
-      <button
-        type="button"
-        onClick={onClick}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => { setHovered(false); setPressed(false); }}
-        onMouseDown={() => setPressed(true)}
-        onMouseUp={() => setPressed(false)}
-        style={{ ...style, outline: 'none', padding: 0 }}
-        aria-label={label}
-        title={label}
-      >
-        {content}
-      </button>
-    );
-  }
-
-  return (
-    <Link
-      to={to}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => { setHovered(false); setPressed(false); }}
-      onMouseDown={() => setPressed(true)}
-      onMouseUp={() => setPressed(false)}
-      style={style}
-      aria-label={label}
-      title={label}
-    >
-      {content}
-    </Link>
-  );
-}
 
 const NAV_LINKS = [
   { to: '/', label: 'Accueil' },
@@ -146,6 +61,12 @@ function Navbar() {
   };
 
   const avatarUrl = user?.avatar || user?.profilePicture || user?.photo || null;
+  // Initials: first letter of first + last name (fallback to email initial).
+  const initials = (
+    `${user?.firstName?.[0] || ''}${user?.lastName?.[0] || ''}`.trim()
+    || user?.email?.[0]
+    || 'U'
+  ).toUpperCase();
   const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
   const isInstructor = user?.role?.toUpperCase() === 'INSTRUCTOR';
   const isStudent = user?.role?.toUpperCase() === 'STUDENT';
@@ -233,90 +154,63 @@ function Navbar() {
 
         {/* Right Controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          {/* Cart / Wishlist — only for students */}
-          {isAuthenticated && isStudent && (
-            <>
-              <NavIconButton
-                to="/wishlist"
-                icon={<Heart size={18} />}
-                count={wishlistCount}
-                label="Mes souhaits"
-              />
-              <NavIconButton
-                onClick={openCart}
-                icon={<ShoppingCart size={18} />}
-                count={cartCount}
-                label="Mon panier"
-              />
-              <div style={{ width: '1px', height: '22px', background: 'rgba(43, 38, 34, 0.1)', margin: '0 0.15rem' }} />
-            </>
-          )}
-
-          {/* User menu */}
+          {/* User menu (cart & wishlist now live inside the dropdown) */}
           {isAuthenticated ? (
             <div ref={dropdownRef} style={{ position: 'relative' }}>
               <button
                 onClick={() => setDropdownOpen((prev) => !prev)}
                 aria-expanded={dropdownOpen}
                 aria-label="Menu utilisateur"
+                title={`${user?.firstName || ''} ${user?.lastName || ''}`.trim()}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.6rem',
-                  padding: '0.4rem 0.85rem 0.4rem 0.4rem',
-                  background: dropdownOpen
-                    ? 'rgba(193, 101, 47, 0.08)'
-                    : 'transparent',
-                  border: '1px solid ' + (dropdownOpen ? 'rgba(193,101,47,0.25)' : 'rgba(43,38,34,0.1)'),
+                  justifyContent: 'center',
+                  padding: 0,
+                  background: 'transparent',
+                  border: 'none',
                   borderRadius: '9999px',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
                   outline: 'none',
+                  boxShadow: dropdownOpen ? '0 0 0 3px rgba(193,101,47,0.25)' : 'none',
                 }}
               >
-                {/* Avatar */}
+                {/* Avatar — rounded icon with initials (or photo when available) */}
                 {avatarUrl ? (
                   <img
                     src={avatarUrl}
                     alt={`Avatar de ${user?.firstName || 'utilisateur'}`}
                     style={{
-                      width: '30px',
-                      height: '30px',
+                      width: '38px',
+                      height: '38px',
                       borderRadius: '50%',
                       objectFit: 'cover',
                       flexShrink: 0,
-                      border: '2px solid rgba(193,101,47,0.3)',
+                      border: '2px solid rgba(193,101,47,0.35)',
                     }}
                     onError={(e) => { e.currentTarget.style.display = 'none'; }}
                   />
                 ) : (
                   <div
                     style={{
-                      width: '30px',
-                      height: '30px',
+                      width: '38px',
+                      height: '38px',
                       background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
                       borderRadius: '50%',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       flexShrink: 0,
+                      color: '#fff',
+                      fontWeight: 700,
+                      fontSize: '0.85rem',
+                      letterSpacing: '0.02em',
                     }}
                   >
-                    <User size={14} color="#fff" />
+                    {initials}
                   </div>
                 )}
-
-                <span style={{ fontWeight: 600, color: 'var(--text-color)', whiteSpace: 'nowrap', fontSize: '0.875rem' }}>
-                  {user?.firstName || user?.email?.split('@')[0] || 'Utilisateur'}
-                </span>
-                <ChevronDown
-                  size={14}
-                  style={{
-                    color: 'var(--secondary)',
-                    transition: 'transform 0.25s cubic-bezier(0.22, 1, 0.36, 1)',
-                    transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0)',
-                  }}
-                />
               </button>
 
               {/* Dropdown menu */}
@@ -379,6 +273,54 @@ function Navbar() {
                     <LayoutDashboard size={15} />
                     Tableau de bord
                   </Link>
+
+                  {isStudent && (
+                    <>
+                      <button
+                        onClick={() => { setDropdownOpen(false); openCart(); }}
+                        style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          gap: '0.7rem', padding: '0.65rem 0.85rem', borderRadius: '12px',
+                          border: 'none', background: 'transparent', color: 'var(--text-color)',
+                          fontWeight: 600, fontSize: '0.88rem', cursor: 'pointer', width: '100%',
+                          textAlign: 'left', transition: 'all 0.18s ease', fontFamily: 'var(--font-heading)',
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(193, 101, 47, 0.08)'; e.currentTarget.style.color = 'var(--primary)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-color)'; }}
+                      >
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.7rem' }}>
+                          <ShoppingCart size={15} /> Mon panier
+                        </span>
+                        {cartCount > 0 && (
+                          <span style={{ minWidth: 18, height: 18, padding: '0 5px', borderRadius: 999, background: 'var(--primary)', color: '#fff', fontSize: '0.68rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {cartCount > 99 ? '99+' : cartCount}
+                          </span>
+                        )}
+                      </button>
+
+                      <Link
+                        to="/wishlist"
+                        onClick={() => setDropdownOpen(false)}
+                        style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          gap: '0.7rem', padding: '0.65rem 0.85rem', borderRadius: '12px',
+                          textDecoration: 'none', color: 'var(--text-color)', fontWeight: 600,
+                          fontSize: '0.88rem', transition: 'all 0.18s ease',
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(193, 101, 47, 0.08)'; e.currentTarget.style.color = 'var(--primary)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-color)'; }}
+                      >
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.7rem' }}>
+                          <Heart size={15} /> Mes souhaits
+                        </span>
+                        {wishlistCount > 0 && (
+                          <span style={{ minWidth: 18, height: 18, padding: '0 5px', borderRadius: 999, background: 'var(--primary)', color: '#fff', fontSize: '0.68rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {wishlistCount > 99 ? '99+' : wishlistCount}
+                          </span>
+                        )}
+                      </Link>
+                    </>
+                  )}
 
                   <div style={{ height: '1px', background: 'rgba(43, 38, 34, 0.07)', margin: '0.3rem 0.5rem' }} />
 
