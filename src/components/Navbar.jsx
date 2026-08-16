@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LogOut, LogIn, ShoppingCart, Heart, Home, BookOpen, Info, LayoutDashboard, UserPlus, Plus, Trophy, Video, User, Lock } from 'lucide-react';
+import { LogOut, LogIn, ShoppingCart, Heart, Home, BookOpen, Info, LayoutDashboard, UserPlus, Plus, Trophy, Video, User, Lock, PhoneCall } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useCartContext } from '../context/CartContext';
@@ -12,6 +12,7 @@ const NAV_LINKS = [
   { to: '/', label: 'Accueil' },
   { to: '/about', label: 'À propos' },
   { to: '/courses', label: 'Cours' },
+  { to: '/contact', label: 'Contact' },
 ];
 
 function Navbar({ extraDockOptions = [] }) {
@@ -582,6 +583,11 @@ function Navbar({ extraDockOptions = [] }) {
           <DockItem key="APropos" onClick={() => navigate('/about')} title="À propos">
             <DockLabel>À propos</DockLabel>
             <DockIcon><Info size={22} /></DockIcon>
+          </DockItem>
+
+          <DockItem key="Contact" onClick={() => navigate('/contact')} title="Contact">
+            <DockLabel>Contact</DockLabel>
+            <DockIcon><PhoneCall size={22} /></DockIcon>
           </DockItem>
 
           {/* Plus menu only visible when user is logged in */}

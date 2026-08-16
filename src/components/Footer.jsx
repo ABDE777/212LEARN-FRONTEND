@@ -31,7 +31,7 @@ export default function Footer() {
             <li><Link to="/">Accueil</Link></li>
             <li><Link to="/about">À propos</Link></li>
             <li><Link to="/courses">Cours</Link></li>
-            <li><Link to="/categories">Catégories</Link></li>
+            <li><Link to="/contact">Page de Contact</Link></li>
           </ul>
         </div>
 
@@ -55,11 +55,7 @@ export default function Footer() {
             </li>
             <li>
               <Phone size={16} />
-              <a href="tel:+0600001716">+06 00 00 17 16</a>
-            </li>
-            <li>
-              <Phone size={16} />
-              <a href="tel:+212664853360">+212 664-853360</a>
+              <a href="tel:+212605713171">+212 605-713171</a>
             </li>
             <li>
               <Phone size={16} />

@@ -30,6 +30,7 @@ import ChangePasswordForm from '../components/ChangePasswordForm';
 import CloudinaryImageUpload from '../components/CloudinaryImageUpload';
 import Modal from '../components/Modal';
 import SessionCalendar from '../components/SessionCalendar';
+import AdminContactMessages from '../components/AdminContactMessages';
 import api from '../services/api';
 
 function AdminStatsTab() {
@@ -4048,6 +4049,7 @@ export default function AdminDashboard() {
           { label: "Journal d'audit", Icon: <FileText size={16} />, onClick: () => setActiveTab('audit') },
           { label: 'Santé système', Icon: <Activity size={16} />, onClick: () => setActiveTab('health') },
           { label: 'Settings', Icon: <Settings size={16} />, onClick: () => setActiveTab('settings') },
+          { label: 'Messages Contact', Icon: <Mail size={16} />, onClick: () => setActiveTab('contact') },
           { label: 'Mon Profil', Icon: <User size={16} />, onClick: () => setActiveTab('profile') },
         ]}
       />
@@ -4152,6 +4154,14 @@ export default function AdminDashboard() {
               <span>Santé système</span>
             </button>
             <button
+              onClick={() => setActiveTab('contact')}
+              className={`sidebar-menu-btn ${activeTab === 'contact' ? 'active' : ''}`}
+              title="Messages Contact"
+            >
+              <Mail size={18} />
+              <span>Messages Contact</span>
+            </button>
+            <button
               onClick={() => setActiveTab('settings')}
               className={`sidebar-menu-btn ${activeTab === 'settings' ? 'active' : ''}`}
               title="Settings"
@@ -4184,6 +4194,7 @@ export default function AdminDashboard() {
 
         <main className="dashboard-main-content">
           <div key={activeTab} className="tab-panel" style={{ background: '#fff', padding: '2rem', borderRadius: '16px', boxShadow: 'var(--shadow-sm)' }}>
+              {activeTab === 'contact' && <AdminContactMessages />}
               {activeTab === 'users' && (
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', gap: '1rem', flexWrap: 'wrap' }}>

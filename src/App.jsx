@@ -25,6 +25,7 @@ const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Catalog = lazy(() => import('./pages/Catalog'));
 const About = lazy(() => import('./pages/About'));
+const Contact = lazy(() => import('./pages/Contact'));
 const CourseDetails = lazy(() => import('./pages/CourseDetails'));
 const Checkout = lazy(() => import('./pages/Checkout'));
 const Cart = lazy(() => import('./pages/Cart'));
@@ -76,6 +77,7 @@ function App() {
                 <Route path="/verify-email/:token" element={<VerifyEmail />} />
                 <Route path="/courses" element={<Catalog />} />
                 <Route path="/about" element={<About />} />
+                <Route path="/contact" element={<Contact />} />
                 <Route path="/courses/:id" element={<CourseDetails />} />
                 <Route path="/courses/:id/checkout" element={<Checkout />} />
 
