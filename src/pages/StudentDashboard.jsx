@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Trophy, Target, BookOpen, TrendingUp, Award, LogOut, User, Lock, Trash2, AlertTriangle, X, Video, Calendar, ExternalLink, ChevronLeft, ChevronRight, Menu } from 'lucide-react';
+import { Trophy, Target, BookOpen, TrendingUp, Award, LogOut, User, Lock, Trash2, AlertTriangle, X, Video, Calendar, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStudentDashboardData } from '../hooks/useStudentDashboard';
 import { useAuth } from '../context/AuthContext';
 import { useMeetings } from '../hooks/useMeetings';
@@ -13,6 +13,7 @@ import ProfileEditForm from '../components/ProfileEditForm';
 import ChangePasswordForm from '../components/ChangePasswordForm';
 import SEOHead from '../components/SEOHead';
 import LoadingSpinner from '../components/LoadingSpinner';
+import FloatingActionMenu from '../components/FloatingActionMenu';
 import { WishlistContent } from './Wishlist';
 
 /* ─── Student Live Sessions Component ────────────────────────── */
@@ -237,19 +238,21 @@ export default function StudentDashboard() {
       <SEOHead title="Tableau de Bord Étudiant" description="Consultez votre progression, vos cours et vos statistiques sur 212Learn." />
       <Navbar />
 
+      {/* Mobile navigation — floating action menu (sidebar is hidden on phones) */}
+      <FloatingActionMenu
+        className="fab-mobile-only"
+        options={[
+          { label: 'Tableau de bord', Icon: <Trophy size={16} />, onClick: () => setActiveTab('dashboard') },
+          { label: 'Sessions Live', Icon: <Video size={16} />, onClick: () => setActiveTab('lives') },
+          { label: 'Mon Profil', Icon: <User size={16} />, onClick: () => setActiveTab('profile') },
+          { label: 'Sécurité', Icon: <Lock size={16} />, onClick: () => setActiveTab('security') },
+          { label: 'Déconnexion', Icon: <LogOut size={16} />, onClick: handleLogout },
+        ]}
+      />
+
       <div className="dashboard-layout">
-        {/* Mobile: one button opens the full menu drawer */}
-        {sidebarCollapsed && (
-          <button className="dashboard-mobile-fab" onClick={() => setSidebarCollapsed(false)} aria-label="Ouvrir le menu">
-            <Menu size={18} /> Menu
-          </button>
-        )}
-        {!sidebarCollapsed && <div className="dashboard-mobile-backdrop" onClick={() => setSidebarCollapsed(true)} />}
         {/* Sidebar Panel */}
-        <aside
-          className={`dashboard-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}
-          onClick={(e) => { if (window.innerWidth <= 768 && e.target.closest('.sidebar-menu-btn')) setSidebarCollapsed(true); }}
-        >
+        <aside className={`dashboard-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             className="sidebar-toggle-btn"

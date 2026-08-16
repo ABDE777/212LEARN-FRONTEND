@@ -7,7 +7,7 @@ import {
   CheckCircle, ChevronRight, ChevronLeft, Zap, Mail, Search,
   HelpCircle, Brain, Pencil, Trash2, X, Save, LayoutGrid,
   TrendingUp, TrendingDown, DollarSign, Award, BarChart3, RefreshCw, Tag,
-  GraduationCap, Target, Activity, UserPlus, Menu,
+  GraduationCap, Target, Activity, UserPlus,
 } from 'lucide-react';
 import { useInstructorCourses, useCreateCourse, useCourseCurriculum, useCourseQuizzes, useCreateQuiz, useGenerateAiQuiz, useAddQuizQuestion, useQuiz, useUpdateQuiz, useDeleteQuiz, useUpdateQuestion, useDeleteQuestion } from '../hooks/useInstructorCourses';
 import { useMeetings } from '../hooks/useMeetings';
@@ -20,6 +20,7 @@ import ProfileEditForm from '../components/ProfileEditForm';
 import ChangePasswordForm from '../components/ChangePasswordForm';
 import VirtualClassroom from '../components/VirtualClassroom';
 import SessionCalendar from '../components/SessionCalendar';
+import FloatingActionMenu from '../components/FloatingActionMenu';
 import api from '../services/api';
 
 /* ─── helpers ─────────────────────────────── */
@@ -2142,17 +2143,15 @@ export default function InstructorDashboard() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-color)' }}>
       <Navbar />
+      <FloatingActionMenu
+        className="fab-mobile-only"
+        options={[
+          ...TABS.map((t) => ({ label: t.label, Icon: t.icon, onClick: () => setActiveTab(t.key) })),
+          { label: 'Déconnexion', Icon: <LogOut size={16} />, onClick: () => { logout(); window.location.href = '/login'; } },
+        ]}
+      />
       <div className="dashboard-layout">
-        {sidebarCollapsed && (
-          <button className="dashboard-mobile-fab" onClick={() => setSidebarCollapsed(false)} aria-label="Ouvrir le menu">
-            <Menu size={18} /> Menu
-          </button>
-        )}
-        {!sidebarCollapsed && <div className="dashboard-mobile-backdrop" onClick={() => setSidebarCollapsed(true)} />}
-        <aside
-          className={`dashboard-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}
-          onClick={(e) => { if (window.innerWidth <= 768 && e.target.closest('.sidebar-menu-btn')) setSidebarCollapsed(true); }}
-        >
+        <aside className={`dashboard-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             className="sidebar-toggle-btn"

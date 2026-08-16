@@ -2127,56 +2127,14 @@ pre { overflow-x: auto; }
 }
 
 /* ============================================================================
-   DASHBOARD SIDEBAR → mobile off-canvas drawer (opened by one button)
-   On phones the cramped icon rail is replaced by a full slide-in menu that
-   holds ALL the dashboard links with labels; a floating button opens it.
+   FLOATING ACTION MENU — mobile navigation
+   On phones the dashboard sidebar is hidden and replaced by a floating action
+   button (bottom-right) that expands into the full list of links.
    ============================================================================ */
-.dashboard-mobile-fab, .dashboard-mobile-backdrop { display: none; }
+.fab-mobile-only { display: none; }
 
 @media (max-width: 768px) {
-  /* Sidebar becomes an off-canvas drawer, hidden by default (collapsed). */
-  .dashboard-sidebar {
-    position: fixed !important;
-    top: 0; left: 0; bottom: 0;
-    width: min(84vw, 300px) !important;
-    padding: 1.5rem 1.1rem !important;
-    z-index: 1300;
-    overflow-y: auto;
-    transform: translateX(-100%);
-    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
-    box-shadow: 6px 0 28px rgba(0, 0, 0, 0.22);
-  }
-  /* Open state = NOT collapsed → slide in, with full labels. */
-  .dashboard-sidebar:not(.collapsed) { transform: translateX(0); }
-  .dashboard-sidebar:not(.collapsed) .sidebar-menu-btn span,
-  .dashboard-sidebar:not(.collapsed) .sidebar-username-wrapper,
-  .dashboard-sidebar:not(.collapsed) .sidebar-user-info,
-  .dashboard-sidebar:not(.collapsed) .sidebar-user-info span { display: inline-flex !important; }
-  .dashboard-sidebar:not(.collapsed) .sidebar-menu-btn {
-    justify-content: flex-start !important;
-    gap: 0.75rem;
-    width: 100%;
-  }
-  .dashboard-sidebar:not(.collapsed) .sidebar-menu { gap: 0.35rem; }
-
-  /* Main content takes the full width; drawer floats above it. */
-  .dashboard-main-content { padding: 1rem !important; }
-
-  /* Floating "open menu" button (shows when the drawer is closed). */
-  .dashboard-mobile-fab {
-    display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
-    position: fixed; top: 70px; left: 12px; z-index: 1150;
-    height: 44px; padding: 0 0.9rem;
-    border: none; border-radius: 12px;
-    background: var(--primary); color: #fff;
-    font-weight: 700; font-size: 0.82rem; cursor: pointer;
-    box-shadow: 0 4px 16px rgba(193, 101, 47, 0.42);
-  }
-
-  /* Dim backdrop behind the open drawer; tap to close. */
-  .dashboard-mobile-backdrop {
-    display: block; position: fixed; inset: 0; z-index: 1250;
-    background: rgba(0, 0, 0, 0.45);
-    animation: fadeIn 0.2s ease;
-  }
+  .fab-mobile-only { display: block; }
+  .dashboard-sidebar { display: none !important; }
+  .dashboard-main-content { padding: 1rem !important; padding-bottom: 5rem !important; }
 }
