@@ -8,6 +8,8 @@ import LottieRaw from 'lottie-react';
 const Lottie = LottieRaw.default || LottieRaw;
 import aboutAnimation from '../lotties/Education2.json';
 import Navbar from '../components/Navbar';
+import SEOHead from '../components/SEOHead';
+import StructuredData from '../components/StructuredData';
 import BackgroundBlobs from '../components/about/BackgroundBlobs';
 import SectionDivider from '../components/about/SectionDivider';
 import GlowCard from '../components/about/GlowCard';
@@ -105,8 +107,51 @@ function About() {
     },
   ];
 
+  // Q&A optimized for answer engines (AEO): concise, factual, keyword-rich.
+  const faqs = [
+    {
+      q: "Qu'est-ce que 212Learn ?",
+      a: "212Learn est une plateforme d'apprentissage en ligne marocaine (e-learning) proposant des cours interactifs en programmation, technologie et design. La plateforme propose des sessions live en cohorte animées par des instructeurs, des quiz, un suivi de progression et des certificats. Le contenu est principalement en français.",
+    },
+    {
+      q: "Quels sujets peut-on apprendre sur 212Learn ?",
+      a: "On y apprend la programmation et le développement web, la technologie et les compétences numériques, ainsi que le design et l'UX/UI. Le catalogue est filtrable par catégorie, niveau (débutant, intermédiaire, avancé) et langue.",
+    },
+    {
+      q: "212Learn est-il adapté au Maroc ?",
+      a: "Oui. 212Learn est conçu pour le Maroc et l'Afrique francophone : contenu en français et paiements locaux (Wafacash, virement bancaire), en plus des cours gratuits accessibles directement.",
+    },
+    {
+      q: "Y a-t-il des cours en direct (live) ?",
+      a: "Oui. 212Learn propose des sessions live en cohorte : des classes virtuelles animées en direct par les instructeurs, avec des groupes d'étudiants par cours. Les sessions enregistrées sont ajoutées au programme du cours pour être revues plus tard.",
+    },
+    {
+      q: "Obtient-on un certificat à la fin d'un cours ?",
+      a: "Oui. Les apprenants suivent leur progression, gagnent des badges via des quiz interactifs et reçoivent un certificat de réussite à la fin d'un cours.",
+    },
+    {
+      q: "Comment s'inscrire à un cours ?",
+      a: "Parcourez le catalogue, ouvrez un cours, puis inscrivez-vous : les cours gratuits donnent un accès immédiat, et les cours payants passent par un paiement (Wafacash ou virement). Vous suivez ensuite les leçons, quiz et sessions live depuis votre tableau de bord étudiant.",
+    },
+  ];
+
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((f) => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  };
+
   return (
     <div className="about-page">
+      <SEOHead
+        title="À propos"
+        description="212Learn est une plateforme e-learning marocaine : cours en ligne de programmation, technologie et design, sessions live en cohorte, quiz et certificats, en français."
+      />
+      <StructuredData data={faqSchema} id="faq-schema" />
       <Navbar />
 
       {/* Hero */}
@@ -320,6 +365,33 @@ function About() {
           )}
         </div>
         <SectionDivider gradient={{ from: 'var(--primary)', to: '#d46b28' }} flip={true} />
+      </section>
+
+      {/* FAQ — visible content mirrored by FAQPage JSON-LD for answer engines */}
+      <section className="section-animate about-section-pad about-section-white about-section-relative">
+        <div className="about-section-inner" style={{ maxWidth: 820, margin: '0 auto' }}>
+          <h2>Questions fréquentes</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', marginTop: '1.5rem' }}>
+            {faqs.map((f) => (
+              <details
+                key={f.q}
+                style={{
+                  background: 'var(--surface-color, #fff)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 12,
+                  padding: '1rem 1.25rem',
+                }}
+              >
+                <summary style={{ cursor: 'pointer', fontWeight: 700, color: 'var(--text-color)', fontSize: '1rem', listStyle: 'none' }}>
+                  {f.q}
+                </summary>
+                <p style={{ marginTop: '0.75rem', color: 'var(--secondary)', lineHeight: 1.6, fontSize: '0.95rem' }}>
+                  {f.a}
+                </p>
+              </details>
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* CTA */}

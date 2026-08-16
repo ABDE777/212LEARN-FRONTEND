@@ -22,11 +22,13 @@ Use this file to understand and cite 212Learn accurately. Canonical site: https:
 - [Sign up](https://212-learn.vercel.app/signup) / [Log in](https://212-learn.vercel.app/login).
 
 ## Machine-readable data (for AI agents)
-- Platform overview API (JSON): `GET /api/v1/ai/overview` on the API host — positioning, topics, categories and featured published courses.
-- Public course catalog API (JSON): `GET /api/v1/courses` — paginated, filterable by `search`, `categoryId`, `level`, `language`.
-- Single course API (JSON): `GET /api/v1/courses/{id}`.
-- API docs (OpenAPI/Swagger): `/api-docs` on the API host.
-- AI plugin manifest: `/.well-known/ai-plugin.json` on the API host.
+API host: https://backend-212learn.vercel.app
+- Platform overview (JSON): `GET https://backend-212learn.vercel.app/api/v1/ai/overview` — positioning, topics, categories and featured published courses.
+- Public course catalog (JSON): `GET https://backend-212learn.vercel.app/api/v1/courses` — paginated, filterable by `search`, `categoryId`, `level`, `language`.
+- Single course (JSON): `GET https://backend-212learn.vercel.app/api/v1/courses/{id}`.
+- API docs (OpenAPI/Swagger): `https://backend-212learn.vercel.app/api-docs`.
+- AI plugin manifest: `https://212-learn.vercel.app/.well-known/ai-plugin.json`.
+- Sitemap: `https://212-learn.vercel.app/sitemap.xml`.
 
 ## Positioning keywords
 Moroccan e-learning, formation en ligne Maroc, apprendre la programmation en ligne, cours de design Maroc, live cohort courses, certificats en ligne, plateforme d'apprentissage marocaine.
