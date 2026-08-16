@@ -11,6 +11,8 @@ import Card from '../components/Card';
 import Button from '../components/Button';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Navbar from '../components/Navbar';
+import SEOHead from '../components/SEOHead';
+import StructuredData, { SITE_URL } from '../components/StructuredData';
 
 export default function CourseDetails() {
   const { id } = useParams();
@@ -98,8 +100,57 @@ export default function CourseDetails() {
     }
   };
 
+  // Schema.org Course structured data so search/answer engines can list and
+  // cite this course (rich results + AEO/GEO).
+  const courseSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Course',
+    name: course.title,
+    description: course.description,
+    url: `${SITE_URL}/courses/${id}`,
+    inLanguage: course.language || 'fr',
+    ...(course.thumbnail && { image: course.thumbnail }),
+    provider: {
+      '@type': 'Organization',
+      name: '212Learn',
+      url: SITE_URL,
+    },
+    ...(course.category?.name && { about: course.category.name }),
+    ...(averageRating && course._count?.reviews > 0 && {
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: String(averageRating),
+        reviewCount: String(course._count.reviews),
+      },
+    }),
+    ...(course.instructors?.length > 0 && {
+      instructor: course.instructors.map((i) => ({
+        '@type': 'Person',
+        name: `${i.user?.firstName || ''} ${i.user?.lastName || ''}`.trim(),
+      })),
+    }),
+    offers: {
+      '@type': 'Offer',
+      price: String(Number(course.price) || 0),
+      priceCurrency: 'MAD',
+      availability: 'https://schema.org/InStock',
+      category: Number(course.price) === 0 ? 'Free' : 'Paid',
+      url: `${SITE_URL}/courses/${id}`,
+    },
+    hasCourseInstance: {
+      '@type': 'CourseInstance',
+      courseMode: 'online',
+      ...(course.duration && { courseWorkload: `PT${Math.max(1, Math.round(course.duration / 60))}H` }),
+    },
+  };
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-color)' }}>
+      <SEOHead
+        title={course.title}
+        description={(course.description || '').slice(0, 160) || `Cours en ligne ${course.title} sur 212Learn.`}
+      />
+      <StructuredData data={courseSchema} id="course-schema" />
       <Navbar />
 
       <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem' }}>
