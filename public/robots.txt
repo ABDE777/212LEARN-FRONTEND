@@ -1,8 +1,78 @@
+# robots.txt — 212Learn
+# Canonical site: https://212-learn.vercel.app
+# NOTE: when a custom domain is purchased, update every https://212-learn.vercel.app
+# reference in this file, sitemap.xml, llms.txt and llms-full.txt.
+
+# ── Default crawlers (search engines) ────────────────────────────────────────
 User-agent: *
 Allow: /
-Disallow: /api/
 Disallow: /admin/
-Disallow: /private/
+Disallow: /student/
+Disallow: /instructor/
+Disallow: /learn/
+Disallow: /cart
+Disallow: /wishlist
+Disallow: /dashboard
+Disallow: /reset-password/
+Disallow: /verify-email/
 Disallow: /*?*demo=true
 
-Sitemap: https://www.212learn.com/sitemap.xml
+# ── AI / answer-engine crawlers — explicitly welcomed on public content ──────
+# Allowing these lets ChatGPT, Claude, Perplexity, Gemini, Copilot, etc. read
+# and cite the public catalog, course pages and About content.
+User-agent: GPTBot
+Allow: /
+Disallow: /admin/
+Disallow: /student/
+Disallow: /instructor/
+Disallow: /learn/
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: Meta-ExternalAgent
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+User-agent: DuckAssistBot
+Allow: /
+
+User-agent: YouBot
+Allow: /
+
+Sitemap: https://212-learn.vercel.app/sitemap.xml

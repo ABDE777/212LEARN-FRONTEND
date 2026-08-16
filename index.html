@@ -4,8 +4,62 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="./src/assets/Logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="212Learn - Plateforme d'apprentissage en ligne marocaine. Élevez vos compétences avec des cours interactifs en technologie et programmation." />
-    <title>212Learn - Élevez votre parcours d'apprentissage</title>
+
+    <!-- Primary SEO -->
+    <title>212Learn — Plateforme d'apprentissage en ligne marocaine (tech & design)</title>
+    <meta name="description" content="212Learn est une plateforme e-learning marocaine : cours en ligne de programmation, technologie et design, sessions live en cohorte, quiz et certificats. En français." />
+    <meta name="keywords" content="formation en ligne Maroc, e-learning Maroc, apprendre la programmation, cours de design, cours en ligne, certificats, sessions live, plateforme d'apprentissage marocaine, 212Learn" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="author" content="212Learn" />
+    <link rel="canonical" href="https://212-learn.vercel.app/" />
+
+    <!-- Open Graph (social + many AI previews) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="212Learn" />
+    <meta property="og:title" content="212Learn — Plateforme d'apprentissage en ligne marocaine (tech & design)" />
+    <meta property="og:description" content="Cours en ligne de programmation, technologie et design, avec sessions live en cohorte, quiz et certificats. En français, pour le Maroc et l'Afrique francophone." />
+    <meta property="og:url" content="https://212-learn.vercel.app/" />
+    <meta property="og:locale" content="fr_FR" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="212Learn — Plateforme d'apprentissage en ligne marocaine" />
+    <meta name="twitter:description" content="Cours en ligne de programmation, technologie et design, sessions live, quiz et certificats. En français." />
+
+    <!-- Structured data: Organization / EducationalOrganization + WebSite (AEO/GEO) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": ["EducationalOrganization", "Organization"],
+          "@id": "https://212-learn.vercel.app/#organization",
+          "name": "212Learn",
+          "url": "https://212-learn.vercel.app/",
+          "description": "Plateforme d'apprentissage en ligne marocaine proposant des cours de programmation, de technologie et de design, avec des sessions live en cohorte, des quiz et des certificats.",
+          "areaServed": { "@type": "Country", "name": "Morocco" },
+          "knowsLanguage": ["fr"],
+          "knowsAbout": ["Programmation", "Développement web", "Technologie", "Design", "UI/UX", "Design graphique", "Formation en ligne"]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://212-learn.vercel.app/#website",
+          "url": "https://212-learn.vercel.app/",
+          "name": "212Learn",
+          "inLanguage": "fr",
+          "publisher": { "@id": "https://212-learn.vercel.app/#organization" },
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": {
+              "@type": "EntryPoint",
+              "urlTemplate": "https://212-learn.vercel.app/courses?search={search_term_string}"
+            },
+            "query-input": "required name=search_term_string"
+          }
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
