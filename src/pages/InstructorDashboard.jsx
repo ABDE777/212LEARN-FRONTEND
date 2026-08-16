@@ -2147,7 +2147,6 @@ export default function InstructorDashboard() {
         className="fab-mobile-only"
         options={[
           ...TABS.map((t) => ({ label: t.label, Icon: t.icon, onClick: () => setActiveTab(t.key) })),
-          { label: 'Déconnexion', Icon: <LogOut size={16} />, onClick: () => { logout(); window.location.href = '/login'; } },
         ]}
       />
       <div className="dashboard-layout">

@@ -246,7 +246,6 @@ export default function StudentDashboard() {
           { label: 'Sessions Live', Icon: <Video size={16} />, onClick: () => setActiveTab('lives') },
           { label: 'Mon Profil', Icon: <User size={16} />, onClick: () => setActiveTab('profile') },
           { label: 'Sécurité', Icon: <Lock size={16} />, onClick: () => setActiveTab('security') },
-          { label: 'Déconnexion', Icon: <LogOut size={16} />, onClick: handleLogout },
         ]}
       />
 

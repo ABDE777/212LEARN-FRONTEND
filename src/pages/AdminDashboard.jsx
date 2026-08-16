@@ -4053,7 +4053,6 @@ export default function AdminDashboard() {
           { label: 'Santé système', Icon: <Activity size={16} />, onClick: () => setActiveTab('health') },
           { label: 'Settings', Icon: <Settings size={16} />, onClick: () => setActiveTab('settings') },
           { label: 'Mon Profil', Icon: <User size={16} />, onClick: () => setActiveTab('profile') },
-          { label: 'Déconnexion', Icon: <LogOut size={16} />, onClick: () => { logout(); window.location.href = '/login'; } },
         ]}
       />
 

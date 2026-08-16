@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { LogOut, ShoppingCart, Heart, Menu, X, LayoutDashboard } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { LogOut, ShoppingCart, Heart, Home, BookOpen, Info, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCartContext } from '../context/CartContext';
 import { useWishlistContext } from '../context/WishlistContext';
+import FloatingActionMenu from './FloatingActionMenu';
 
 
 const NAV_LINKS = [
@@ -15,8 +16,8 @@ const NAV_LINKS = [
 function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -41,9 +42,8 @@ function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Close mobile menu on route change
+  // Close the profile dropdown on route change
   useEffect(() => {
-    setMobileMenuOpen(false);
     setDropdownOpen(false);
   }, [location.pathname]);
 
@@ -67,6 +67,9 @@ function Navbar() {
     || user?.email?.[0]
     || 'U'
   ).toUpperCase();
+  // Dashboards render their own floating menu (tabs), so the Navbar's global
+  // one is skipped there to avoid two floating buttons.
+  const isDashboardRoute = /^\/(student|instructor|admin)\/dashboard/.test(location.pathname);
   const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
   const isInstructor = user?.role?.toUpperCase() === 'INSTRUCTOR';
   const isStudent = user?.role?.toUpperCase() === 'STUDENT';
@@ -246,34 +249,6 @@ function Navbar() {
                     </p>
                   </div>
 
-                  <Link
-                    to={getDashboardPath(user?.role)}
-                    onClick={() => setDropdownOpen(false)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.7rem',
-                      padding: '0.65rem 0.85rem',
-                      borderRadius: '12px',
-                      textDecoration: 'none',
-                      color: 'var(--text-color)',
-                      fontWeight: 600,
-                      fontSize: '0.88rem',
-                      transition: 'all 0.18s ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'rgba(193, 101, 47, 0.08)';
-                      e.currentTarget.style.color = 'var(--primary)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'transparent';
-                      e.currentTarget.style.color = 'var(--text-color)';
-                    }}
-                  >
-                    <LayoutDashboard size={15} />
-                    Tableau de bord
-                  </Link>
-
                   {isStudent && (
                     <>
                       <button
@@ -395,135 +370,36 @@ function Navbar() {
             </div>
           )}
 
-          {/* Mobile toggle */}
-          <button
-            className="nav-mobile-toggle"
-            onClick={() => setMobileMenuOpen((prev) => !prev)}
-            style={{
-              display: 'none',
-              background: mobileMenuOpen ? 'rgba(193,101,47,0.08)' : 'transparent',
-              border: '1px solid rgba(43,38,34,0.12)',
-              borderRadius: '10px',
-              cursor: 'pointer',
-              padding: '7px',
-              color: 'var(--text-color)',
-              transition: 'all 0.2s ease',
-            }}
-            aria-label="Menu principal"
-          >
-            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
         </div>
       </nav>
 
-      {/* Mobile menu dropdown */}
-      {mobileMenuOpen && (
-        <div
-          className="nav-mobile-menu"
-          style={{
-            position: 'sticky',
-            top: '60px',
-            zIndex: 999,
-            background: 'rgba(245, 237, 228, 0.97)',
-            backdropFilter: 'blur(16px)',
-            borderBottom: '1px solid rgba(255,255,255,0.6)',
-            boxShadow: '0 8px 30px rgba(43,38,34,0.1)',
-            padding: '1rem 1.5rem 1.5rem',
-            animation: 'mobileMenuIn 0.25s cubic-bezier(0.22, 1, 0.36, 1) both',
-          }}
-        >
-          {/* Nav links */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '1rem' }}>
-            {NAV_LINKS.map(({ to, label }) => {
-              const isActive = location.pathname === to;
-              return (
-                <Link
-                  key={to}
-                  to={to}
-                  style={{
-                    padding: '0.75rem 1rem',
-                    borderRadius: '12px',
-                    fontWeight: 600,
-                    fontSize: '1rem',
-                    color: isActive ? 'var(--primary)' : 'var(--text-color)',
-                    textDecoration: 'none',
-                    background: isActive ? 'rgba(193,101,47,0.08)' : 'transparent',
-                    borderLeft: isActive ? '3px solid var(--primary)' : '3px solid transparent',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  {label}
-                </Link>
-              );
-            })}
-          </div>
-
-          <div style={{ height: '1px', background: 'rgba(43,38,34,0.08)', marginBottom: '1rem' }} />
-
-          {/* Auth */}
-          {isAuthenticated ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <Link
-                to={getDashboardPath(user?.role)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '0.6rem',
-                  padding: '0.75rem 1rem', borderRadius: '12px',
-                  fontWeight: 600, fontSize: '0.95rem',
-                  color: 'var(--text-color)', textDecoration: 'none',
-                  background: 'rgba(43,38,34,0.04)',
-                }}
-              >
-                <LayoutDashboard size={16} />
-                Tableau de bord
-              </Link>
-              <button
-                onClick={handleLogout}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '0.6rem',
-                  padding: '0.75rem 1rem', borderRadius: '12px',
-                  border: 'none', background: 'rgba(229,62,62,0.07)',
-                  color: '#e53e3e', fontWeight: 600, fontSize: '0.95rem',
-                  cursor: 'pointer', textAlign: 'left',
-                  fontFamily: 'var(--font-heading)',
-                }}
-              >
-                <LogOut size={16} />
-                Déconnexion
-              </button>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-              <Link
-                to="/login"
-                style={{
-                  flex: 1, textAlign: 'center', padding: '0.65rem 1rem',
-                  borderRadius: '10px', border: '1px solid rgba(43,38,34,0.15)',
-                  color: 'var(--secondary)', fontWeight: 600, textDecoration: 'none',
-                  fontSize: '0.9rem',
-                }}
-              >
-                Se connecter
-              </Link>
-              <Link
-                to="/signup"
-                className="btn-primary"
-                style={{ flex: 1, textAlign: 'center', padding: '0.65rem 1rem', textDecoration: 'none', fontSize: '0.9rem', borderRadius: '10px' }}
-              >
-                S'inscrire
-              </Link>
-            </div>
-          )}
-        </div>
+      {/* Primary mobile navigation — floating action menu. On the dashboards the
+          page renders its own FAB (with tabs), so skip it there to avoid two. */}
+      {!isDashboardRoute && (
+        <FloatingActionMenu
+          className="fab-mobile-only"
+          options={
+            isAuthenticated
+              ? [
+                  { label: 'Accueil', Icon: <Home size={16} />, onClick: () => navigate('/') },
+                  { label: 'Cours', Icon: <BookOpen size={16} />, onClick: () => navigate('/courses') },
+                  { label: 'À propos', Icon: <Info size={16} />, onClick: () => navigate('/about') },
+                  { label: 'Tableau de bord', Icon: <LayoutDashboard size={16} />, onClick: () => navigate(getDashboardPath(user?.role)) },
+                ]
+              : [
+                  { label: 'Accueil', Icon: <Home size={16} />, onClick: () => navigate('/') },
+                  { label: 'Cours', Icon: <BookOpen size={16} />, onClick: () => navigate('/courses') },
+                  { label: 'À propos', Icon: <Info size={16} />, onClick: () => navigate('/about') },
+                  { label: 'Se connecter', Icon: <LogOut size={16} />, onClick: () => navigate('/login') },
+                ]
+          }
+        />
       )}
 
       <style>{`
         @keyframes dropdownIn {
           from { opacity: 0; transform: translateY(-8px) scale(0.97); }
           to   { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        @keyframes mobileMenuIn {
-          from { opacity: 0; transform: translateY(-12px); }
-          to   { opacity: 1; transform: translateY(0); }
         }
         .nav-center-link {
           color: var(--secondary);
@@ -545,10 +421,6 @@ function Navbar() {
         }
         @media (max-width: 768px) {
           .nav-desktop-links { display: none !important; }
-          .nav-mobile-toggle { display: flex !important; }
-        }
-        @media (min-width: 769px) {
-          .nav-mobile-menu { display: none !important; }
         }
       `}</style>
     </>
