@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LogOut, LogIn, ShoppingCart, Heart, Home, BookOpen, Info, LayoutDashboard } from 'lucide-react';
+import { LogOut, LogIn, ShoppingCart, Heart, Home, BookOpen, Info } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCartContext } from '../context/CartContext';
 import { useWishlistContext } from '../context/WishlistContext';
@@ -47,12 +47,6 @@ function Navbar() {
     setDropdownOpen(false);
   }, [location.pathname]);
 
-  const getDashboardPath = (role) => {
-    const r = role?.toUpperCase();
-    if (r === 'INSTRUCTOR') return '/instructor/dashboard';
-    if (r === 'ADMIN') return '/admin/dashboard';
-    return '/student/dashboard';
-  };
 
   const handleLogout = () => {
     setDropdownOpen(false);
@@ -71,15 +65,15 @@ function Navbar() {
   const isInstructor = user?.role?.toUpperCase() === 'INSTRUCTOR';
   const isStudent = user?.role?.toUpperCase() === 'STUDENT';
 
-  // Site links shown in the bottom dock (mobile). Dashboard tabs stay in each
-  // dashboard's own (+) floating menu.
+  // Site links shown in the bottom dock (mobile). The user's own sections live
+  // in the (+) floating button, so the dock keeps only the public site links.
   const siteDockItems = [
     { label: 'Accueil', icon: <Home size={22} />, onClick: () => navigate('/') },
     { label: 'Cours', icon: <BookOpen size={22} />, onClick: () => navigate('/courses') },
     { label: 'À propos', icon: <Info size={22} />, onClick: () => navigate('/about') },
-    isAuthenticated
-      ? { label: 'Espace', icon: <LayoutDashboard size={22} />, onClick: () => navigate(getDashboardPath(user?.role)) }
-      : { label: 'Connexion', icon: <LogIn size={22} />, onClick: () => navigate('/login') },
+    ...(isAuthenticated
+      ? []
+      : [{ label: 'Connexion', icon: <LogIn size={22} />, onClick: () => navigate('/login') }]),
   ];
 
   const navStyle = {
