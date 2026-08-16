@@ -11,10 +11,6 @@ export default function TinderSwipeCategories({ categories = [], onSelectCategor
   const cardRef = useRef(null);
   const autoPlayRef = useRef(null);
 
-  if (!categories || categories.length === 0) {
-    return null;
-  }
-
   const handleNext = (isAuto = false) => {
     if (!isAuto) stopAutoPlay();
     setSlideDirection('slide-left');
@@ -125,7 +121,7 @@ export default function TinderSwipeCategories({ categories = [], onSelectCategor
 
   // Auto-play functionality
   useEffect(() => {
-    if (isAutoPlaying) {
+    if (isAutoPlaying && categories.length > 0) {
       autoPlayRef.current = setInterval(() => {
         handleNext(true); // Pass true to indicate this is auto-play
       }, 2000); // Change every 2 seconds
@@ -146,6 +142,12 @@ export default function TinderSwipeCategories({ categories = [], onSelectCategor
   const resumeAutoPlay = () => {
     setIsAutoPlaying(true);
   };
+
+  // Nothing to render without categories (guard placed after all hooks so
+  // the hook call order stays stable across renders — rules-of-hooks).
+  if (!categories || categories.length === 0) {
+    return null;
+  }
 
   return (
     <div 
