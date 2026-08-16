@@ -250,33 +250,6 @@ export default function PortfolioEditor({ value, isEditing, onChange }) {
         subtitle: 'Vos diplômes (avec le fichier PDF ou image).',
       })}
 
-      {/* Social links */}
-      <div style={cardStyle}>
-        <h3 style={headingStyle}><Link2 size={20} style={{ color: 'var(--primary)' }} /> Liens</h3>
-        <p style={subStyle}>Vos réseaux et votre portfolio en ligne.</p>
-        {isEditing ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
-            {SOCIAL.map(({ key, label, icon: Icon, placeholder }) => (
-              <div key={key}>
-                <label style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                  <Icon size={15} /> {label}
-                </label>
-                <input style={inputStyle} type="url" value={v.socialLinks[key] || ''} placeholder={placeholder}
-                  onChange={(e) => patch({ socialLinks: { ...v.socialLinks, [key]: e.target.value } })} />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
-            {SOCIAL.filter(({ key }) => v.socialLinks[key]).length === 0 && <span style={muted}>Aucun lien.</span>}
-            {SOCIAL.filter(({ key }) => v.socialLinks[key]).map(({ key, label, icon: Icon }) => (
-              <a key={key} href={v.socialLinks[key]} target="_blank" rel="noopener noreferrer" style={{ ...chip, textDecoration: 'none', color: 'var(--primary)' }}>
-                <Icon size={16} /> {label}
-              </a>
-            ))}
-          </div>
-        )}
-      </div>
     </>
   );
 }

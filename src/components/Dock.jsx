@@ -17,15 +17,14 @@ import {
 } from 'react';
 
 /**
- * Apple-style magnifying Dock — adapted from a shadcn/Tailwind/TS component to
- * this project's stack (plain JSX + inline styles + theme tokens). Icons grow as
- * the pointer nears them; each shows a label tooltip on hover/focus.
+ * Apple-style magnifying Dock — adapted to this project's stack (plain JSX + inline styles + theme tokens).
+ * Icons magnify with spring physics as pointer or finger nears them; each shows a label tooltip.
  */
 
 const DOCK_HEIGHT = 128;
-const DEFAULT_MAGNIFICATION = 72;
-const DEFAULT_DISTANCE = 140;
-const DEFAULT_PANEL_HEIGHT = 60;
+const DEFAULT_MAGNIFICATION = 80;
+const DEFAULT_DISTANCE = 150;
+const DEFAULT_PANEL_HEIGHT = 64;
 
 const DockContext = createContext(undefined);
 
@@ -59,24 +58,44 @@ export function Dock({
 
   return (
     <motion.div
-      style={{ height, scrollbarWidth: 'none', display: 'flex', maxWidth: '100%', alignItems: 'flex-end' }}
+      style={{ height, scrollbarWidth: 'none', display: 'flex', width: '100%', alignItems: 'flex-end' }}
       className={className}
     >
       <motion.div
-        onMouseMove={({ pageX }) => { isHovered.set(1); mouseX.set(pageX); }}
-        onMouseLeave={() => { isHovered.set(0); mouseX.set(Infinity); }}
+        onMouseMove={({ pageX }) => {
+          isHovered.set(1);
+          mouseX.set(pageX);
+        }}
+        onMouseLeave={() => {
+          isHovered.set(0);
+          mouseX.set(Infinity);
+        }}
+        onTouchStart={(e) => {
+          isHovered.set(1);
+          if (e.touches[0]) mouseX.set(e.touches[0].pageX);
+        }}
+        onTouchMove={(e) => {
+          isHovered.set(1);
+          if (e.touches[0]) mouseX.set(e.touches[0].pageX);
+        }}
+        onTouchEnd={() => {
+          isHovered.set(0);
+          mouseX.set(Infinity);
+        }}
         style={{
           height: panelHeight,
           margin: '0 auto',
           display: 'flex',
-          width: 'fit-content',
-          gap: '0.9rem',
-          alignItems: 'flex-end',
+          width: '100%',
+          justifyContent: 'space-around',
+          gap: '0.5rem',
+          alignItems: 'center',
           borderRadius: '18px',
-          padding: '0 0.9rem',
+          padding: '0 0.6rem',
           background: 'var(--surface-color, #fff)',
           border: '1px solid var(--border-color)',
           boxShadow: '0 12px 34px rgba(43,38,34,0.20)',
+          boxSizing: 'border-box',
         }}
         role="toolbar"
         aria-label="Navigation du site"
@@ -187,3 +206,4 @@ export function DockIcon({ children, className = '', ...rest }) {
     </motion.div>
   );
 }
+

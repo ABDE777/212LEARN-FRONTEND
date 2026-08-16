@@ -14,8 +14,25 @@ import { Plus } from 'lucide-react';
  *  - style: extra inline style merged onto the wrapper (position overrides).
  *  - ariaLabel: label for the toggle button.
  */
-export default function FloatingActionMenu({ options = [], className = '', style, ariaLabel = 'Menu' }) {
-  const [isOpen, setIsOpen] = useState(false);
+export default function FloatingActionMenu({ options = [], className = '', style, ariaLabel = 'Menu', isOpen: controlledIsOpen, onToggle }) {
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
+
+  const handleToggle = () => {
+    if (onToggle) {
+      onToggle(!isOpen);
+    } else {
+      setInternalIsOpen(!isOpen);
+    }
+  };
+
+  const handleClose = () => {
+    if (onToggle) {
+      onToggle(false);
+    } else {
+      setInternalIsOpen(false);
+    }
+  };
 
   // App theme: primary-gradient main button, light surface option chips.
   const mainStyle = {
@@ -36,7 +53,7 @@ export default function FloatingActionMenu({ options = [], className = '', style
   return (
     <div className={className} style={{ position: 'fixed', bottom: '1.75rem', right: '1.25rem', zIndex: 1400, ...style }}>
       <button
-        onClick={() => setIsOpen((v) => !v)}
+        onClick={handleToggle}
         aria-label={ariaLabel}
         aria-expanded={isOpen}
         style={{
@@ -77,7 +94,7 @@ export default function FloatingActionMenu({ options = [], className = '', style
                   transition={{ duration: 0.3, delay: index * 0.05 }}
                 >
                   <button
-                    onClick={() => { option.onClick?.(); setIsOpen(false); }}
+                    onClick={() => { option.onClick?.(); handleClose(); }}
                     style={{
                       ...optionStyle,
                       display: 'flex',

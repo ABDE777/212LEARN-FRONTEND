@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import LottieRaw from 'lottie-react';
-const Lottie = LottieRaw.default || LottieRaw;
-import signupAnimation from '../lotties/Sign up.json';
+import { motion } from 'framer-motion';
 import logoImg from '../assets/navbarlogo.png';
-import { ArrowLeft, GraduationCap, User, Eye, EyeOff, ChevronLeft, ChevronRight, CheckCircle, Loader } from 'lucide-react';
+import { ArrowLeft, GraduationCap, User, Eye, EyeOff, ChevronLeft, ChevronRight, CheckCircle, Loader, Check, X, ShieldCheck, Sparkles, Trophy, Video, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
+import CountryPhonePicker, { DEFAULT_COUNTRIES } from '../components/CountryPhonePicker';
 
 // Reassurance messages shown while the account is being created. Registration is
 // a single request (no real progress signal), so instead of a fake % we advance
@@ -24,8 +24,24 @@ export default function Signup() {
   const [error, setError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [emailStatus, setEmailStatus] = useState(null); // null | 'checking' | 'available' | 'taken' | 'invalid'
+  const [phoneStatus, setPhoneStatus] = useState(null); // null | 'checking' | 'available' | 'taken' | 'invalid'
+  const [selectedCountry, setSelectedCountry] = useState(DEFAULT_COUNTRIES[0]); // 🇲🇦 Maroc (+212)
+  const [localPhone, setLocalPhone] = useState('');
   const { signup, user } = useAuth();
   const navigate = useNavigate();
+
+  const handleLocalPhoneChange = (code, rawDigits) => {
+    // Strip non-digits and leading zeros for clean international formatting
+    const digitsOnly = rawDigits.replace(/\D/g, '');
+    const cleanDigits = digitsOnly.startsWith('0') ? digitsOnly.slice(1) : digitsOnly;
+    setLocalPhone(rawDigits);
+    if (cleanDigits) {
+      setFormData((prev) => ({ ...prev, phone: `${code}${cleanDigits}` }));
+    } else {
+      setFormData((prev) => ({ ...prev, phone: '' }));
+    }
+  };
 
   // Redirect if already logged in
   useEffect(() => {
@@ -87,6 +103,80 @@ export default function Signup() {
   // Validation errors state
   const [validationErrors, setValidationErrors] = useState({});
 
+  // Live Email availability check effect
+  useEffect(() => {
+    const rawEmail = formData.email?.trim() || '';
+    if (!rawEmail) {
+      setEmailStatus(null);
+      return undefined;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(rawEmail)) {
+      setEmailStatus('invalid');
+      return undefined;
+    }
+
+    setEmailStatus('checking');
+    const timer = setTimeout(async () => {
+      try {
+        const res = await api.get(`/auth/check-email?email=${encodeURIComponent(rawEmail)}`, {
+          validateStatus: (status) => status < 500,
+        });
+        if (res.status === 200) {
+          if (res.data.exists || !res.data.available) {
+            setEmailStatus('taken');
+          } else {
+            setEmailStatus('available');
+          }
+        } else {
+          setEmailStatus(null);
+        }
+      } catch {
+        setEmailStatus(null);
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [formData.email]);
+
+  // Live Phone availability check effect
+  useEffect(() => {
+    const rawPhone = formData.phone?.trim() || '';
+    if (!rawPhone) {
+      setPhoneStatus(null);
+      return undefined;
+    }
+
+    const phoneRegex = /^\+?[\d\s-]{10,}$/;
+    if (!phoneRegex.test(rawPhone)) {
+      setPhoneStatus('invalid');
+      return undefined;
+    }
+
+    setPhoneStatus('checking');
+    const timer = setTimeout(async () => {
+      try {
+        const res = await api.get(`/auth/check-phone?phone=${encodeURIComponent(rawPhone)}`, {
+          validateStatus: (status) => status < 500,
+        });
+        if (res.status === 200) {
+          if (res.data.exists || !res.data.available) {
+            setPhoneStatus('taken');
+          } else {
+            setPhoneStatus('available');
+          }
+        } else {
+          setPhoneStatus(null);
+        }
+      } catch {
+        setPhoneStatus(null);
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [formData.phone]);
+
   const getDashboardPath = (role) => {
     const normalizedRole = role?.toUpperCase();
     if (normalizedRole === 'INSTRUCTOR') return '/instructor/dashboard';
@@ -107,9 +197,13 @@ export default function Signup() {
       errors.email = 'L\'adresse e-mail est requise.';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       errors.email = 'Veuillez entrer une adresse e-mail valide.';
+    } else if (emailStatus === 'taken') {
+      errors.email = 'Cette adresse e-mail est déjà utilisée.';
     }
     if (formData.phone && !/^\+?[\d\s-]{10,}$/.test(formData.phone)) {
       errors.phone = 'Veuillez entrer un numéro de téléphone valide.';
+    } else if (phoneStatus === 'taken') {
+      errors.phone = 'Ce numéro de téléphone est déjà utilisé.';
     }
     if (!formData.password) {
       errors.password = 'Le mot de passe est requis.';
@@ -393,10 +487,42 @@ export default function Signup() {
     return steps;
   };
 
+  const pwd = formData.password || '';
+  const pwdRules = {
+    minLength: pwd.length >= 8,
+    hasUpper: /[A-Z]/.test(pwd),
+    hasLower: /[a-z]/.test(pwd),
+    hasNumber: /[0-9]/.test(pwd),
+    hasSpecial: /[!@#$%^&*(),.?":{}|<>_\-]/.test(pwd),
+  };
+
+  const pwdPassedCount = Object.values(pwdRules).filter(Boolean).length;
+  
+  const getPwdStrength = () => {
+    if (pwdPassedCount <= 1) return { label: 'Faible', color: '#e53e3e', width: '25%' };
+    if (pwdPassedCount <= 3) return { label: 'Moyen', color: '#dd6b20', width: '60%' };
+    if (pwdPassedCount === 4) return { label: 'Fort', color: '#38a169', width: '80%' };
+    return { label: 'Très fort', color: '#319795', width: '100%' };
+  };
+
+  const pwdStrength = getPwdStrength();
+
+  const isStep1Valid = Boolean(
+    formData.firstName?.trim() &&
+    formData.lastName?.trim() &&
+    formData.email?.trim() &&
+    emailStatus === 'available' &&
+    formData.password &&
+    formData.password.length >= 8 &&
+    formData.confirmPassword === formData.password &&
+    phoneStatus !== 'taken' &&
+    (formData.phone ? /^\+?[\d\s-]{10,}$/.test(formData.phone.trim()) : true)
+  );
+
   const renderStep1 = () => (
     <div>
-      <h2 style={{ marginBottom: '0.5rem', color: 'var(--primary)' }}>Créer votre compte</h2>
-      <p style={{ marginBottom: '2rem', color: 'var(--secondary)' }}>
+      <h2 style={{ marginBottom: '0.35rem', color: 'var(--primary)' }}>Créer votre compte</h2>
+      <p style={{ marginBottom: '1rem', color: 'var(--secondary)' }}>
         Remplissez vos informations pour commencer.
       </p>
 
@@ -435,22 +561,82 @@ export default function Signup() {
           placeholder="etudiant@212learn.com"
           value={formData.email}
           onChange={e => setFormData({ ...formData, email: e.target.value })}
-          style={validationErrors.email ? { borderColor: 'var(--error-color)' } : {}}
+          style={
+            emailStatus === 'taken' || validationErrors.email
+              ? { borderColor: 'var(--error-color)' }
+              : emailStatus === 'available'
+              ? { borderColor: '#2e7d32' }
+              : {}
+          }
         />
-        {validationErrors.email && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.email}</div>}
+        {emailStatus === 'checking' && (
+          <div style={{ color: 'var(--secondary)', fontSize: '0.78rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+            <Loader size={12} className="spin" /> Vérification de la disponibilité...
+          </div>
+        )}
+        {emailStatus === 'taken' && (
+          <div style={{ color: '#d32f2f', fontSize: '0.78rem', marginTop: '0.25rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+            <X size={13} /> Cette adresse e-mail est déjà utilisée
+          </div>
+        )}
+        {emailStatus === 'available' && (
+          <div style={{ color: '#2e7d32', fontSize: '0.78rem', marginTop: '0.25rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+            <Check size={13} /> Adresse e-mail disponible
+          </div>
+        )}
+        {validationErrors.email && emailStatus !== 'taken' && (
+          <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.email}</div>
+        )}
       </div>
 
       <div className="form-group">
         <label>Numéro de téléphone</label>
-        <input
-          type="tel"
-          className="form-control"
-          placeholder="+212 6 XX XX XX XX"
-          value={formData.phone}
-          onChange={e => setFormData({ ...formData, phone: e.target.value })}
-          style={validationErrors.phone ? { borderColor: 'var(--error-color)' } : {}}
-        />
-        {validationErrors.phone && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.phone}</div>}
+        <div style={{ display: 'flex', gap: '0.45rem', alignItems: 'stretch' }}>
+          {/* Searchable Country Code Picker */}
+          <CountryPhonePicker
+            selectedCountry={selectedCountry}
+            onChange={(countryObj) => {
+              setSelectedCountry(countryObj);
+              handleLocalPhoneChange(countryObj.code, localPhone);
+            }}
+          />
+
+          {/* Local Phone Input */}
+          <input
+            type="tel"
+            className="form-control"
+            placeholder="6 12 34 56 78"
+            value={localPhone}
+            onChange={(e) => handleLocalPhoneChange(selectedCountry.code, e.target.value)}
+            style={{
+              flex: 1,
+              borderColor:
+                phoneStatus === 'taken' || validationErrors.phone
+                  ? 'var(--error-color)'
+                  : phoneStatus === 'available'
+                  ? '#2e7d32'
+                  : undefined,
+            }}
+          />
+        </div>
+        {phoneStatus === 'checking' && (
+          <div style={{ color: 'var(--secondary)', fontSize: '0.78rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+            <Loader size={12} className="spin" /> Vérification du numéro...
+          </div>
+        )}
+        {phoneStatus === 'taken' && (
+          <div style={{ color: '#d32f2f', fontSize: '0.78rem', marginTop: '0.25rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+            <X size={13} /> Ce numéro de téléphone est déjà utilisé
+          </div>
+        )}
+        {phoneStatus === 'available' && (
+          <div style={{ color: '#2e7d32', fontSize: '0.78rem', marginTop: '0.25rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+            <Check size={13} /> Numéro de téléphone disponible ({formData.phone})
+          </div>
+        )}
+        {validationErrors.phone && phoneStatus !== 'taken' && (
+          <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.phone}</div>
+        )}
       </div>
 
       <div className="form-group">
@@ -472,6 +658,34 @@ export default function Signup() {
             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
         </div>
+
+        {/* Live Password Strength Meter & Checklist */}
+        {pwd.length > 0 && (
+          <div style={{ marginTop: '0.45rem', padding: '0.55rem 0.75rem', background: 'rgba(27,75,90,0.04)', borderRadius: '10px', border: '1px solid rgba(27,75,90,0.1)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem', fontSize: '0.78rem', fontWeight: 600 }}>
+              <span style={{ color: 'var(--secondary)' }}>Sécurité du mot de passe:</span>
+              <span style={{ color: pwdStrength.color }}>{pwdStrength.label}</span>
+            </div>
+            <div style={{ height: '4px', background: 'rgba(0,0,0,0.08)', borderRadius: '999px', overflow: 'hidden', marginBottom: '0.45rem' }}>
+              <div style={{ height: '100%', width: pwdStrength.width, background: pwdStrength.color, transition: 'all 0.3s ease' }} />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.2rem 0.4rem', fontSize: '0.74rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: pwdRules.minLength ? '#2e7d32' : '#888' }}>
+                {pwdRules.minLength ? <Check size={12} /> : <X size={12} />} 8+ caractères
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: pwdRules.hasUpper ? '#2e7d32' : '#888' }}>
+                {pwdRules.hasUpper ? <Check size={12} /> : <X size={12} />} Majuscule (A-Z)
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: pwdRules.hasNumber ? '#2e7d32' : '#888' }}>
+                {pwdRules.hasNumber ? <Check size={12} /> : <X size={12} />} Chiffre (0-9)
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: pwdRules.hasSpecial ? '#2e7d32' : '#888' }}>
+                {pwdRules.hasSpecial ? <Check size={12} /> : <X size={12} />} Caractère spécial (!@#...)
+              </div>
+            </div>
+          </div>
+        )}
+
         {validationErrors.password && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.password}</div>}
       </div>
 
@@ -494,6 +708,18 @@ export default function Signup() {
             {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
         </div>
+
+        {/* Live Confirm Password Match Indicator */}
+        {formData.confirmPassword.length > 0 && (
+          <div style={{ marginTop: '0.35rem', fontSize: '0.78rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem', color: formData.confirmPassword === pwd ? '#2e7d32' : '#d32f2f' }}>
+            {formData.confirmPassword === pwd ? (
+              <><Check size={13} /> Les mots de passe correspondent</>
+            ) : (
+              <><X size={13} /> Les mots de passe ne correspondent pas</>
+            )}
+          </div>
+        )}
+
         {validationErrors.confirmPassword && <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.confirmPassword}</div>}
       </div>
     </div>
@@ -1315,11 +1541,11 @@ export default function Signup() {
               <ArrowLeft size={20} />
               Retour
             </Link>
-            <img src={logoImg} alt="212LEARN Logo" style={{ height: '80px', objectFit: 'contain' }} />
+            <img src={logoImg} alt="212LEARN Logo" style={{ height: '48px', objectFit: 'contain' }} />
           </div>
 
           {/* Progress indicator */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '2rem', fontSize: '0.85rem', color: 'var(--secondary)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem', fontSize: '0.85rem', color: 'var(--secondary)' }}>
             {getProgressSteps().map((s, index) => (
               <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span style={{ 
@@ -1343,7 +1569,7 @@ export default function Signup() {
           {step === 4 && renderStep4()}
 
           {/* Navigation buttons */}
-          <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+          <div style={{ display: 'flex', gap: '1rem', marginTop: '1.25rem' }}>
             {step > 1 && step !== 4 && (
               <button
                 type="button"
@@ -1372,20 +1598,22 @@ export default function Signup() {
               <button
                 type="button"
                 onClick={handleContinue}
-                disabled={loading}
+                disabled={loading || (step === 1 && !isStep1Valid)}
                 style={{
                   flex: 1,
                   padding: '0.75rem',
                   borderRadius: '8px',
                   border: 'none',
-                  background: 'var(--primary)',
-                  cursor: loading ? 'not-allowed' : 'pointer',
+                  background: (step === 1 && !isStep1Valid) ? '#cbd5e1' : 'var(--primary)',
+                  cursor: (loading || (step === 1 && !isStep1Valid)) ? 'not-allowed' : 'pointer',
                   fontWeight: 600,
                   color: '#fff',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '0.5rem',
+                  opacity: (step === 1 && !isStep1Valid) ? 0.6 : 1,
+                  transition: 'all 0.25s ease',
                 }}
               >
                 Continuer <ChevronRight size={18} />
@@ -1440,13 +1668,134 @@ export default function Signup() {
           </p>
         </div>
 
-        {/* Right Section: Lottie Animation */}
-        <div className="auth-lottie">
-          <Lottie 
-            animationData={signupAnimation} 
-            loop={true} 
-            style={{ width: '100%', maxWidth: '400px' }}
-          />
+        {/* Right Section: Authentic 212Learn Live Dashboard Preview */}
+        <div className="auth-dashboard-preview">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94, y: 15 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="mockup-212-dashboard"
+            style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}
+          >
+            {/* Mockup Top Header Navbar */}
+            <div className="mockup-navbar">
+              <div className="mockup-brand">
+                <span className="mockup-brand-logo">212</span>
+                <span className="mockup-brand-text">212Learn</span>
+              </div>
+              <div className="mockup-nav-right">
+                <span className="mockup-badge-live">En direct</span>
+                <div className="mockup-avatar">
+                  {formData.firstName ? formData.firstName.charAt(0).toUpperCase() : 'U'}
+                </div>
+              </div>
+            </div>
+
+            {/* Mockup Layout Split: Sidebar + Main Area */}
+            <div className="mockup-body-split">
+              {/* Left Mini Sidebar */}
+              <div className="mockup-sidebar">
+                <div className="mockup-nav-item active" title="Tableau de bord">
+                  <Trophy size={14} />
+                </div>
+                <div className="mockup-nav-item" title="Sessions Live">
+                  <Video size={14} />
+                </div>
+                <div className="mockup-nav-item" title="Mon Profil">
+                  <User size={14} />
+                </div>
+                <div className="mockup-nav-item" title="Sécurité">
+                  <Lock size={14} />
+                </div>
+              </div>
+
+              {/* Main Content Area */}
+              <div className="mockup-main-area">
+                {/* Welcome Heading */}
+                <div className="mockup-welcome-head">
+                  <h4 className="mockup-user-title">
+                    Bienvenue, {formData.firstName?.trim() || 'Étudiant'} 👋
+                  </h4>
+                  <p className="mockup-user-sub">
+                    Suivez vos progrès et continuez votre apprentissage sur 212Learn.
+                  </p>
+                </div>
+
+                {/* 4 Stat Cards Grid (Exact replica of 212Learn StudentDashboard) */}
+                <div className="mockup-stats-grid">
+                  <div className="mockup-stat-card">
+                    <span className="stat-card-title">📚 Cours</span>
+                    <span className="stat-card-val">1 / 3</span>
+                  </div>
+                  <div className="mockup-stat-card">
+                    <span className="stat-card-title">⚡ Profil</span>
+                    <span className="stat-card-val highlight">
+                      {step === 1 ? (isStep1Valid ? '35%' : '15%') : step === 2 ? '55%' : step === 3 ? '85%' : '100%'}
+                    </span>
+                  </div>
+                  <div className="mockup-stat-card">
+                    <span className="stat-card-title">🏆 Badges</span>
+                    <span className="stat-card-val">1</span>
+                  </div>
+                  <div className="mockup-stat-card">
+                    <span className="stat-card-title">🏅 Certificats</span>
+                    <span className="stat-card-val">0</span>
+                  </div>
+                </div>
+
+                {/* Live User Profile Card */}
+                <div className="mockup-profile-card">
+                  <div className="mockup-profile-row">
+                    <div className="mockup-profile-avatar">
+                      {formData.firstName ? formData.firstName.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                    <div className="mockup-profile-details">
+                      <span className="profile-name">
+                        {formData.firstName || formData.lastName
+                          ? `${formData.firstName} ${formData.lastName}`.trim()
+                          : 'Votre Nom & Prénom'}
+                      </span>
+                      <span className="profile-email">
+                        {formData.email ? formData.email : 'votre.email@212learn.com'}
+                      </span>
+                    </div>
+                    <span className="profile-role-tag">
+                      {formData.role === 'instructor' ? 'Formateur' : 'Étudiant'}
+                    </span>
+                  </div>
+
+                  {/* Secondary info fields if entered */}
+                  {(formData.phone || formData.school || formData.companyName) && (
+                    <div className="mockup-profile-meta">
+                      {formData.phone && <div><strong>Tél:</strong> {formData.phone}</div>}
+                      {formData.school && <div><strong>Établissement:</strong> {formData.school}</div>}
+                      {formData.companyName && <div><strong>Entreprise:</strong> {formData.companyName}</div>}
+                    </div>
+                  )}
+                </div>
+
+                {/* Live Readiness Indicator */}
+                <div className="mockup-readiness-bar">
+                  <div className="readiness-row">
+                    <span>Création du compte</span>
+                    <span className="readiness-percent">
+                      {step === 1 ? (isStep1Valid ? '35%' : '15%') : step === 2 ? '55%' : step === 3 ? '85%' : '100%'}
+                    </span>
+                  </div>
+                  <div className="readiness-track">
+                    <motion.div
+                      className="readiness-fill"
+                      animate={{
+                        width: step === 1 ? (isStep1Valid ? '35%' : '15%') : step === 2 ? '55%' : step === 3 ? '85%' : '100%',
+                      }}
+                      transition={{ duration: 0.35 }}
+                    />
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </motion.div>
         </div>
 
       </div>

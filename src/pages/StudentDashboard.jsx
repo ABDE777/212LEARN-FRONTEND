@@ -13,7 +13,6 @@ import ProfileEditForm from '../components/ProfileEditForm';
 import ChangePasswordForm from '../components/ChangePasswordForm';
 import SEOHead from '../components/SEOHead';
 import LoadingSpinner from '../components/LoadingSpinner';
-import FloatingActionMenu from '../components/FloatingActionMenu';
 import { WishlistContent } from './Wishlist';
 
 /* ─── Student Live Sessions Component ────────────────────────── */
@@ -236,12 +235,8 @@ export default function StudentDashboard() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-color, #f8fafc)' }}>
       <SEOHead title="Tableau de Bord Étudiant" description="Consultez votre progression, vos cours et vos statistiques sur 212Learn." />
-      <Navbar />
-
-      {/* Mobile navigation — floating action menu (sidebar is hidden on phones) */}
-      <FloatingActionMenu
-        className="fab-mobile-only"
-        options={[
+      <Navbar
+        extraDockOptions={[
           { label: 'Tableau de bord', Icon: <Trophy size={16} />, onClick: () => setActiveTab('dashboard') },
           { label: 'Sessions Live', Icon: <Video size={16} />, onClick: () => setActiveTab('lives') },
           { label: 'Mon Profil', Icon: <User size={16} />, onClick: () => setActiveTab('profile') },

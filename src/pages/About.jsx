@@ -8,20 +8,120 @@ import LottieRaw from 'lottie-react';
 const Lottie = LottieRaw.default || LottieRaw;
 import aboutAnimation from '../lotties/Education2.json';
 import Navbar from '../components/Navbar';
+import AnimatedLogo from '../components/AnimatedLogo';
 import SEOHead from '../components/SEOHead';
-import StructuredData from '../components/StructuredData';
 import BackgroundBlobs from '../components/about/BackgroundBlobs';
 import SectionDivider from '../components/about/SectionDivider';
 import GlowCard from '../components/about/GlowCard';
 import { usePublicTestimonials } from '../hooks/usePublicTestimonials';
+import { usePublicInstructors } from '../hooks/usePublicInstructors';
 import LoadingSpinner from '../components/LoadingSpinner';
+import CoverflowCarousel from '../components/CoverflowCarousel';
+import TeamShowcase from '../components/TeamShowcase';
 
 const BG_SAND = '#F5EDE4';
 const BG_WHITE = '#ffffff';
 const BG_CTA = '#C1652F';
 
+const DEFAULT_INSTRUCTOR_SLIDES = [
+  {
+    src: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=640&h=640&fit=crop&q=80',
+    alt: 'Dr. Sofia Benali',
+    title: 'Dr. Sofia Benali',
+    subtitle: 'Lead AI Researcher & Instructor',
+    meta: [
+      { label: 'Spécialité', value: 'Machine Learning & Python' },
+      { label: 'Expérience', value: '9+ ans en R&D Tech' },
+      { label: 'Vérification', value: '✔ Formateur Vérifié' },
+    ],
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=640&h=640&fit=crop&q=80',
+    alt: 'Karim Mansouri',
+    title: 'Karim Mansouri',
+    subtitle: 'Principal Cloud Architect',
+    meta: [
+      { label: 'Spécialité', value: 'React, Node.js & AWS' },
+      { label: 'Expérience', value: '12 ans d’expérience' },
+      { label: 'Vérification', value: '✔ Formateur Vérifié' },
+    ],
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=640&h=640&fit=crop&q=80',
+    alt: 'Amine El Amrani',
+    title: 'Amine El Amrani',
+    subtitle: 'Senior Cyber Security Consultant',
+    meta: [
+      { label: 'Spécialité', value: 'Ethical Hacking & Linux' },
+      { label: 'Expérience', value: '8 ans d’expérience' },
+      { label: 'Vérification', value: '✔ Formateur Vérifié' },
+    ],
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=640&h=640&fit=crop&q=80',
+    alt: 'Nadia Tazi',
+    title: 'Nadia Tazi',
+    subtitle: 'Head of Product Design',
+    meta: [
+      { label: 'Spécialité', value: 'Figma, Design Systems & UX' },
+      { label: 'Expérience', value: '7 ans d’expérience' },
+      { label: 'Vérification', value: '✔ Formateur Vérifié' },
+    ],
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=640&h=640&fit=crop&q=80',
+    alt: 'Youssef Chraibi',
+    title: 'Youssef Chraibi',
+    subtitle: 'Staff DevOps & Database Engineer',
+    meta: [
+      { label: 'Spécialité', value: 'PostgreSQL, Docker & CI/CD' },
+      { label: 'Expérience', value: '10+ ans d’expérience' },
+      { label: 'Vérification', value: '✔ Formateur Vérifié' },
+    ],
+  },
+];
+
 function About() {
   const { testimonials, loading: testimonialsLoading } = usePublicTestimonials();
+  const { instructors, loading: instructorsLoading } = usePublicInstructors();
+
+  // Map real database instructors to Coverflow Carousel slides with maximum trust fields
+  const instructorSlides = instructors.length > 0
+    ? instructors.map((inst) => {
+        const name = `${inst.firstName || ''} ${inst.lastName || ''}`.trim() || 'Instructeur';
+        const profile = inst.instructorProfile || {};
+
+        const position = profile.position || inst.position;
+        const organization = profile.organization || inst.organization;
+        const specialization = profile.specialization || inst.specialization;
+        const expertiseDomain = profile.expertiseDomain || inst.expertiseDomain;
+        const experienceYears = profile.experienceYears || inst.experienceYears;
+
+        // Build position & organization subtitle
+        const subtitleText = position && organization
+          ? `${position} @ ${organization}`
+          : organization
+          ? `${specialization || expertiseDomain || 'Formateur'} @ ${organization}`
+          : specialization || expertiseDomain || inst.bio || 'Formateur 212Learn';
+
+        // Build specialty & experience labels from signup DB fields
+        const mainSkill = specialization || expertiseDomain || (Array.isArray(inst.skills) && inst.skills.length > 0 ? inst.skills.join(', ') : 'Technologies Numériques');
+        const expText = experienceYears ? `${experienceYears} ans d’exp.` : 'Formateur Vérifié';
+        const courseCount = inst.coursesInstructed?.length || 1;
+
+        return {
+          src: inst.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=640&h=640&fit=crop&q=80',
+          alt: name,
+          title: name,
+          subtitle: subtitleText,
+          meta: [
+            { label: 'Spécialité', value: mainSkill },
+            { label: 'Expérience', value: expText },
+            { label: 'Formations', value: `${courseCount} Cours publiés` },
+          ],
+        };
+      })
+    : DEFAULT_INSTRUCTOR_SLIDES;
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -71,21 +171,25 @@ function About() {
       icon: Target,
       title: 'Exigence pédagogique',
       desc: 'Des programmes structurés, des objectifs clairs et un contenu révisé pour rester utile et à jour.',
+      accent: 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)',
     },
     {
       icon: Heart,
       title: 'Proximité humaine',
       desc: 'Derrière chaque cours : des instructeurs, des lives et un suivi — pas seulement des vidéos anonymes.',
+      accent: 'linear-gradient(135deg, #e056fd 0%, #f5576c 100%)',
     },
     {
       icon: Zap,
       title: 'Pratique avant tout',
       desc: 'Exercices, projets et évaluations pour transformer la théorie en compétences concrètes.',
+      accent: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
     },
     {
       icon: Globe,
       title: 'Accessibilité',
       desc: 'Apprendre depuis chez soi, à son rythme, avec une interface simple et un parcours compréhensible.',
+      accent: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
     },
   ];
 
@@ -107,51 +211,12 @@ function About() {
     },
   ];
 
-  // Q&A optimized for answer engines (AEO): concise, factual, keyword-rich.
-  const faqs = [
-    {
-      q: "Qu'est-ce que 212Learn ?",
-      a: "212Learn est une plateforme d'apprentissage en ligne marocaine (e-learning) proposant des cours interactifs en programmation, technologie et design. La plateforme propose des sessions live en cohorte animées par des instructeurs, des quiz, un suivi de progression et des certificats. Le contenu est principalement en français.",
-    },
-    {
-      q: "Quels sujets peut-on apprendre sur 212Learn ?",
-      a: "On y apprend la programmation et le développement web, la technologie et les compétences numériques, ainsi que le design et l'UX/UI. Le catalogue est filtrable par catégorie, niveau (débutant, intermédiaire, avancé) et langue.",
-    },
-    {
-      q: "212Learn est-il adapté au Maroc ?",
-      a: "Oui. 212Learn est conçu pour le Maroc et l'Afrique francophone : contenu en français et paiements locaux (Wafacash, virement bancaire), en plus des cours gratuits accessibles directement.",
-    },
-    {
-      q: "Y a-t-il des cours en direct (live) ?",
-      a: "Oui. 212Learn propose des sessions live en cohorte : des classes virtuelles animées en direct par les instructeurs, avec des groupes d'étudiants par cours. Les sessions enregistrées sont ajoutées au programme du cours pour être revues plus tard.",
-    },
-    {
-      q: "Obtient-on un certificat à la fin d'un cours ?",
-      a: "Oui. Les apprenants suivent leur progression, gagnent des badges via des quiz interactifs et reçoivent un certificat de réussite à la fin d'un cours.",
-    },
-    {
-      q: "Comment s'inscrire à un cours ?",
-      a: "Parcourez le catalogue, ouvrez un cours, puis inscrivez-vous : les cours gratuits donnent un accès immédiat, et les cours payants passent par un paiement (Wafacash ou virement). Vous suivez ensuite les leçons, quiz et sessions live depuis votre tableau de bord étudiant.",
-    },
-  ];
-
-  const faqSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: faqs.map((f) => ({
-      '@type': 'Question',
-      name: f.q,
-      acceptedAnswer: { '@type': 'Answer', text: f.a },
-    })),
-  };
-
   return (
     <div className="about-page">
       <SEOHead
         title="À propos"
         description="212Learn est une plateforme e-learning marocaine : cours en ligne de programmation, technologie et design, sessions live en cohorte, quiz et certificats, en français."
       />
-      <StructuredData data={faqSchema} id="faq-schema" />
       <Navbar />
 
       {/* Hero */}
@@ -199,13 +264,7 @@ function About() {
 
           <div className="about-hero-visual anim-slide-right">
             <div className="about-lottie-glow" aria-hidden="true" />
-            <svg className="about-hero-ring" viewBox="0 0 200 200" aria-hidden="true">
-              <circle cx="100" cy="100" r="92" fill="none" stroke="rgba(193,101,47,0.25)" strokeWidth="1.5" strokeDasharray="6 8" />
-              <circle cx="100" cy="100" r="78" fill="none" stroke="rgba(27,75,90,0.18)" strokeWidth="1" strokeDasharray="4 10" />
-            </svg>
-            <div className="about-lottie-frame">
-              <Lottie animationData={aboutAnimation} loop />
-            </div>
+            <AnimatedLogo size={380} />
           </div>
         </div>
         <SectionDivider fill={BG_WHITE} flip={true} />
@@ -257,7 +316,7 @@ function About() {
             </p>
           </div>
 
-          <div className="about-milestone-grid" style={{ gridTemplateColumns: '1fr' }}>
+          <div className="about-milestone-grid">
             {storyBeats.map((beat) => (
               <GlowCard
                 key={beat.year}
@@ -294,7 +353,7 @@ function About() {
         <SectionDivider fill={BG_SAND} flip={true} />
       </section>
 
-      {/* Valeurs */}
+      {/* Valeurs — Creative Bento Cards */}
       <section className="section-animate about-section-pad about-section-sand about-section-relative">
         <BackgroundBlobs />
         <div className="about-container">
@@ -304,17 +363,23 @@ function About() {
             <p>Les principes que nous appliquons dans le produit, la pédagogie et le support.</p>
           </div>
 
-          <div className="about-values-grid card-stagger">
-            {values.map((value) => {
-              const Icon = value.icon;
+          <div className="creative-values-grid card-stagger">
+            {values.map((v, idx) => {
+              const Icon = v.icon;
               return (
-                <GlowCard
-                  key={value.title}
-                  centered
-                  icon={<Icon size={28} />}
-                  title={value.title}
-                  description={value.desc}
-                />
+                <div key={v.title} className="creative-value-card">
+                  <div className="value-card-glow-bar" style={{ background: v.accent }} />
+                  <div className="value-card-top">
+                    <span className="value-number-badge" style={{ background: v.accent, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                      0{idx + 1}
+                    </span>
+                    <div className="value-icon-wrapper" style={{ background: v.accent }}>
+                      <Icon size={24} color="#fff" />
+                    </div>
+                  </div>
+                  <h3 className="value-card-title">{v.title}</h3>
+                  <p className="value-card-desc">{v.desc}</p>
+                </div>
               );
             })}
           </div>
@@ -322,8 +387,50 @@ function About() {
         <SectionDivider fill={BG_WHITE} flip={true} />
       </section>
 
+      {/* Nos Formateurs — Coverflow 3D Carousel */}
+      <section className="section-animate about-section-pad about-section-white about-section-relative">
+        <BackgroundBlobs variant="cool" />
+        <div className="about-container">
+          <div className="about-section-head">
+            <span className="about-eyebrow muted">L’expertise pédagogique</span>
+            <h2>Nos Formateurs & Mentors</h2>
+            <p>Des professionnels passionnés qui vous accompagnent avec des cours complets et des sessions live.</p>
+          </div>
+
+          <div style={{ margin: '2rem 0 1rem 0', width: '100%' }}>
+            {instructorsLoading ? (
+              <div style={{ textAlign: 'center', padding: '2rem' }}><LoadingSpinner /></div>
+            ) : (
+              <CoverflowCarousel
+                slides={instructorSlides}
+                cardWidth="clamp(190px, 24vw, 290px)"
+                showCaption
+                showPagination
+                showNavigation
+                label="Formateurs 212Learn"
+              />
+            )}
+          </div>
+        </div>
+        <SectionDivider fill="#ffffff" flip={true} />
+      </section>
+
+      {/* Fondateurs & Équipe Dirigeante (Admins / Leadership) */}
+      <section className="section-animate about-team-showcase about-section-relative" style={{ background: '#ffffff', padding: '4rem 1.5rem 3rem' }}>
+        <BackgroundBlobs variant="warm" />
+        <div className="about-container">
+          <div className="about-section-head">
+            <span className="about-eyebrow muted">Fondateurs & Administrateurs</span>
+            <h2>L’équipe dirigeante de 212Learn</h2>
+            <p>Découvrez les passionnés et décideurs qui conçoivent, développent et administrent la plateforme.</p>
+          </div>
+          <TeamShowcase />
+        </div>
+        <SectionDivider fill={BG_SAND} flip={false} />
+      </section>
+
       {/* Témoignages */}
-      <section className="section-animate about-testimonials about-section-white about-section-relative">
+      <section className="section-animate about-testimonials about-section-sand about-section-relative">
         <BackgroundBlobs variant="cool" />
         <div className="about-container">
           <div className="about-section-head">
@@ -365,33 +472,6 @@ function About() {
           )}
         </div>
         <SectionDivider gradient={{ from: 'var(--primary)', to: '#d46b28' }} flip={true} />
-      </section>
-
-      {/* FAQ — visible content mirrored by FAQPage JSON-LD for answer engines */}
-      <section className="section-animate about-section-pad about-section-white about-section-relative">
-        <div className="about-section-inner" style={{ maxWidth: 820, margin: '0 auto' }}>
-          <h2>Questions fréquentes</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', marginTop: '1.5rem' }}>
-            {faqs.map((f) => (
-              <details
-                key={f.q}
-                style={{
-                  background: 'var(--surface-color, #fff)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: 12,
-                  padding: '1rem 1.25rem',
-                }}
-              >
-                <summary style={{ cursor: 'pointer', fontWeight: 700, color: 'var(--text-color)', fontSize: '1rem', listStyle: 'none' }}>
-                  {f.q}
-                </summary>
-                <p style={{ marginTop: '0.75rem', color: 'var(--secondary)', lineHeight: 1.6, fontSize: '0.95rem' }}>
-                  {f.a}
-                </p>
-              </details>
-            ))}
-          </div>
-        </div>
       </section>
 
       {/* CTA */}

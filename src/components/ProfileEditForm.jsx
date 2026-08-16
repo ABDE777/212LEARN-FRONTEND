@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { User, Mail, FileText, Save, UploadCloud, Camera, Trash2, CheckCircle2, AlertCircle, Edit2, X, Phone, GraduationCap, Briefcase, Building, Calendar, BookOpen, Code2, Globe, AtSign } from 'lucide-react';
+import { User, Mail, FileText, Save, UploadCloud, Camera, Trash2, CheckCircle2, AlertCircle, Edit2, X, Phone, GraduationCap, Briefcase, Building, Calendar, BookOpen, Code2, Globe, AtSign, Link2 } from 'lucide-react';
 
 // Social links shown in the profile header (top-right). Keys match socialLinks.
 const HEADER_SOCIAL = [
@@ -557,33 +557,98 @@ export default function ProfileEditForm() {
             </div>
           )}
 
-          {/* Liens (social links) — top-right of the header */}
-          {(() => {
-            const items = HEADER_SOCIAL.filter((s) => formData.socialLinks?.[s.key]);
-            if (items.length === 0) return null;
-            return (
-              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                {items.map(({ key, label, Icon }) => (
-                  <a
-                    key={key}
-                    href={formData.socialLinks[key]}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title={label}
-                    aria-label={label}
+          </div>
+        </div>
+
+        {/* Liens (Social links & Online portfolio) section inside the top header card */}
+        <div
+          style={{
+            marginTop: '1.5rem',
+            paddingTop: '1.25rem',
+            borderTop: '1px solid rgba(255, 255, 255, 0.25)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.4rem',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+            <Link2 size={18} style={{ color: '#ffffff' }} />
+            <span style={{ fontWeight: 700, fontSize: '1rem', color: '#ffffff' }}>Liens</span>
+          </div>
+          <p style={{ margin: 0, opacity: 0.85, fontSize: '0.82rem', color: '#ffffff' }}>
+            Vos réseaux et votre portfolio en ligne.
+          </p>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', marginTop: '0.4rem' }}>
+            {HEADER_SOCIAL.map(({ key, label, Icon }) => {
+              const url = formData.socialLinks?.[key];
+              if (!url && !isEditing) return null;
+              return isEditing ? (
+                <div
+                  key={key}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    background: 'rgba(255,255,255,0.18)',
+                    border: '1px solid rgba(255,255,255,0.3)',
+                    borderRadius: '10px',
+                    padding: '0.4rem 0.75rem',
+                    backdropFilter: 'blur(8px)',
+                  }}
+                >
+                  <Icon size={15} style={{ color: '#fff' }} />
+                  <input
+                    type="url"
+                    placeholder={label}
+                    value={formData.socialLinks?.[key] || ''}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        socialLinks: { ...prev.socialLinks, [key]: e.target.value },
+                      }))
+                    }
                     style={{
-                      width: 38, height: 38, borderRadius: '10px',
-                      background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: '#fff', textDecoration: 'none', backdropFilter: 'blur(10px)',
+                      background: 'transparent',
+                      border: 'none',
+                      outline: 'none',
+                      color: '#ffffff',
+                      fontSize: '0.85rem',
+                      width: '160px',
                     }}
-                  >
-                    <Icon size={17} />
-                  </a>
-                ))}
-              </div>
-            );
-          })()}
+                  />
+                </div>
+              ) : url ? (
+                <a
+                  key={key}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.45rem',
+                    padding: '0.4rem 0.9rem',
+                    borderRadius: '999px',
+                    background: 'rgba(255,255,255,0.22)',
+                    border: '1px solid rgba(255,255,255,0.35)',
+                    color: '#ffffff',
+                    textDecoration: 'none',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    backdropFilter: 'blur(8px)',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  <Icon size={16} />
+                  <span>{label}</span>
+                </a>
+              ) : null;
+            })}
+
+            {!isEditing && HEADER_SOCIAL.every(({ key }) => !formData.socialLinks?.[key]) && (
+              <span style={{ fontSize: '0.82rem', opacity: 0.75, color: '#ffffff' }}>Aucun lien renseigné.</span>
+            )}
           </div>
         </div>
       </div>

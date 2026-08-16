@@ -20,7 +20,6 @@ import ProfileEditForm from '../components/ProfileEditForm';
 import ChangePasswordForm from '../components/ChangePasswordForm';
 import VirtualClassroom from '../components/VirtualClassroom';
 import SessionCalendar from '../components/SessionCalendar';
-import FloatingActionMenu from '../components/FloatingActionMenu';
 import api from '../services/api';
 
 /* ─── helpers ─────────────────────────────── */
@@ -2142,12 +2141,8 @@ export default function InstructorDashboard() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-color)' }}>
-      <Navbar />
-      <FloatingActionMenu
-        className="fab-mobile-only"
-        options={[
-          ...TABS.map((t) => ({ label: t.label, Icon: t.icon, onClick: () => setActiveTab(t.key) })),
-        ]}
+      <Navbar
+        extraDockOptions={TABS.map((t) => ({ label: t.label, Icon: t.icon, onClick: () => setActiveTab(t.key) }))}
       />
       <div className="dashboard-layout">
         <aside className={`dashboard-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>

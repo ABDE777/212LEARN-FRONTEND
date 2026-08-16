@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LogOut, LogIn, ShoppingCart, Heart, Home, BookOpen, Info, LayoutDashboard } from 'lucide-react';
+import { LogOut, LogIn, ShoppingCart, Heart, Home, BookOpen, Info, LayoutDashboard, UserPlus, Plus, Trophy, Video, User, Lock } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useCartContext } from '../context/CartContext';
 import { useWishlistContext } from '../context/WishlistContext';
@@ -13,13 +14,15 @@ const NAV_LINKS = [
   { to: '/courses', label: 'Cours' },
 ];
 
-function Navbar() {
+function Navbar({ extraDockOptions = [] }) {
   const { user, isAuthenticated, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [dockMenuOpen, setDockMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const dropdownRef = useRef(null);
+  const dockRef = useRef(null);
 
   const { cartCount, openCart } = useCartContext();
   const { wishlistCount } = useWishlistContext();
@@ -31,20 +34,24 @@ function Navbar() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Close dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setDropdownOpen(false);
+      }
+      if (dockRef.current && !dockRef.current.contains(e.target)) {
+        setDockMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Close the profile dropdown on route change
+  // Close dropdowns on route change
   useEffect(() => {
     setDropdownOpen(false);
+    setDockMenuOpen(false);
   }, [location.pathname]);
 
   const getDashboardPath = (role) => {
@@ -71,15 +78,53 @@ function Navbar() {
   const isInstructor = user?.role?.toUpperCase() === 'INSTRUCTOR';
   const isStudent = user?.role?.toUpperCase() === 'STUDENT';
 
-  // Site links shown in the bottom dock (mobile). Dashboard tabs stay in each
-  // dashboard's own (+) floating menu.
-  const siteDockItems = [
-    { label: 'Accueil', icon: <Home size={22} />, onClick: () => navigate('/') },
-    { label: 'Cours', icon: <BookOpen size={22} />, onClick: () => navigate('/courses') },
-    { label: 'À propos', icon: <Info size={22} />, onClick: () => navigate('/about') },
-    isAuthenticated
-      ? { label: 'Espace', icon: <LayoutDashboard size={22} />, onClick: () => navigate(getDashboardPath(user?.role)) }
-      : { label: 'Connexion', icon: <LogIn size={22} />, onClick: () => navigate('/login') },
+  const handleDockActionClick = (tabKey) => {
+    setDockMenuOpen(false);
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    const role = user?.role?.toUpperCase();
+    let basePath = '/student/dashboard';
+    let targetTab = tabKey;
+
+    if (role === 'INSTRUCTOR') {
+      basePath = '/instructor/dashboard';
+      if (tabKey === 'dashboard') targetTab = 'courses';
+      else if (tabKey === 'lives') targetTab = 'meetings';
+      else if (tabKey === 'profile' || tabKey === 'security') targetTab = 'profile';
+    } else if (role === 'ADMIN') {
+      basePath = '/admin/dashboard';
+      if (tabKey === 'dashboard') targetTab = 'users';
+      else if (tabKey === 'lives') targetTab = 'meetings';
+      else if (tabKey === 'profile' || tabKey === 'security') targetTab = 'profile';
+    }
+
+    navigate(`${basePath}?tab=${targetTab}`);
+  };
+
+  // Fixed menu options displayed when clicking the single (+) button inside the Apple Dock
+  const allDockMenuOptions = [
+    {
+      label: 'Tableau de bord',
+      Icon: <Trophy size={16} />,
+      onClick: () => handleDockActionClick('dashboard'),
+    },
+    {
+      label: 'Session live',
+      Icon: <Video size={16} />,
+      onClick: () => handleDockActionClick('lives'),
+    },
+    {
+      label: 'Profil',
+      Icon: <User size={16} />,
+      onClick: () => handleDockActionClick('profile'),
+    },
+    {
+      label: 'Sécurité',
+      Icon: <Lock size={16} />,
+      onClick: () => handleDockActionClick('security'),
+    },
   ];
 
   const navStyle = {
@@ -257,6 +302,67 @@ function Navbar() {
                     </p>
                   </div>
 
+                  {/* Navigation links for Dashboard, Profile, Security & Live Session */}
+                  <Link
+                    to={getDashboardPath(user?.role)}
+                    onClick={() => setDropdownOpen(false)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '0.7rem',
+                      padding: '0.65rem 0.85rem', borderRadius: '12px',
+                      textDecoration: 'none', color: 'var(--text-color)', fontWeight: 600,
+                      fontSize: '0.88rem', transition: 'all 0.18s ease',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(193, 101, 47, 0.08)'; e.currentTarget.style.color = 'var(--primary)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-color)'; }}
+                  >
+                    <LayoutDashboard size={15} /> Tableau de bord
+                  </Link>
+
+                  <Link
+                    to={`${getDashboardPath(user?.role)}?tab=profile`}
+                    onClick={() => setDropdownOpen(false)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '0.7rem',
+                      padding: '0.65rem 0.85rem', borderRadius: '12px',
+                      textDecoration: 'none', color: 'var(--text-color)', fontWeight: 600,
+                      fontSize: '0.88rem', transition: 'all 0.18s ease',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(193, 101, 47, 0.08)'; e.currentTarget.style.color = 'var(--primary)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-color)'; }}
+                  >
+                    <User size={15} /> Mon Profil
+                  </Link>
+
+                  <Link
+                    to={`${getDashboardPath(user?.role)}?tab=security`}
+                    onClick={() => setDropdownOpen(false)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '0.7rem',
+                      padding: '0.65rem 0.85rem', borderRadius: '12px',
+                      textDecoration: 'none', color: 'var(--text-color)', fontWeight: 600,
+                      fontSize: '0.88rem', transition: 'all 0.18s ease',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(193, 101, 47, 0.08)'; e.currentTarget.style.color = 'var(--primary)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-color)'; }}
+                  >
+                    <Lock size={15} /> Sécurité
+                  </Link>
+
+                  <Link
+                    to={`${getDashboardPath(user?.role)}?tab=meetings`}
+                    onClick={() => setDropdownOpen(false)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '0.7rem',
+                      padding: '0.65rem 0.85rem', borderRadius: '12px',
+                      textDecoration: 'none', color: 'var(--text-color)', fontWeight: 600,
+                      fontSize: '0.88rem', transition: 'all 0.18s ease',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(193, 101, 47, 0.08)'; e.currentTarget.style.color = 'var(--primary)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-color)'; }}
+                  >
+                    <Video size={15} /> Session live
+                  </Link>
+
                   {isStudent && (
                     <>
                       <button
@@ -340,40 +446,22 @@ function Navbar() {
               )}
             </div>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <div className="nav-auth-buttons">
               <Link
                 to="/login"
-                style={{
-                  color: 'var(--secondary)',
-                  textDecoration: 'none',
-                  fontWeight: 600,
-                  padding: '0.5rem 1rem',
-                  borderRadius: '10px',
-                  fontSize: '0.9rem',
-                  transition: 'all 0.2s ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = 'var(--primary)';
-                  e.currentTarget.style.background = 'rgba(193,101,47,0.07)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = 'var(--secondary)';
-                  e.currentTarget.style.background = 'transparent';
-                }}
+                className="nav-btn-login"
+                title="Se connecter"
               >
-                Se connecter
+                <LogIn size={15} />
+                <span className="auth-btn-text">Connexion</span>
               </Link>
               <Link
                 to="/signup"
-                className="btn-primary"
-                style={{
-                  padding: '0.5rem 1.25rem',
-                  textDecoration: 'none',
-                  fontSize: '0.9rem',
-                  borderRadius: '10px',
-                }}
+                className="nav-btn-signup"
+                title="Créer un compte"
               >
-                S'inscrire
+                <UserPlus size={15} />
+                <span className="auth-btn-text">S'inscrire</span>
               </Link>
             </div>
           )}
@@ -381,16 +469,132 @@ function Navbar() {
         </div>
       </nav>
 
-      {/* Primary mobile site navigation — Apple-style dock (bottom-center).
-          Dashboards keep their own floating (+) menu for their tabs. */}
-      <div className="site-dock">
+      {/* Primary mobile site navigation — Apple-style dock (bottom-center) */}
+      <div className="site-dock" ref={dockRef}>
+        <AnimatePresence>
+          {isAuthenticated && dockMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: 15, scale: 0.92, filter: 'blur(8px)' }}
+              animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: 10, scale: 0.95, filter: 'blur(8px)' }}
+              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              style={{
+                position: 'absolute',
+                bottom: '4.8rem',
+                right: '1rem',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-end',
+                gap: '0.45rem',
+                zIndex: 1400,
+                maxHeight: '60vh',
+                overflowY: 'auto',
+                padding: '0.2rem',
+              }}
+            >
+              {allDockMenuOptions.map((option, index) => (
+                <motion.button
+                  key={option.label || index}
+                  initial={{ opacity: 0, x: 15 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 10 }}
+                  transition={{ duration: 0.2, delay: index * 0.03 }}
+                  onClick={() => {
+                    option.onClick?.();
+                    setDockMenuOpen(false);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.6rem',
+                    padding: '0.55rem 0.95rem',
+                    borderRadius: '12px',
+                    background: 'var(--surface-color, #fff)',
+                    color: 'var(--text-color)',
+                    border: '1px solid var(--border-color)',
+                    boxShadow: '0 8px 24px rgba(43,38,34,0.18)',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <span style={{ display: 'inline-flex', color: 'var(--primary)' }}>{option.Icon}</span>
+                  <span>{option.label}</span>
+                </motion.button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <Dock>
-          {siteDockItems.map((item) => (
-            <DockItem key={item.label} onClick={item.onClick} title={item.label}>
-              <DockLabel>{item.label}</DockLabel>
-              <DockIcon>{item.icon}</DockIcon>
+          {/* Left Side: 2 buttons */}
+          <DockItem key="Accueil" onClick={() => navigate('/')} title="Accueil">
+            <DockLabel>Accueil</DockLabel>
+            <DockIcon><Home size={22} /></DockIcon>
+          </DockItem>
+
+          <DockItem key="Cours" onClick={() => navigate('/courses')} title="Cours">
+            <DockLabel>Cours</DockLabel>
+            <DockIcon><BookOpen size={22} /></DockIcon>
+          </DockItem>
+
+          {/* Center: Animated 212Learn Logo */}
+          <DockItem key="Logo" onClick={() => navigate('/')} title="212Learn - Accueil">
+            <DockLabel>212Learn</DockLabel>
+            <DockIcon>
+              <motion.div
+                animate={{
+                  scale: [1, 1.08, 1],
+                  filter: [
+                    'drop-shadow(0 0 2px rgba(193,101,47,0.3))',
+                    'drop-shadow(0 0 8px rgba(193,101,47,0.7))',
+                    'drop-shadow(0 0 2px rgba(193,101,47,0.3))',
+                  ],
+                }}
+                transition={{
+                  duration: 2.8,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
+                  color: '#fff',
+                  fontWeight: 900,
+                  fontSize: '0.78rem',
+                  letterSpacing: '-0.02em',
+                  fontFamily: 'var(--font-heading)',
+                  boxShadow: '0 4px 14px rgba(193,101,47,0.4)',
+                }}
+              >
+                212
+              </motion.div>
+            </DockIcon>
+          </DockItem>
+
+          {/* Right Side */}
+          <DockItem key="APropos" onClick={() => navigate('/about')} title="À propos">
+            <DockLabel>À propos</DockLabel>
+            <DockIcon><Info size={22} /></DockIcon>
+          </DockItem>
+
+          {/* Plus menu only visible when user is logged in */}
+          {isAuthenticated && (
+            <DockItem key="PlusMenu" onClick={() => setDockMenuOpen((prev) => !prev)} title="Plus d'actions">
+              <DockLabel>Plus</DockLabel>
+              <DockIcon>
+                <motion.div animate={{ rotate: dockMenuOpen ? 45 : 0 }} transition={{ duration: 0.2 }} style={{ display: 'flex' }}>
+                  <Plus size={22} />
+                </motion.div>
+              </DockIcon>
             </DockItem>
-          ))}
+          )}
         </Dock>
       </div>
 

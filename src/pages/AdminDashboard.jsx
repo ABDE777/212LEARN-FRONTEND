@@ -2,7 +2,6 @@ import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import FloatingActionMenu from '../components/FloatingActionMenu';
 import { Users, BookOpen, Folder, Settings, User, LogOut, FileText, Pencil, Trash2, BarChart3, TrendingUp, DollarSign, ShieldCheck, ShieldAlert, ChevronLeft, ChevronRight, RotateCcw, Lock, Plus, Mail, X, Loader, Wallet, CheckCircle, XCircle, Clock, Activity, Server, Search, Award, Download, Printer, Code, Database, Globe, Video, Building2, Check } from 'lucide-react';
 import { useWafacash } from '../hooks/useWafacash';
 import { useTransfer } from '../hooks/useTransfer';
@@ -4035,11 +4034,8 @@ export default function AdminDashboard() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-color)' }}>
-      <Navbar />
-
-      <FloatingActionMenu
-        className="fab-mobile-only"
-        options={[
+      <Navbar
+        extraDockOptions={[
           { label: 'Users', Icon: <Users size={16} />, onClick: () => setActiveTab('users') },
           { label: 'Courses', Icon: <BookOpen size={16} />, onClick: () => setActiveTab('courses') },
           { label: 'Categories', Icon: <Folder size={16} />, onClick: () => setActiveTab('categories') },
