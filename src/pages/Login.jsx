@@ -1,8 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import LottieRaw from 'lottie-react';
-const Lottie = LottieRaw.default || LottieRaw;
-import loginAnimation from '../lotties/login.json';
+import LazyLottie from '../components/LazyLottie';
 import logoImg from '../assets/navbarlogo.png';
 import { ArrowLeft, ShieldCheck, RefreshCcw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -190,9 +188,9 @@ export default function Login() {
 
         {/* Left Section: Lottie Animation */}
         <div className="auth-lottie" style={{ animation: 'slideInLeft 0.6s cubic-bezier(0.22,1,0.36,1) 0.1s both' }}>
-          <Lottie
-            animationData={loginAnimation}
-            loop={true}
+          <LazyLottie
+            load={() => import('../lotties/login.json')}
+            loop
             style={{ width: '100%', maxWidth: '400px' }}
           />
         </div>
