@@ -1,12 +1,19 @@
-import React, { useState } from 'react';
-import { Mail, Phone, Send, CheckCircle, AlertCircle, MessageSquare, HelpCircle, Sparkles } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Mail, Phone, Send, CheckCircle, AlertCircle, MessageSquare, HelpCircle, Sparkles, Lock, ShieldCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 import CountryPhonePicker, { DEFAULT_COUNTRIES } from '../components/CountryPhonePicker';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function Contact() {
+  const { user } = useAuth();
+  const isAdmin = (user?.role || '').toLowerCase() === 'admin';
+  // A signed-in non-admin sends from their own account: identity fields are
+  // filled from their profile and locked so the message is attributable.
+  const lockIdentity = !!user && !isAdmin;
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -18,12 +25,32 @@ export default function Contact() {
   const [selectedCountry, setSelectedCountry] = useState(DEFAULT_COUNTRIES[0]);
   const [status, setStatus] = useState({ loading: false, success: null, error: null });
 
+  // Prefill (and keep in sync) the identity fields from the signed-in profile.
+  useEffect(() => {
+    if (!lockIdentity) return;
+    const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim();
+    setFormData((prev) => ({
+      ...prev,
+      name: fullName || prev.name,
+      email: user?.email || prev.email,
+      phone: user?.phone || prev.phone,
+    }));
+  }, [lockIdentity, user?.firstName, user?.lastName, user?.email, user?.phone]);
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // Visual treatment for identity fields that are filled from the profile and
+  // can't be edited by a signed-in user.
+  const lockedStyle = { background: '#f1f5f9', color: '#475569', cursor: 'not-allowed' };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isAdmin) {
+      setStatus({ loading: false, success: null, error: "En tant qu'administrateur, vous ne pouvez pas envoyer de message de contact." });
+      return;
+    }
     if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
       setStatus({ loading: false, success: null, error: 'Veuillez remplir tous les champs obligatoires.' });
       return;
@@ -31,9 +58,11 @@ export default function Contact() {
 
     setStatus({ loading: true, success: null, error: null });
 
-    const fullPhone = formData.phone
-      ? `${selectedCountry.code} ${formData.phone.trim()}`
-      : '';
+    // Signed-in users send their stored profile phone as-is; anonymous visitors
+    // compose it from the country picker + typed digits.
+    const fullPhone = lockIdentity
+      ? (user?.phone || '')
+      : (formData.phone ? `${selectedCountry.code} ${formData.phone.trim()}` : '');
 
     try {
       const res = await api.post('/contact', {
@@ -206,7 +235,24 @@ export default function Contact() {
               Envoyez-nous un message
             </h2>
 
+            {isAdmin ? (
+              <div style={{ padding: '1.5rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '14px', display: 'flex', gap: '0.85rem', alignItems: 'flex-start' }}>
+                <ShieldCheck size={22} style={{ color: 'var(--primary, #C1652F)', flexShrink: 0, marginTop: '0.1rem' }} />
+                <div>
+                  <p style={{ margin: 0, fontWeight: 700, color: 'var(--text-color)' }}>Compte administrateur</p>
+                  <p style={{ margin: '0.35rem 0 0 0', color: 'var(--secondary)', fontSize: '0.9rem', lineHeight: 1.5 }}>
+                    En tant qu'administrateur, vous <strong>recevez</strong> les messages de contact des utilisateurs — vous ne pouvez pas en envoyer. Retrouvez-les dans votre tableau de bord, onglet « Contact ».
+                  </p>
+                </div>
+              </div>
+            ) : (
             <form onSubmit={handleSubmit}>
+              {lockIdentity && (
+                <div style={{ padding: '0.7rem 0.95rem', background: 'rgba(193, 101, 47, 0.07)', border: '1px solid rgba(193, 101, 47, 0.2)', borderRadius: '10px', marginBottom: '1.1rem', display: 'flex', gap: '0.5rem', alignItems: 'center', fontSize: '0.83rem', color: 'var(--secondary)' }}>
+                  <Lock size={15} style={{ flexShrink: 0, color: 'var(--primary)' }} />
+                  Vos coordonnées sont reprises de votre profil. Pour les modifier, mettez à jour votre profil.
+                </div>
+              )}
               {/* Full Name */}
               <div className="form-group" style={{ marginBottom: '1rem' }}>
                 <label style={{ display: 'block', fontWeight: 600, fontSize: '0.86rem', marginBottom: '0.35rem' }}>
@@ -216,11 +262,12 @@ export default function Contact() {
                   type="text"
                   name="name"
                   required
+                  readOnly={lockIdentity}
                   placeholder="Ex: Abdel Mazgoura"
                   className="form-control"
                   value={formData.name}
                   onChange={handleChange}
-                  style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #cbd5e1' }}
+                  style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #cbd5e1', ...(lockIdentity ? lockedStyle : {}) }}
                 />
               </div>
 
@@ -233,11 +280,12 @@ export default function Contact() {
                   type="email"
                   name="email"
                   required
+                  readOnly={lockIdentity}
                   placeholder="exemple@domaine.com"
                   className="form-control"
                   value={formData.email}
                   onChange={handleChange}
-                  style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #cbd5e1' }}
+                  style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #cbd5e1', ...(lockIdentity ? lockedStyle : {}) }}
                 />
               </div>
 
@@ -246,18 +294,30 @@ export default function Contact() {
                 <label style={{ display: 'block', fontWeight: 600, fontSize: '0.86rem', marginBottom: '0.35rem' }}>
                   Numéro de téléphone
                 </label>
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                  <CountryPhonePicker selectedCountry={selectedCountry} onChange={setSelectedCountry} />
+                {lockIdentity ? (
                   <input
                     type="tel"
                     name="phone"
-                    placeholder="06 12 34 56 78"
+                    readOnly
+                    placeholder="Non renseigné"
                     className="form-control"
                     value={formData.phone}
-                    onChange={handleChange}
-                    style={{ flex: 1, padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #cbd5e1' }}
+                    style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #cbd5e1', ...lockedStyle }}
                   />
-                </div>
+                ) : (
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <CountryPhonePicker selectedCountry={selectedCountry} onChange={setSelectedCountry} />
+                    <input
+                      type="tel"
+                      name="phone"
+                      placeholder="06 12 34 56 78"
+                      className="form-control"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      style={{ flex: 1, padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid #cbd5e1' }}
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Subject */}
@@ -336,6 +396,7 @@ export default function Contact() {
                 <Send size={18} /> {status.loading ? 'Envoi en cours...' : 'Envoyer le message'}
               </button>
             </form>
+            )}
           </motion.div>
 
           {/* Right Side: FAQ Card */}
