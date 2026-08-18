@@ -1,7 +1,14 @@
 import axios from 'axios';
 
-// Base URL – read from environment variable, fallback to local dev or production URL
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1';
+// Base URL – prefer the VITE_API_BASE_URL env var. When it isn't set, default by
+// build mode: production builds hit the deployed backend (so a missing env var on
+// a Vercel deploy can't silently point the live site at localhost), while dev
+// builds keep using the local API server.
+const baseURL =
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.PROD
+    ? 'https://backend-212learn.vercel.app/api/v1'
+    : 'http://localhost:5000/api/v1');
 
 const api = axios.create({
   baseURL,
