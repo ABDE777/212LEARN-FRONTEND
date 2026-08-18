@@ -302,7 +302,7 @@ export default function CourseDetails() {
               <div style={{ padding: '2rem' }}>
                 <div style={{ marginBottom: '1.5rem' }}>
                   <span style={{ fontSize: '2.5rem', fontWeight: 700, color: 'var(--primary)' }}>
-                    {isFree ? 'Gratuit' : `${course.price}€`}
+                    {isFree ? 'Gratuit' : `${course.price} MAD`}
                   </span>
                 </div>
                 
