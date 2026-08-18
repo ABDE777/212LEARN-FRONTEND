@@ -22,7 +22,7 @@ export default function Checkout() {
   const { course, loading: courseLoading, error: courseError } = useCourse(id);
   const { requestPayment: requestWafaPayment, submitProof, loading: wafaLoading, error: wafaError } = useWafacash();
   const { requestPayment: requestTransferPayment, submitTransferDetails, loading: transferLoading, error: transferError } = useTransfer();
-  const { validateCoupon } = useCoupons();
+  const { validateCoupon } = useCoupons(false); // Checkout only validates; skip the admin-only coupon list fetch
 
   const [paymentMethod, setPaymentMethod] = useState('wafacash');
   const [wafaStep, setWafaStep] = useState(1);
@@ -93,10 +93,12 @@ export default function Checkout() {
 
     try {
       const response = await validateCoupon(couponCode.trim(), course.id);
-      const couponData = response.data?.data || response;
+      // validateCoupon returns the axios `res.data` envelope: { success, data: {...} }.
+      const couponData = response?.data ?? response;
 
-      setDiscount(course.price * (couponData.discountPercent / 100));
-      setAppliedCoupon(couponData.code);
+      const percent = Number(couponData?.discountPercent) || 0;
+      setDiscount((Number(course.price) || 0) * (percent / 100));
+      setAppliedCoupon(couponData?.code || couponCode.trim());
       setCouponError('');
     } catch (error) {
       setCouponError(error.response?.data?.error?.message || error.response?.data?.message || error.message || 'Code de coupon invalide.');

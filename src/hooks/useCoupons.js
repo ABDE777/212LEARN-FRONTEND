@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 
-export function useCoupons() {
+export function useCoupons(autoFetch = true) {
   const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -63,8 +63,12 @@ export function useCoupons() {
   };
 
   useEffect(() => {
-    fetchCoupons();
-  }, []);
+    // The coupon LIST is admin/instructor-only; consumers that just need
+    // validateCoupon (e.g. Checkout for a student) pass autoFetch=false to
+    // avoid a spurious admin-only GET /coupons that 403s.
+    if (autoFetch) fetchCoupons();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoFetch]);
 
   return {
     coupons,
