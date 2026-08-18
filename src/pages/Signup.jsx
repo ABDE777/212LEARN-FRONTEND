@@ -463,8 +463,14 @@ export default function Signup() {
       }
 
       const newUser = await signup(payload);
-      const dashboardPath = getDashboardPath(newUser?.role || formData.role);
-      navigate(dashboardPath);
+      const finalRole = (newUser?.role || formData.role || '').toUpperCase();
+      // Instructors aren't active until an admin approves them: send them to the
+      // locked "pending approval" screen instead of the dashboard.
+      if (finalRole === 'INSTRUCTOR') {
+        navigate('/instructor/pending');
+      } else {
+        navigate(getDashboardPath(newUser?.role || formData.role));
+      }
     } catch (err) {
       const errorMessage = err.response?.data?.error?.message || err.response?.data?.message || "Une erreur est survenue. Veuillez réessayer.";
       if (errorMessage.includes('email') || errorMessage.includes('Email')) {
