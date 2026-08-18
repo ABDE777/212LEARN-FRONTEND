@@ -35,6 +35,7 @@ const QuizPlayer = lazy(() => import('./pages/QuizPlayer'));
 const AssignmentSubmit = lazy(() => import('./pages/AssignmentSubmit'));
 const StudentDashboard = lazy(() => import('./pages/StudentDashboard'));
 const InstructorDashboard = lazy(() => import('./pages/InstructorDashboard'));
+const InstructorPending = lazy(() => import('./pages/InstructorPending'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const InstructorCourseManage = lazy(() => import('./pages/InstructorCourseManage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
@@ -95,6 +96,10 @@ function App() {
                   <Route path="/learn/:courseId/quiz/:quizId" element={<QuizPlayer />} />
                   <Route path="/learn/:courseId/assignment/:assignmentId" element={<AssignmentSubmit />} />
                 </Route>
+
+                {/* Instructor pending-approval screen (self-guarded; outside the
+                    InstructorLayout gate so unapproved instructors can see it) */}
+                <Route path="/instructor/pending" element={<InstructorPending />} />
 
                 {/* Instructor Routes */}
                 <Route element={<InstructorLayout />}>
