@@ -31,6 +31,13 @@ function InstructorLayout() {
     return <Navigate to="/" replace />;
   }
 
+  // Unapproved instructors can't reach any instructor page — even by typing the
+  // URL directly. They're sent to the locked "pending approval" screen. The
+  // backend enforces this too (restrictTo blocks their API calls).
+  if (!user?.isVerified) {
+    return <Navigate to="/instructor/pending" replace />;
+  }
+
   return <Outlet />;
 }
 

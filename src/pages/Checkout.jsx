@@ -488,15 +488,11 @@ export default function Checkout() {
                     <span>-{discount.toFixed(2)} MAD</span>
                   </div>
                 )}
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', color: 'var(--secondary)' }}>
-                  <span>TVA (20%)</span>
-                  <span>{isFree ? '0 MAD' : `${((Number(course.price) - discount) * 0.2).toFixed(2)} MAD`}</span>
-                </div>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '1rem', borderTop: '2px solid var(--border-color)', marginBottom: '1.5rem' }}>
                 <span style={{ fontWeight: 700, fontSize: '1.2rem', color: 'var(--text-color)' }}>Total</span>
                 <span style={{ fontWeight: 700, fontSize: '1.2rem', color: 'var(--primary)' }}>
-                  {isFree ? 'Gratuit' : `${((Number(course.price) - discount) * 1.2).toFixed(2)} MAD`}
+                  {isFree ? 'Gratuit' : `${(Number(course.price) - discount).toFixed(2)} MAD`}
                 </span>
               </div>
             </Card>
