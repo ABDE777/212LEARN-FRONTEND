@@ -28,9 +28,7 @@ export default function ResetPassword() {
 
     setLoading(true);
     try {
-      console.log('Reset token from URL:', token);
-      const response = await api.post(`/auth/reset-password/${token}`, { newPassword: password });
-      console.log('Reset response:', response.data);
+      await api.post(`/auth/reset-password/${token}`, { newPassword: password });
       setSuccess(true);
     } catch (err) {
       const code = err.response?.data?.error?.code || err.response?.data?.code;

@@ -447,7 +447,6 @@ export default function Signup() {
         };
       } else if (formData.role === 'instructor') {
         const mappedExperience = EXPERIENCE_MAP[formData.experienceYears];
-        console.log('Mapping experienceYears:', formData.experienceYears, '->', mappedExperience);
         payload.instructorProfile = {
           situation: formData.instructorSituation,
           expertiseDomain: formData.expertiseDomain.trim(),
