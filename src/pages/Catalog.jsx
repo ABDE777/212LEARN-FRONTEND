@@ -309,7 +309,7 @@ export default function Catalog() {
                   }}>
                     <div>
                       <span style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--primary)' }}>
-                        {course.price === 0 ? 'Gratuit' : `${course.price}€`}
+                        {course.price === 0 ? 'Gratuit' : `${course.price} MAD`}
                       </span>
                     </div>
                     <div style={{ fontSize: '0.9rem', color: 'var(--secondary)' }}>

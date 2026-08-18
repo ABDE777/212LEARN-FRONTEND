@@ -239,7 +239,7 @@ export default function Checkout() {
                               <li>Rendez-vous dans une agence Wafacash.</li>
                               <li>Indiquez que vous souhaitez payer pour 212Learn.</li>
                               <li>Présentez la référence : <strong style={{ color: 'var(--text-color)', fontSize: '1.1rem' }}>{paymentData.paymentReference}</strong></li>
-                              <li>Réglez le montant de <strong style={{ color: 'var(--text-color)' }}>{paymentData.amount || course.price}€</strong>.</li>
+                              <li>Réglez le montant de <strong style={{ color: 'var(--text-color)' }}>{paymentData.amount || course.price} MAD</strong>.</li>
                               <li>Prenez une photo claire du reçu remis par l'agent.</li>
                             </ol>
                           </div>
@@ -323,7 +323,7 @@ export default function Checkout() {
                             <ol style={{ color: 'var(--secondary)', margin: 0, paddingLeft: '1.2rem', lineHeight: '1.6' }}>
                               <li>Effectuez un virement vers le compte ci-dessus.</li>
                               <li>Utilisez la référence : <strong style={{ color: 'var(--text-color)', fontSize: '1.1rem' }}>{paymentData.paymentReference}</strong> dans le libellé du virement.</li>
-                              <li>Transférez le montant de <strong style={{ color: 'var(--text-color)' }}>{paymentData.amount || course.price}€</strong>.</li>
+                              <li>Transférez le montant de <strong style={{ color: 'var(--text-color)' }}>{paymentData.amount || course.price} MAD</strong>.</li>
                               <li>Uploadez une photo de votre relevé de virement.</li>
                               <li>Indiquez votre RIB (24 chiffres) pour identification.</li>
                             </ol>
@@ -472,7 +472,7 @@ export default function Checkout() {
                     </button>
                   </div>
                   <div style={{ color: '#2e7d32', fontSize: '0.85rem' }}>
-                    Réduction: -{discount.toFixed(2)}€
+                    Réduction: -{discount.toFixed(2)} MAD
                   </div>
                 </div>
               )}
@@ -480,23 +480,23 @@ export default function Checkout() {
               <div style={{ marginBottom: '1.5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', color: 'var(--secondary)' }}>
                   <span>Sous-total</span>
-                  <span>{isFree ? 'Gratuit' : `${course.price}€`}</span>
+                  <span>{isFree ? 'Gratuit' : `${course.price} MAD`}</span>
                 </div>
                 {discount > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', color: '#4caf50' }}>
                     <span>Réduction</span>
-                    <span>-{discount.toFixed(2)}€</span>
+                    <span>-{discount.toFixed(2)} MAD</span>
                   </div>
                 )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', color: 'var(--secondary)' }}>
                   <span>TVA (20%)</span>
-                  <span>{isFree ? '0€' : `${((Number(course.price) - discount) * 0.2).toFixed(2)}€`}</span>
+                  <span>{isFree ? '0 MAD' : `${((Number(course.price) - discount) * 0.2).toFixed(2)} MAD`}</span>
                 </div>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '1rem', borderTop: '2px solid var(--border-color)', marginBottom: '1.5rem' }}>
                 <span style={{ fontWeight: 700, fontSize: '1.2rem', color: 'var(--text-color)' }}>Total</span>
                 <span style={{ fontWeight: 700, fontSize: '1.2rem', color: 'var(--primary)' }}>
-                  {isFree ? 'Gratuit' : `${((Number(course.price) - discount) * 1.2).toFixed(2)}€`}
+                  {isFree ? 'Gratuit' : `${((Number(course.price) - discount) * 1.2).toFixed(2)} MAD`}
                 </span>
               </div>
             </Card>
