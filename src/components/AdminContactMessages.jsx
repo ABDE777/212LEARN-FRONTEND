@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Trash2, Search, Eye, MessageSquare, RefreshCw, Send, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import api from '../services/api';
 
 export default function AdminContactMessages() {
   const [messages, setMessages] = useState([]);
@@ -13,11 +14,8 @@ export default function AdminContactMessages() {
   const fetchMessages = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/v1/contact');
-      if (res.ok) {
-        const data = await res.json();
-        setMessages(data.data || []);
-      }
+      const res = await api.get('/contact');
+      setMessages(res.data?.data || []);
     } catch (err) {
       console.warn('Error fetching contact messages:', err);
     } finally {
@@ -32,18 +30,12 @@ export default function AdminContactMessages() {
   const handleUpdateStatus = async (id, newStatus) => {
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/v1/contact/${id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      if (res.ok) {
-        setMessages((prev) =>
-          prev.map((m) => (m.id === id ? { ...m, status: newStatus } : m))
-        );
-        if (selectedMessage && selectedMessage.id === id) {
-          setSelectedMessage((prev) => ({ ...prev, status: newStatus }));
-        }
+      await api.patch(`/contact/${id}/status`, { status: newStatus });
+      setMessages((prev) =>
+        prev.map((m) => (m.id === id ? { ...m, status: newStatus } : m))
+      );
+      if (selectedMessage && selectedMessage.id === id) {
+        setSelectedMessage((prev) => ({ ...prev, status: newStatus }));
       }
     } catch (err) {
       console.warn('Error updating status:', err);
@@ -56,12 +48,10 @@ export default function AdminContactMessages() {
     if (!window.confirm('Voulez-vous vraiment supprimer ce message ?')) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/v1/contact/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        setMessages((prev) => prev.filter((m) => m.id !== id));
-        if (selectedMessage && selectedMessage.id === id) {
-          setSelectedMessage(null);
-        }
+      await api.delete(`/contact/${id}`);
+      setMessages((prev) => prev.filter((m) => m.id !== id));
+      if (selectedMessage && selectedMessage.id === id) {
+        setSelectedMessage(null);
       }
     } catch (err) {
       console.warn('Error deleting message:', err);
