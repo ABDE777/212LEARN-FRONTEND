@@ -32,7 +32,8 @@ function InstructorGroupChatSection() {
   useEffect(() => {
     const fetchGroups = async () => {
       try {
-        const res = await api.get('/groups');
+        // /groups is admin-only; instructors get the groups they lead via /mine.
+        const res = await api.get('/groups/mine');
         const list = res.data?.data?.groups || res.data?.data || [];
         setGroups(list);
         if (list.length > 0) setSelectedGroup(list[0]);
