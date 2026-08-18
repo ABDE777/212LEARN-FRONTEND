@@ -48,15 +48,6 @@ export const DEFAULT_COUNTRIES = [
   { code: '+52', flag: '🇲🇽', name: 'Mexique', iso: 'MX' },
 ];
 
-function getFlagEmoji(isoCode) {
-  if (!isoCode || isoCode.length !== 2) return '🏳️';
-  const codePoints = isoCode
-    .toUpperCase()
-    .split('')
-    .map((char) => 127397 + char.charCodeAt(0));
-  return String.fromCodePoint(...codePoints);
-}
-
 function CountryFlagImage({ iso, fallbackEmoji }) {
   const [hasError, setHasError] = useState(false);
 
@@ -87,50 +78,9 @@ function CountryFlagImage({ iso, fallbackEmoji }) {
 export default function CountryPhonePicker({ selectedCountry, onChange }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [countries, setCountries] = useState(DEFAULT_COUNTRIES);
+  const [countries] = useState(DEFAULT_COUNTRIES);
   const dropdownRef = useRef(null);
   const searchInputRef = useRef(null);
-
-  // Fetch full countries dataset from country-code.com API on mount
-  useEffect(() => {
-    let isMounted = true;
-    async function fetchCountriesFromAPI() {
-      try {
-        const res = await fetch('https://country-code.com/api/countries');
-        if (!res.ok) return;
-        const data = await res.json();
-        if (!isMounted || !Array.isArray(data)) return;
-
-        const parsed = data
-          .map((item) => {
-            const dialCode = item.code?.trim();
-            if (!dialCode) return null;
-            return {
-              code: dialCode,
-              flag: getFlagEmoji(item.iso),
-              name: item.name || '',
-              iso: item.iso || '',
-              flagUrl: item.flag ? `https://country-code.com${item.flag}` : undefined,
-            };
-          })
-          .filter(Boolean);
-
-        if (parsed.length > 0) {
-          // Sort with Morocco (MA) first, then alphabetical by name
-          const sorted = parsed.sort((a, b) => {
-            if (a.iso === 'MA') return -1;
-            if (b.iso === 'MA') return 1;
-            return a.name.localeCompare(b.name, 'fr');
-          });
-          setCountries(sorted);
-        }
-      } catch {
-        // Fallback to DEFAULT_COUNTRIES silently if API fails or offline
-      }
-    }
-    fetchCountriesFromAPI();
-    return () => { isMounted = false; };
-  }, []);
 
   // Close dropdown on click outside
   useEffect(() => {
