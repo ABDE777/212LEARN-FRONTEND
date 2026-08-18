@@ -190,7 +190,6 @@ export function useQuiz(quizId) {
       const response = await api.get(`/quizzes/${quizId}`);
       const body = response.data;
       const quizData = body?.data?.quiz || body?.data || body?.quiz || null;
-      console.log('useQuiz response:', body);
       setQuiz(quizData);
     } catch (err) {
       console.error('Failed to fetch quiz:', err);

@@ -47,7 +47,6 @@ export function AuthProvider({ children }) {
   };
 
   const signup = async (userData) => {
-    console.log('AuthContext signup - sending payload:', JSON.stringify(userData, null, 2));
     const response = await api.post('/auth/register', userData);
     const { token: newToken, data } = response.data;
     const newUser = data?.user || response.data.user;

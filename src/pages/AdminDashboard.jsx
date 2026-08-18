@@ -1819,9 +1819,8 @@ export default function AdminDashboard() {
                   {!meetingsLoading && (
                     <SessionCalendar
                       meetings={meetings}
-                      onMeetingClick={(meeting) => {
+                      onMeetingClick={() => {
                         // Handle meeting clicks - could show details or join
-                        console.log('Meeting clicked:', meeting);
                       }}
                       onEditMeeting={handleAdminMeetingEdit}
                       onDeleteMeeting={handleAdminMeetingDelete}
