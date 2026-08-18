@@ -386,13 +386,6 @@ export default function Checkout() {
                 </div>
               )}
             </Card>
-
-            <Card variant="default" padding="1.5rem">
-              <h3 style={{ marginBottom: '1rem', color: 'var(--secondary)', fontSize: '1.1rem' }}>Garantie satisfait ou remboursé</h3>
-              <p style={{ color: 'var(--secondary)', fontSize: '0.95rem', lineHeight: 1.6 }}>
-                Si vous n'êtes pas satisfait de votre achat, contactez-nous dans les 30 jours pour un remboursement complet.
-              </p>
-            </Card>
           </div>
 
           {/* Right: Order Summary */}

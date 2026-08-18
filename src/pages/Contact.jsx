@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import CountryPhonePicker, { DEFAULT_COUNTRIES } from '../components/CountryPhonePicker';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import api from '../services/api';
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -35,44 +36,30 @@ export default function Contact() {
       : '';
 
     try {
-      const res = await fetch('/api/v1/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          phone: fullPhone,
-          subject: formData.subject,
-          message: formData.message,
-        }),
+      const res = await api.post('/contact', {
+        name: formData.name,
+        email: formData.email,
+        phone: fullPhone,
+        subject: formData.subject,
+        message: formData.message,
       });
 
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        setStatus({
-          loading: false,
-          success: data.message || 'Votre message a été envoyé avec succès ! Nous vous contacterons bientôt.',
-          error: null,
-        });
-        setFormData({ name: '', email: '', phone: '', subject: 'Information cours', message: '' });
-      } else {
-        // Fallback simulated success if API endpoint is offline
-        setStatus({
-          loading: false,
-          success: 'Votre message a été envoyé avec succès ! Notre équipe vous répondra dans les 24h.',
-          error: null,
-        });
-        setFormData({ name: '', email: '', phone: '', subject: 'Information cours', message: '' });
-      }
-    } catch {
-      // Fallback response for offline / dev preview
+      const data = res.data;
       setStatus({
         loading: false,
-        success: 'Votre message a été enregistré avec succès ! Merci de contacter 212Learn.',
+        success: data?.message || 'Votre message a été envoyé avec succès ! Nous vous contacterons bientôt.',
         error: null,
       });
       setFormData({ name: '', email: '', phone: '', subject: 'Information cours', message: '' });
+    } catch (err) {
+      setStatus({
+        loading: false,
+        success: null,
+        error:
+          err.response?.data?.error?.message ||
+          err.response?.data?.message ||
+          "Impossible d'envoyer votre message pour le moment. Veuillez réessayer.",
+      });
     }
   };
 

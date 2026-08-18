@@ -363,10 +363,6 @@ export default function CourseDetails() {
                     </Button>
                   </div>
                 )}
-                
-                <p style={{ textAlign: 'center', fontSize: '0.9rem', color: 'var(--secondary)', marginBottom: '1.5rem' }}>
-                  Garantie satisfait ou remboursé 30 jours
-                </p>
 
                 <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem' }}>
                   <h4 style={{ marginBottom: '1rem', color: 'var(--secondary)' }}>Ce cours comprend :</h4>
