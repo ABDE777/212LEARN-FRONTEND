@@ -1,4 +1,5 @@
 import { Loader, X } from 'lucide-react';
+import ModalPortal from '../ModalPortal';
 
 export default function AdminUserFormDrawer({
   isOpen,
@@ -13,6 +14,7 @@ export default function AdminUserFormDrawer({
   if (!isOpen) return null;
 
   return (
+    <ModalPortal>
     <div
       style={{
         position: 'fixed',
@@ -207,5 +209,6 @@ export default function AdminUserFormDrawer({
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }

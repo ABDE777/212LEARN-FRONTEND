@@ -76,7 +76,9 @@ export function ToastContainer({ toasts, onClose }) {
         display: 'flex',
         flexDirection: 'column',
         gap: '10px',
-        zIndex: 9999,
+        // Above modal/drawer overlays (z-index 99999) so success/error toasts
+        // are visible even while a form drawer is open.
+        zIndex: 1000000,
         pointerEvents: 'none',
       }}
     >

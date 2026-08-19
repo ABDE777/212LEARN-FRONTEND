@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Loader, X } from 'lucide-react';
 import CloudinaryImageUpload from '../CloudinaryImageUpload';
+import ModalPortal from '../ModalPortal';
 
 export default function AdminCreateCourseDrawer({
   isOpen,
@@ -54,6 +55,7 @@ export default function AdminCreateCourseDrawer({
   };
 
   return (
+    <ModalPortal>
     <div
       style={{
         position: 'fixed',
@@ -281,5 +283,6 @@ export default function AdminCreateCourseDrawer({
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }
