@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import api from '../services/api';
 import { useAutoFetch } from './useAutoFetch';
 
@@ -125,31 +125,29 @@ export function usePendingKyc(enabled = true) {
   return { users, loading, error, refreshPendingKyc: fetchPending };
 }
 
-export function useAdminInstructors() {
+export function useAdminInstructors(enabled = true) {
   const [instructors, setInstructors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchInstructors = async () => {
-      try {
-        const response = await api.get('/users', {
-          params: { role: 'instructor', limit: 100, order: 'asc', sort: 'firstName' },
-        });
-        setInstructors(response.data?.data?.users || []);
-      } catch (err) {
-        console.error('Failed to fetch instructors:', err);
-        setError('Impossible de charger les instructeurs.');
-        setInstructors([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchInstructors();
+  const fetchInstructors = useCallback(async () => {
+    try {
+      const response = await api.get('/users', {
+        params: { role: 'instructor', limit: 100, order: 'asc', sort: 'firstName' },
+      });
+      setInstructors(response.data?.data?.users || []);
+    } catch (err) {
+      console.error('Failed to fetch instructors:', err);
+      setError('Impossible de charger les instructeurs.');
+      setInstructors([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  return { instructors, loading, error };
+  useAutoFetch(fetchInstructors, enabled);
+
+  return { instructors, loading, error, refreshInstructors: fetchInstructors };
 }
 
 export function useAdminCourses(enabled = true) {

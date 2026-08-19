@@ -117,16 +117,16 @@ export default function AdminDashboard() {
     updateGroup,
     addStudentToGroup,
     removeStudentFromGroup,
-  } = useAdminGroups();
-  const { 
-    coupons, 
-    loading: couponsLoading, 
-    error: couponsError, 
+  } = useAdminGroups(activeTab === 'groups');
+  const {
+    coupons,
+    loading: couponsLoading,
+    error: couponsError,
     refetch: refetchCoupons,
     createCoupon,
     updateCoupon,
     deleteCoupon,
-  } = useCoupons();
+  } = useCoupons(activeTab === 'coupons');
 
   const flatCategories = useMemo(() => flattenCategories(categories), [categories]);
 

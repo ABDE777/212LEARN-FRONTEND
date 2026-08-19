@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useAutoFetch } from './useAutoFetch';
 
 export function useInstructorCourses() {
   const { user } = useAuth();
@@ -8,28 +9,27 @@ export function useInstructorCourses() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const fetchCourses = useCallback(async () => {
     if (!user?.id) return;
-
-    const fetchCourses = async () => {
-      try {
-        const response = await api.get('/courses', {
-          params: { instructorId: user.id, limit: 100, status: 'all' },
-        });
-        setCourses(response.data?.data?.courses || []);
-      } catch (err) {
-        console.error('Failed to fetch instructor courses:', err);
-        setError('Impossible de charger vos cours.');
-        setCourses([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCourses();
+    try {
+      const response = await api.get('/courses', {
+        params: { instructorId: user.id, limit: 100, status: 'all' },
+      });
+      setCourses(response.data?.data?.courses || []);
+    } catch (err) {
+      console.error('Failed to fetch instructor courses:', err);
+      setError('Impossible de charger vos cours.');
+      setCourses([]);
+    } finally {
+      setLoading(false);
+    }
   }, [user?.id]);
 
-  return { courses, loading, error };
+  // Fetch on mount / user change, and re-fetch after any create/update/delete
+  // so a newly-created or deleted course shows without a page reload.
+  useAutoFetch(fetchCourses, !!user?.id);
+
+  return { courses, loading, error, refreshCourses: fetchCourses };
 }
 
 export function useCreateCourse() {
