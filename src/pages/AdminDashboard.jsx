@@ -84,13 +84,13 @@ export default function AdminDashboard() {
     updateUser,
     deleteUser,
     resetPassword,
-  } = useAdminUsers();
+  } = useAdminUsers(activeTab === 'users');
   const {
     users: pendingKycUsers,
     loading: pendingKycLoading,
     error: pendingKycError,
     refreshPendingKyc,
-  } = usePendingKyc();
+  } = usePendingKyc(activeTab === 'users');
   const { courses, loading: coursesLoading, error: coursesError, refreshCourses } = useAdminCourses();
   const { instructors, loading: instructorsLoading } = useAdminInstructors();
   const {
