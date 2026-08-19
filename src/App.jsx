@@ -32,7 +32,6 @@ const Cart = lazy(() => import('./pages/Cart'));
 const Wishlist = lazy(() => import('./pages/Wishlist'));
 const ClassroomPlayer = lazy(() => import('./pages/ClassroomPlayer'));
 const QuizPlayer = lazy(() => import('./pages/QuizPlayer'));
-const AssignmentSubmit = lazy(() => import('./pages/AssignmentSubmit'));
 const StudentDashboard = lazy(() => import('./pages/StudentDashboard'));
 const InstructorDashboard = lazy(() => import('./pages/InstructorDashboard'));
 const InstructorPending = lazy(() => import('./pages/InstructorPending'));
@@ -94,7 +93,6 @@ function App() {
                   <Route path="/student/dashboard" element={<StudentDashboard />} />
                   <Route path="/learn/:courseId/lesson/:lessonId" element={<ClassroomPlayer />} />
                   <Route path="/learn/:courseId/quiz/:quizId" element={<QuizPlayer />} />
-                  <Route path="/learn/:courseId/assignment/:assignmentId" element={<AssignmentSubmit />} />
                 </Route>
 
                 {/* Instructor pending-approval screen (self-guarded; outside the
