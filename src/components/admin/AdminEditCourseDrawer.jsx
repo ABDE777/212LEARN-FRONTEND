@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Loader, X } from 'lucide-react';
 import CloudinaryImageUpload from '../CloudinaryImageUpload';
 import { normalizeCourseForm } from './adminCourseHelpers';
+import ModalPortal from '../ModalPortal';
 
 export default function AdminEditCourseDrawer({
   course,
@@ -30,6 +31,7 @@ export default function AdminEditCourseDrawer({
   };
 
   return (
+    <ModalPortal>
     <div
       style={{
         position: 'fixed',
@@ -290,5 +292,6 @@ export default function AdminEditCourseDrawer({
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }

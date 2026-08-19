@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Loader, X } from 'lucide-react';
+import ModalPortal from '../ModalPortal';
 
 export default function AdminCategoryDrawer({
   isOpen,
@@ -56,6 +57,7 @@ export default function AdminCategoryDrawer({
   };
 
   return (
+    <ModalPortal>
     <div
       style={{
         position: 'fixed',
@@ -275,5 +277,6 @@ export default function AdminCategoryDrawer({
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }
