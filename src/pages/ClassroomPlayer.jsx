@@ -9,6 +9,21 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import LessonAssignments from '../components/LessonAssignments';
 import { useAuth } from '../context/AuthContext';
 
+// Resources only carry { type, url } — no stored name. Derive a readable
+// label from the file name in the URL, falling back to a typed French label.
+const RESOURCE_TYPE_LABELS = { pdf: 'Document PDF', video: 'Vidéo', image: 'Image', link: 'Lien externe', file: 'Fichier' };
+function resourceLabel(resource) {
+  if (resource.name || resource.title) return resource.name || resource.title;
+  try {
+    const path = decodeURIComponent(new URL(resource.url).pathname);
+    const file = path.split('/').pop();
+    if (file && file.includes('.')) return file;
+  } catch {
+    // url isn't absolute — ignore and fall through to the type label
+  }
+  return RESOURCE_TYPE_LABELS[resource.type] || 'Ressource';
+}
+
 export default function ClassroomPlayer() {
   const { courseId, lessonId } = useParams();
   const navigate = useNavigate();
@@ -444,7 +459,7 @@ export default function ClassroomPlayer() {
                           }}
                         >
                           <FileText size={18} />
-                          {resource.name}
+                          {resourceLabel(resource)}
                         </a>
                       ))}
                     </div>
