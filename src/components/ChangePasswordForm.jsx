@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { KeyRound, CheckCircle, AlertCircle, Loader, Trash2, AlertTriangle, X } from 'lucide-react';
+import ModalPortal from './ModalPortal';
 
 export default function ChangePasswordForm() {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -203,6 +204,7 @@ export default function ChangePasswordForm() {
 
       {/* Confirmation Modal */}
       {showDeleteModal && (
+        <ModalPortal>
         <div style={{
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -274,6 +276,7 @@ export default function ChangePasswordForm() {
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
     </div>
   );

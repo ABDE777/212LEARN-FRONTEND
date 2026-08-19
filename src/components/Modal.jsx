@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
+import ModalPortal from './ModalPortal';
 
-export default function Modal({ 
+export default function Modal({
   isOpen, 
   onClose, 
   title, 
@@ -28,7 +29,8 @@ export default function Modal({
   };
 
   return (
-    <div 
+    <ModalPortal>
+    <div
       style={{
         position: 'fixed',
         top: 0,
@@ -91,5 +93,6 @@ export default function Modal({
         {children}
       </div>
     </div>
+    </ModalPortal>
   );
 }

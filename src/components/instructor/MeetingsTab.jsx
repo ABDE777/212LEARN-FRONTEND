@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { BookOpen, Calendar, Check, CheckCircle, ChevronRight, Save, Video, X } from 'lucide-react';
 import { useMeetings } from '../../hooks/useMeetings';
+import { useAuth } from '../../context/AuthContext';
 import LoadingSpinner from '../LoadingSpinner';
 import SessionCalendar from '../SessionCalendar';
 import VirtualClassroom from '../VirtualClassroom';
+import ModalPortal from '../ModalPortal';
 
 function formatDate(iso) {
   if (!iso) return '—';
@@ -363,6 +365,7 @@ function ScheduleForm({ courses, initialCourseId, onScheduled }) {
 
 /* ─── Meetings tab ─────────────────────────── */
 export default function MeetingsTab({ courses }) {
+  const { user } = useAuth();
   const [view, setView] = useState('calendar'); // 'calendar' | 'schedule'
   const [activeCourseId, setActiveCourseId] = useState(courses[0]?.id || '');
   const { meetings, loading, error, fetchMeetings, startMeeting, endMeeting, updateMeeting, deleteMeeting } = useMeetings(activeCourseId);
@@ -436,6 +439,7 @@ export default function MeetingsTab({ courses }) {
 
       {/* Edit Meeting Drawer */}
       {editingMeeting && (
+        <ModalPortal>
         <div
           style={{
             position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
@@ -473,6 +477,7 @@ export default function MeetingsTab({ courses }) {
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* Header row */}
@@ -527,6 +532,7 @@ export default function MeetingsTab({ courses }) {
       )}
 
       {view === 'schedule' ? (
+        <ModalPortal>
         <div
           style={{
             position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
@@ -567,6 +573,7 @@ export default function MeetingsTab({ courses }) {
             </div>
           </div>
         </div>
+        </ModalPortal>
       ) : (
         <>
           {/* Course filter pills */}
