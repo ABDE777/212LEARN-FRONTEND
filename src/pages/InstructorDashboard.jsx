@@ -19,6 +19,7 @@ import CouponsTab from '../components/instructor/CouponsTab';
 import StudentsTab from '../components/instructor/StudentsTab';
 import MeetingsTab from '../components/instructor/MeetingsTab';
 import InstructorGroupChatSection from '../components/instructor/InstructorGroupChatSection';
+import ModalPortal from '../components/ModalPortal';
 
 /* ─── Instructor Group Chat Section ───────────────────────────── */
 /* ─── helpers ─────────────────────────────── */
@@ -372,6 +373,7 @@ export default function InstructorDashboard() {
 
       {/* Create Course Drawer */}
       {createCourseDrawerOpen && (
+        <ModalPortal>
         <div
           style={{
             position: 'fixed',
@@ -611,6 +613,7 @@ export default function InstructorDashboard() {
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* Keyframe for pulse dot */}

@@ -35,6 +35,7 @@ import AdminEditCourseDrawer from '../components/admin/AdminEditCourseDrawer';
 import AdminCategoryDrawer from '../components/admin/AdminCategoryDrawer';
 import AdminCreateCourseDrawer from '../components/admin/AdminCreateCourseDrawer';
 import AdminUserFormDrawer from '../components/admin/AdminUserFormDrawer';
+import ModalPortal from '../components/ModalPortal';
 import api from '../services/api';
 
 export default function AdminDashboard() {
@@ -2252,6 +2253,7 @@ export default function AdminDashboard() {
 
       {/* ── Admin Action Confirmation Modal ───────────────────────── */}
       {adminConfirmModal && (
+        <ModalPortal>
         <div
           style={{
             position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)',
@@ -2307,6 +2309,7 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
 
 
@@ -2353,6 +2356,7 @@ export default function AdminDashboard() {
 
       {/* Rejection Reason Modal for Update Requests */}
       {selectedUpdateRequest && (
+        <ModalPortal>
         <div
           style={{
             position: 'fixed',
@@ -2467,6 +2471,7 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* Create / Edit Category Slide-Over Right Drawer */}

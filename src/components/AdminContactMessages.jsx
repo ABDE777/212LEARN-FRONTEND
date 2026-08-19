@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Trash2, Search, Eye, MessageSquare, RefreshCw, Send, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../services/api';
+import ModalPortal from './ModalPortal';
 
 export default function AdminContactMessages() {
   const [messages, setMessages] = useState([]);
@@ -296,6 +297,7 @@ export default function AdminContactMessages() {
       {/* Message Modal Drawer */}
       <AnimatePresence>
         {selectedMessage && (
+          <ModalPortal>
           <div
             style={{
               position: 'fixed',
@@ -419,6 +421,7 @@ export default function AdminContactMessages() {
               </div>
             </motion.div>
           </div>
+          </ModalPortal>
         )}
       </AnimatePresence>
     </div>

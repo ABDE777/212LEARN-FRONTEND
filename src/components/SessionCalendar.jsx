@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Video, Clock, Pencil, Trash2, X, Zap } from 'lucide-react';
+import ModalPortal from './ModalPortal';
 
 function SessionCalendar({ meetings, onMeetingClick, onEditMeeting, onDeleteMeeting, readOnly = false }) {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -285,6 +286,7 @@ function SessionCalendar({ meetings, onMeetingClick, onEditMeeting, onDeleteMeet
 
       {/* Meeting Detail Drawer */}
       {selectedMeeting && (
+        <ModalPortal>
         <div
           style={{
             position: 'fixed',
@@ -520,6 +522,7 @@ function SessionCalendar({ meetings, onMeetingClick, onEditMeeting, onDeleteMeet
             )}
           </div>
         </div>
+        </ModalPortal>
       )}
     </div>
   );
