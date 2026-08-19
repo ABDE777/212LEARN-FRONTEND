@@ -575,47 +575,20 @@ export default function MeetingsTab({ courses }) {
         </div>
         </ModalPortal>
       ) : (
-        <>
-          {/* Course filter pills */}
-          {courses.length > 1 && (
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-              {courses.map(c => (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => setActiveCourseId(c.id)}
-                  style={{
-                    padding: '0.35rem 1rem', borderRadius: '9999px', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
-                    border: `1.5px solid ${activeCourseId === c.id ? 'var(--primary)' : 'var(--border-color)'}`,
-                    background: activeCourseId === c.id ? 'rgba(193,101,47,0.08)' : 'transparent',
-                    color: activeCourseId === c.id ? 'var(--primary)' : 'var(--secondary)',
-                    transition: 'all 0.15s',
-                  }}
-                >
-                  {c.title.length > 28 ? c.title.slice(0, 28) + '…' : c.title}
-                </button>
-              ))}
+        !loading && !error && meetings.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '4rem 2rem', border: '2px dashed var(--border-color)', borderRadius: '16px', marginTop: '1.5rem' }}>
+            <div style={{ width: '64px', height: '64px', borderRadius: '16px', background: 'rgba(193,101,47,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+              <Calendar size={28} color="var(--primary)" />
             </div>
-          )}
-
-          {loading && <LoadingSpinner />}
-          {error && <p style={{ color: 'var(--error-color)' }}>{error}</p>}
-
-          {!loading && !error && meetings.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '4rem 2rem', border: '2px dashed var(--border-color)', borderRadius: '16px' }}>
-              <div style={{ width: '64px', height: '64px', borderRadius: '16px', background: 'rgba(193,101,47,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
-                <Calendar size={28} color="var(--primary)" />
-              </div>
-              <h3 style={{ color: 'var(--secondary)', marginBottom: '0.5rem' }}>Aucune session planifiée</h3>
-              <p style={{ color: 'var(--secondary)', fontSize: '0.9rem', marginBottom: '1.25rem' }}>
-                Planifiez votre première session live pour ce cours.
-              </p>
-              <button className="btn-primary" onClick={() => setView('schedule')} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.65rem 1.5rem' }}>
-                <Calendar size={16} /> Planifier maintenant
-              </button>
-            </div>
-          )}
-        </>
+            <h3 style={{ color: 'var(--secondary)', marginBottom: '0.5rem' }}>Aucune session planifiée</h3>
+            <p style={{ color: 'var(--secondary)', fontSize: '0.9rem', marginBottom: '1.25rem' }}>
+              Planifiez votre première session live pour ce cours.
+            </p>
+            <button className="btn-primary" onClick={() => setView('schedule')} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.65rem 1.5rem' }}>
+              <Calendar size={16} /> Planifier maintenant
+            </button>
+          </div>
+        )
       )}
     </div>
   );
