@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Send, FileText, Trash2, AlertTriangle, ShieldCheck, RefreshCw, X, Paperclip, Loader } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
@@ -20,7 +20,7 @@ export default function GroupChatRoom({ groupId, groupName, formateurName, onClo
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const fetchMessages = async (silent = false) => {
+  const fetchMessages = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
       const res = await api.get(`/groups/${groupId}/messages`);
@@ -31,7 +31,7 @@ export default function GroupChatRoom({ groupId, groupName, formateurName, onClo
     } finally {
       if (!silent) setLoading(false);
     }
-  };
+  }, [groupId]);
 
   useEffect(() => {
     if (groupId) {
@@ -42,7 +42,7 @@ export default function GroupChatRoom({ groupId, groupName, formateurName, onClo
       }, 4000);
       return () => clearInterval(interval);
     }
-  }, [groupId]);
+  }, [groupId, fetchMessages]);
 
   useEffect(() => {
     scrollToBottom();

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 
 export function useAssignments(lessonId) {
@@ -6,9 +6,9 @@ export function useAssignments(lessonId) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchAssignments = async () => {
+  const fetchAssignments = useCallback(async () => {
     if (!lessonId) return;
-    
+
     setLoading(true);
     setError(null);
     try {
@@ -20,11 +20,11 @@ export function useAssignments(lessonId) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [lessonId]);
 
   useEffect(() => {
     fetchAssignments();
-  }, [lessonId]);
+  }, [fetchAssignments]);
 
   return {
     assignments,
@@ -39,9 +39,9 @@ export function useAssignmentSubmissions(assignmentId) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchSubmissions = async () => {
+  const fetchSubmissions = useCallback(async () => {
     if (!assignmentId) return;
-    
+
     setLoading(true);
     setError(null);
     try {
@@ -53,7 +53,7 @@ export function useAssignmentSubmissions(assignmentId) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [assignmentId]);
 
   const gradeSubmission = async (submissionId, grade, feedback) => {
     try {
@@ -68,7 +68,7 @@ export function useAssignmentSubmissions(assignmentId) {
 
   useEffect(() => {
     fetchSubmissions();
-  }, [assignmentId]);
+  }, [fetchSubmissions]);
 
   return {
     submissions,
