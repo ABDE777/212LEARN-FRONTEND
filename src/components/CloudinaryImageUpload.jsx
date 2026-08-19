@@ -82,7 +82,7 @@ export default function CloudinaryImageUpload({
         xhr.send(formData);
       });
 
-      onChange(uploadRes.secure_url);
+      onChange?.(uploadRes.secure_url);
       setProgress(100);
     } catch (err) {
       console.error('Cloudinary upload error:', err);
@@ -115,7 +115,7 @@ export default function CloudinaryImageUpload({
 
   const handleRemove = (e) => {
     e.stopPropagation();
-    onChange('');
+    onChange?.('');
     setProgress(0);
     setError(null);
   };

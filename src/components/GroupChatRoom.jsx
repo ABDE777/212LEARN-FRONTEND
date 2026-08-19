@@ -498,7 +498,8 @@ export default function GroupChatRoom({ groupId, groupName, formateurName, onClo
             </button>
           </div>
           <CloudinaryImageUpload
-            onUploadSuccess={(url) => {
+            onChange={(url) => {
+              if (!url) return;
               const isVid = url.match(/\.(mp4|webm|mov)$/i);
               setAttachment({
                 url,
