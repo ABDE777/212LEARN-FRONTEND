@@ -123,7 +123,7 @@ export default function LessonAssignments({ lessonId }) {
   const { assignments, loading, error, refetch } = useAssignments(lessonId);
 
   // Nothing to show for a lesson without assignments — keep the player clean.
-  if (loading || error || !assignments || assignments.length === 0) return null;
+  if (loading || error || !Array.isArray(assignments) || assignments.length === 0) return null;
 
   return (
     <Card variant="default" padding="1.5rem" style={{ marginTop: '2rem' }}>
