@@ -6,6 +6,7 @@ import { useLessonProgress } from '../hooks/useProgress';
 import { useCourseQuizzes } from '../hooks/useInstructorCourses';
 import Card from '../components/Card';
 import LoadingSpinner from '../components/LoadingSpinner';
+import LessonAssignments from '../components/LessonAssignments';
 import { useAuth } from '../context/AuthContext';
 
 export default function ClassroomPlayer() {
@@ -449,6 +450,9 @@ export default function ClassroomPlayer() {
                     </div>
                   </Card>
                 )}
+
+                {/* Assignments for this lesson (submit + view grade) */}
+                <LessonAssignments lessonId={lessonId} />
               </div>
             </>
           ) : (
