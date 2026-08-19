@@ -131,6 +131,9 @@ export default function TinderSwipeCategories({ categories = [], onSelectCategor
         clearInterval(autoPlayRef.current);
       }
     };
+    // Interval restarts on each slide (currentIndex); handleNext is intentionally
+    // excluded so the autoplay timer isn't reset on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAutoPlaying, currentIndex]);
 
   // Stop auto-play on interaction

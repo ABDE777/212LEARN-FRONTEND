@@ -789,6 +789,8 @@ function GroupsManager({ courseId }) {
       }
     })();
     return () => { active = false; };
+    // getCourseGroups is stable (from a hook); refetch only when courseId changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId]);
 
   const loadGroupStudents = async (groupId) => {

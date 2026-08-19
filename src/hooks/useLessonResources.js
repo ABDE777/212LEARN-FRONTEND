@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 
 export function useLessonResources(lessonId) {
@@ -6,9 +6,9 @@ export function useLessonResources(lessonId) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchResources = async () => {
+  const fetchResources = useCallback(async () => {
     if (!lessonId) return;
-    
+
     setLoading(true);
     setError(null);
     try {
@@ -20,7 +20,7 @@ export function useLessonResources(lessonId) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [lessonId]);
 
   const addResource = async (resourceData) => {
     try {
@@ -45,7 +45,7 @@ export function useLessonResources(lessonId) {
 
   useEffect(() => {
     fetchResources();
-  }, [lessonId]);
+  }, [fetchResources]);
 
   return {
     resources,

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 
 export function useNotifications(userId) {
@@ -6,7 +6,7 @@ export function useNotifications(userId) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -18,7 +18,7 @@ export function useNotifications(userId) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
 
   const markAsRead = async (notificationId) => {
     try {
@@ -42,7 +42,7 @@ export function useNotifications(userId) {
     if (userId) {
       fetchNotifications();
     }
-  }, [userId]);
+  }, [userId, fetchNotifications]);
 
   return {
     notifications,
