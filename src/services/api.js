@@ -63,6 +63,13 @@ api.interceptors.response.use(
     // UI showing stale data. Correctness over a tiny cache-hit gain.
     if (['post', 'put', 'patch', 'delete'].includes(response.config.method?.toLowerCase())) {
       clearApiCache();
+      // Notify subscribed data hooks that server state changed, so lists refresh
+      // after any create/update/delete without a manual page reload. Skip auth
+      // endpoints (login/register/logout) — those drive their own navigation.
+      const mUrl = response.config.url || '';
+      if (typeof window !== 'undefined' && !mUrl.startsWith('/auth/')) {
+        window.dispatchEvent(new CustomEvent('api:mutated', { detail: { url: mUrl } }));
+      }
     }
     return response;
   },

@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import api from '../services/api';
+import { useAutoFetch } from './useAutoFetch';
 
-export function useAdminUsers() {
+export function useAdminUsers(enabled = true) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -47,9 +48,7 @@ export function useAdminUsers() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+  useAutoFetch(fetchUsers, enabled);
 
   const verifyInstructor = async (userId, isVerified = true, notes = 'Compte vérifié après vérification manuelle') => {
     const response = await api.patch(`/admin/users/${userId}/verify`, { isVerified, notes });
@@ -101,7 +100,7 @@ export function useAdminUsers() {
   };
 }
 
-export function usePendingKyc() {
+export function usePendingKyc(enabled = true) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -121,41 +120,37 @@ export function usePendingKyc() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchPending();
-  }, [fetchPending]);
+  useAutoFetch(fetchPending, enabled);
 
   return { users, loading, error, refreshPendingKyc: fetchPending };
 }
 
-export function useAdminInstructors() {
+export function useAdminInstructors(enabled = true) {
   const [instructors, setInstructors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchInstructors = async () => {
-      try {
-        const response = await api.get('/users', {
-          params: { role: 'instructor', limit: 100, order: 'asc', sort: 'firstName' },
-        });
-        setInstructors(response.data?.data?.users || []);
-      } catch (err) {
-        console.error('Failed to fetch instructors:', err);
-        setError('Impossible de charger les instructeurs.');
-        setInstructors([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchInstructors();
+  const fetchInstructors = useCallback(async () => {
+    try {
+      const response = await api.get('/users', {
+        params: { role: 'instructor', limit: 100, order: 'asc', sort: 'firstName' },
+      });
+      setInstructors(response.data?.data?.users || []);
+    } catch (err) {
+      console.error('Failed to fetch instructors:', err);
+      setError('Impossible de charger les instructeurs.');
+      setInstructors([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  return { instructors, loading, error };
+  useAutoFetch(fetchInstructors, enabled);
+
+  return { instructors, loading, error, refreshInstructors: fetchInstructors };
 }
 
-export function useAdminCourses() {
+export function useAdminCourses(enabled = true) {
   const [courses, setCourses] = useState([]);
   const [enrollments, setEnrollments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -209,9 +204,7 @@ export function useAdminCourses() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchCourses();
-  }, [fetchCourses]);
+  useAutoFetch(fetchCourses, enabled);
 
   return { courses, enrollments, loading, error, refreshCourses: fetchCourses };
 }

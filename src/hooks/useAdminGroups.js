@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import api from '../services/api';
+import { useAutoFetch } from './useAutoFetch';
 
-export function useAdminGroups() {
+export function useAdminGroups(enabled = true) {
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchGroups = async () => {
+  const fetchGroups = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -18,7 +19,7 @@ export function useAdminGroups() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const createGroup = async (groupData) => {
     const response = await api.post('/groups', groupData);
@@ -50,9 +51,7 @@ export function useAdminGroups() {
     return response.data;
   };
 
-  useEffect(() => {
-    fetchGroups();
-  }, []);
+  useAutoFetch(fetchGroups, enabled);
 
   return {
     groups,
