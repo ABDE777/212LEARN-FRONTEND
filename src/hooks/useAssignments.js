@@ -13,7 +13,9 @@ export function useAssignments(lessonId) {
     setError(null);
     try {
       const response = await api.get(`/lessons/${lessonId}/assignments`);
-      setAssignments(response.data?.data || response.data || []);
+      // Envelope: { data: { assignments: [...] } }
+      const payload = response.data?.data ?? response.data;
+      setAssignments(Array.isArray(payload) ? payload : payload?.assignments || []);
     } catch (err) {
       setError('Failed to load assignments');
       console.error('Assignments error:', err);
