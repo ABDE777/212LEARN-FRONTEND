@@ -531,7 +531,7 @@ export default function MeetingsTab({ courses }) {
         />
       )}
 
-      {view === 'schedule' ? (
+      {view === 'schedule' && (
         <ModalPortal>
         <div
           style={{
@@ -574,21 +574,6 @@ export default function MeetingsTab({ courses }) {
           </div>
         </div>
         </ModalPortal>
-      ) : (
-        !loading && !error && meetings.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '4rem 2rem', border: '2px dashed var(--border-color)', borderRadius: '16px', marginTop: '1.5rem' }}>
-            <div style={{ width: '64px', height: '64px', borderRadius: '16px', background: 'rgba(193,101,47,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
-              <Calendar size={28} color="var(--primary)" />
-            </div>
-            <h3 style={{ color: 'var(--secondary)', marginBottom: '0.5rem' }}>Aucune session planifiée</h3>
-            <p style={{ color: 'var(--secondary)', fontSize: '0.9rem', marginBottom: '1.25rem' }}>
-              Planifiez votre première session live pour ce cours.
-            </p>
-            <button className="btn-primary" onClick={() => setView('schedule')} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.65rem 1.5rem' }}>
-              <Calendar size={16} /> Planifier maintenant
-            </button>
-          </div>
-        )
       )}
     </div>
   );
