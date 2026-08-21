@@ -1,4 +1,21 @@
-import { Activity, Award, BarChart3, DollarSign, GraduationCap, RefreshCw, Target, TrendingDown, TrendingUp, UserPlus, Users } from 'lucide-react';
+import { 
+  Activity, 
+  Award, 
+  BarChart3, 
+  DollarSign, 
+  GraduationCap, 
+  RefreshCw, 
+  Target, 
+  TrendingDown, 
+  TrendingUp, 
+  UserPlus, 
+  Users, 
+  Wallet, 
+  Layers, 
+  Percent, 
+  CheckCircle2,
+  Info
+} from 'lucide-react';
 import LoadingSpinner from '../LoadingSpinner';
 
 const nf = new Intl.NumberFormat('fr-FR');
@@ -28,7 +45,7 @@ function StatTile({ icon: Icon, label, value, sub, subColor, accent }) {
   );
 }
 
-/* Vertical bar chart of the monthly revenue trend (single series, one hue). */
+/* Vertical bar chart of the monthly revenue trend. */
 function MonthlyRevenueChart({ monthly, currency }) {
   const data = monthly || [];
   if (data.length === 0) {
@@ -38,13 +55,14 @@ function MonthlyRevenueChart({ monthly, currency }) {
   return (
     <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.6rem', height: 180, overflowX: 'auto', paddingTop: '1.5rem' }}>
       {data.map((m) => {
-        const val = Number(m.revenue) || 0;
-        const h = Math.max((val / max) * 140, val > 0 ? 4 : 0);
+        const val = Number(m.instructorEarnings ?? (m.revenue * 0.7)) || 0;
+        const gross = Number(m.revenue) || 0;
+        const h = Math.max((val / (max * 0.7 || 1)) * 140, val > 0 ? 4 : 0);
         return (
-          <div key={m.month} title={`${monthLabel(m.month)} · ${fmtMoney(val)} ${currency} · ${fmtInt(m.enrollments)} inscription(s)`}
+          <div key={m.month} title={`${monthLabel(m.month)} · Net Formateur: ${fmtMoney(val)} ${currency} (Brut: ${fmtMoney(gross)} ${currency}) · ${fmtInt(m.enrollments)} vente(s)`}
             style={{ flex: '1 0 42px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
-            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-color)' }}>{val > 0 ? fmtMoney(val) : ''}</span>
-            <div style={{ width: '100%', maxWidth: 40, height: h, background: 'var(--primary)', borderRadius: '4px 4px 2px 2px', transition: 'height .3s' }} />
+            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#059669' }}>{val > 0 ? fmtMoney(val) : ''}</span>
+            <div style={{ width: '100%', maxWidth: 40, height: h, background: 'linear-gradient(180deg, #10b981 0%, #059669 100%)', borderRadius: '4px 4px 2px 2px', transition: 'height .3s' }} />
             <span style={{ fontSize: '0.68rem', color: 'var(--secondary)', whiteSpace: 'nowrap' }}>{monthLabel(m.month)}</span>
           </div>
         );
@@ -59,11 +77,12 @@ function TopCoursesChart({ topCourses, currency }) {
   if (data.length === 0) {
     return <p style={{ color: 'var(--secondary)', fontSize: '0.9rem' }}>Aucun revenu par cours à afficher.</p>;
   }
-  const max = Math.max(...data.map((c) => Number(c.revenue) || 0), 1);
+  const max = Math.max(...data.map((c) => Number(c.instructorEarnings ?? (c.revenue * 0.7)) || 0), 1);
   return (
     <div style={{ display: 'grid', gap: '0.9rem' }}>
       {data.map((c, i) => {
-        const val = Number(c.revenue) || 0;
+        const val = Number(c.instructorEarnings ?? (c.revenue * 0.7)) || 0;
+        const gross = Number(c.revenue) || 0;
         const w = Math.max((val / max) * 100, val > 0 ? 3 : 0);
         return (
           <div key={c.courseId}>
@@ -71,14 +90,19 @@ function TopCoursesChart({ topCourses, currency }) {
               <span style={{ fontSize: '0.86rem', fontWeight: 600, color: 'var(--text-color)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {i + 1}. {c.title}
               </span>
-              <span style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--text-color)', whiteSpace: 'nowrap' }}>
-                {fmtMoney(val)} {currency}
-              </span>
+              <div style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: '0.88rem', fontWeight: 800, color: '#059669' }}>
+                  {fmtMoney(val)} {currency} <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--secondary)' }}>(Net)</span>
+                </span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--secondary)', marginLeft: '0.5rem' }}>
+                  Brut: {fmtMoney(gross)} {currency}
+                </span>
+              </div>
             </div>
             <div style={{ background: 'var(--border-color)', borderRadius: 6, height: 10, overflow: 'hidden' }}>
-              <div title={`${fmtInt(c.students)} étudiant(s)`} style={{ width: `${w}%`, height: '100%', background: 'var(--primary)', borderRadius: 6 }} />
+              <div title={`${fmtInt(c.students)} étudiant(s)`} style={{ width: `${w}%`, height: '100%', background: '#10b981', borderRadius: 6 }} />
             </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--secondary)', marginTop: '0.25rem' }}>{fmtInt(c.students)} étudiant(s)</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--secondary)', marginTop: '0.25rem' }}>{fmtInt(c.students)} étudiant(s) inscrits</div>
           </div>
         );
       })}
@@ -103,8 +127,12 @@ export default function AnalyticsTab({ revenueData, studentsData, completionData
   const currency = revenueData?.currency || 'MAD';
 
   const growth = Number(revenueData?.growth || 0);
-  const totalRevenue = Number(revenueData?.totalRevenue || 0);
-  const currentMonthRevenue = Number(revenueData?.currentMonthRevenue || 0);
+  const totalGrossRevenue = Number(revenueData?.totalRevenue || 0);
+  const sharePct = Number(revenueData?.instructorSharePercentage || 70);
+  const instructorNetEarnings = Number(revenueData?.instructorEarnings ?? (totalGrossRevenue * (sharePct / 100)));
+  const currentMonthEarnings = Number(revenueData?.currentMonthEarnings ?? ((revenueData?.currentMonthRevenue || 0) * (sharePct / 100)));
+  const platformFee = Number(revenueData?.platformRetention ?? (totalGrossRevenue * ((100 - sharePct) / 100)));
+
   const avgOrder = Number(revenueData?.averageOrderValue || 0);
   const totalStudents = Number(studentsData?.totalStudents || 0);
   const totalEnrollments = Number(studentsData?.totalEnrollments ?? revenueData?.totalEnrollments ?? 0);
@@ -116,27 +144,31 @@ export default function AnalyticsTab({ revenueData, studentsData, completionData
   const topCourses = revenueData?.topCourses || [];
   const studentCourses = studentsData?.courses || [];
   const completionCourses = completionData?.courses || [];
+  const groups = studentsData?.groups || [];
+  const scope = revenueData?.scope || 'group_students';
 
   const growthColor = growth > 0 ? '#059669' : growth < 0 ? 'var(--error-color, #ef4444)' : 'var(--secondary)';
   const GrowthIcon = growth >= 0 ? TrendingUp : TrendingDown;
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.75rem', gap: '1rem', flexWrap: 'wrap' }}>
+      {/* ── Header ── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', gap: '1rem', flexWrap: 'wrap' }}>
         <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.3rem', color: 'var(--text-color)' }}>
-            Analytics
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.3rem', color: 'var(--text-color)' }}>
+            📊 Tableau de Bord Financier & Analytics
           </h2>
           <p style={{ color: 'var(--secondary)', fontSize: '0.92rem' }}>
-            Revenus, étudiants et progression sur l'ensemble de vos cours
+            Consultez votre rémunération nette à percevoir, vos revenus et la progression des étudiants que vous encadrez.
           </p>
         </div>
         <button
           onClick={refetch}
           style={{
-            display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1rem',
-            background: 'var(--surface-color)', color: 'var(--text-color)', border: '1px solid var(--border-color)',
-            borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem',
+            display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1.1rem',
+            background: 'var(--surface-color, #fff)', color: 'var(--text-color)', border: '1px solid var(--border-color)',
+            borderRadius: '10px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
           }}
         >
           <RefreshCw size={16} />
@@ -149,36 +181,124 @@ export default function AnalyticsTab({ revenueData, studentsData, completionData
 
       {!loading && !error && (
         <div style={{ display: 'grid', gap: '1.5rem' }}>
+
+          {/* ── Scope Explanation Banner ── */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            padding: '0.85rem 1.25rem',
+            borderRadius: '12px',
+            background: 'rgba(79, 70, 229, 0.06)',
+            border: '1px solid rgba(79, 70, 229, 0.2)',
+            color: 'var(--primary)',
+            fontSize: '0.86rem',
+          }}>
+            <Info size={18} style={{ flexShrink: 0 }} />
+            <span>
+              {scope === 'group_students'
+                ? "👥 Vos revenus et statistiques sont calculés précisément sur les étudiants inscrits dans les groupes de classe que vous encadrez."
+                : "📚 Vos revenus sont calculés sur l'ensemble des étudiants inscrits à vos cours."}
+            </span>
+          </div>
+
+          {/* ── Hero Payout Statement Card ── */}
+          <div style={{
+            borderRadius: '20px',
+            background: 'linear-gradient(135deg, #064e3b 0%, #047857 50%, #059669 100%)',
+            padding: '2rem',
+            color: '#fff',
+            position: 'relative',
+            overflow: 'hidden',
+            boxShadow: '0 12px 36px rgba(4, 120, 87, 0.3)',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+            gap: '1.75rem',
+            alignItems: 'center',
+          }}>
+            <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '160px', height: '160px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
+            
+            {/* Net Payout to Receive */}
+            <div>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '3px 10px', borderRadius: '20px', background: 'rgba(255,255,255,0.2)', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.75rem' }}>
+                <Wallet size={14} /> Votre Rémunération Nette ({sharePct}%)
+              </div>
+              <div style={{ fontSize: '2.6rem', fontWeight: 900, letterSpacing: '-1px', lineHeight: 1 }}>
+                {fmtMoney(instructorNetEarnings)} <span style={{ fontSize: '1.3rem', fontWeight: 600 }}>{currency}</span>
+              </div>
+              <div style={{ fontSize: '0.85rem', opacity: 0.9, marginTop: '0.4rem' }}>
+                Montant total que vous recevrez ({sharePct}% de reversement formateur)
+              </div>
+            </div>
+
+            {/* Breakdown Mini-Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div style={{ background: 'rgba(255,255,255,0.12)', padding: '1rem', borderRadius: '14px', backdropFilter: 'blur(4px)' }}>
+                <div style={{ fontSize: '0.75rem', opacity: 0.85 }}>Chiffre d'Affaires Brut</div>
+                <div style={{ fontSize: '1.3rem', fontWeight: 800, marginTop: '0.2rem' }}>
+                  {fmtMoney(totalGrossRevenue)} {currency}
+                </div>
+                <div style={{ fontSize: '0.7rem', opacity: 0.7, marginTop: '0.15rem' }}>100% ventes validées</div>
+              </div>
+
+              <div style={{ background: 'rgba(255,255,255,0.12)', padding: '1rem', borderRadius: '14px', backdropFilter: 'blur(4px)' }}>
+                <div style={{ fontSize: '0.75rem', opacity: 0.85 }}>Gains ce mois</div>
+                <div style={{ fontSize: '1.3rem', fontWeight: 800, marginTop: '0.2rem' }}>
+                  {fmtMoney(currentMonthEarnings)} {currency}
+                </div>
+                <div style={{ fontSize: '0.7rem', opacity: 0.7, marginTop: '0.15rem' }}>Net perçu ce mois</div>
+              </div>
+            </div>
+          </div>
+
           {/* ── KPI tiles ─────────────────────────────── */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '1rem' }}>
-            <StatTile icon={DollarSign} accent="#059669" label="Revenus totaux"
-              value={`${fmtMoney(totalRevenue)} ${currency}`}
-              sub={`Panier moyen : ${fmtMoney(avgOrder)} ${currency}`} />
-            <StatTile icon={BarChart3} accent="#c1652f" label="Revenus ce mois"
-              value={`${fmtMoney(currentMonthRevenue)} ${currency}`}
-              sub={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><GrowthIcon size={13} />{growth >= 0 ? '+' : ''}{growth}% vs mois dernier</span>}
-              subColor={growthColor} />
-            <StatTile icon={Users} accent="#2563eb" label="Étudiants uniques"
+            <StatTile icon={Users} accent="#2563eb" label="Étudiants encadrés"
               value={fmtInt(totalStudents)}
-              sub={`${fmtInt(totalEnrollments)} inscription(s) au total`} />
+              sub={`${fmtInt(totalEnrollments)} inscription(s) payée(s)`} />
             <StatTile icon={UserPlus} accent="#7c3aed" label="Nouveaux ce mois"
               value={fmtInt(newStudents)}
-              sub="Étudiants inscrits ce mois-ci" />
+              sub="Apprenants inscrits ce mois-ci" />
+            <StatTile icon={BarChart3} accent="#c1652f" label="Croissance mensuelle"
+              value={`${growth >= 0 ? '+' : ''}${growth}%`}
+              sub={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><GrowthIcon size={13} /> vs mois précédent</span>}
+              subColor={growthColor} />
             <StatTile icon={Award} accent="#d97706" label="Complétion moyenne"
               value={`${avgCompletion}%`}
               sub="Étudiants ayant tout terminé" />
             <StatTile icon={Activity} accent="#0891b2" label="Progression moyenne"
               value={`${avgProgress}%`}
-              sub="Avancement moyen des étudiants" />
+              sub="Avancement moyen des leçons" />
           </div>
 
-          {/* ── Monthly revenue trend ─────────────────── */}
-          <SectionCard title="Revenus mensuels" subtitle="Sur les 12 derniers mois" icon={BarChart3}>
+          {/* ── Groups taught breakdown (if any) ──────── */}
+          {groups.length > 0 && (
+            <SectionCard title="Vos Groupes de Classe Encadrés" subtitle="Cohortes d'étudiants dont vous êtes le formateur attitré" icon={Layers}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.85rem' }}>
+                {groups.map((g) => (
+                  <div key={g.id} style={{ padding: '1rem', borderRadius: '12px', background: 'var(--bg-color, #f8fafc)', border: '1px solid var(--border-color)' }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-color)' }}>
+                      💬 {g.name}
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--secondary)', marginTop: '0.25rem' }}>
+                      Formation : {g.courseTitle}
+                    </div>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--primary)', marginTop: '0.4rem' }}>
+                      👥 {g.studentsCount} étudiant(s) inscrits
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
+          )}
+
+          {/* ── Monthly net revenue trend ─────────────── */}
+          <SectionCard title="Rémunération Mensuelle Nette" subtitle="Vos gains nets perçus sur les 12 derniers mois (70% des ventes)" icon={BarChart3}>
             <MonthlyRevenueChart monthly={monthly} currency={currency} />
           </SectionCard>
 
           {/* ── Top courses by revenue ────────────────── */}
-          <SectionCard title="Meilleurs cours par revenu" subtitle="Vos 5 cours les plus rentables" icon={TrendingUp}>
+          <SectionCard title="Meilleurs cours par rémunération" subtitle="Vos formations les plus rémunératrices (Montants Nets Formateur)" icon={TrendingUp}>
             <TopCoursesChart topCourses={topCourses} currency={currency} />
           </SectionCard>
 

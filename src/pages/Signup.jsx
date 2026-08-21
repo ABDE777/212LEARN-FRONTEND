@@ -124,7 +124,9 @@ export default function Signup() {
           validateStatus: (status) => status < 500,
         });
         if (res.status === 200) {
-          if (res.data.exists || !res.data.available) {
+          if (res.data.isDisposable) {
+            setEmailStatus('disposable');
+          } else if (res.data.exists || !res.data.available) {
             setEmailStatus('taken');
           } else {
             setEmailStatus('available');
@@ -148,7 +150,7 @@ export default function Signup() {
       return undefined;
     }
 
-    const phoneRegex = /^\+?[\d\s-]{10,}$/;
+    const phoneRegex = /^\+?[\d\s-]{8,}$/;
     if (!phoneRegex.test(rawPhone)) {
       setPhoneStatus('invalid');
       return undefined;
@@ -161,7 +163,9 @@ export default function Signup() {
           validateStatus: (status) => status < 500,
         });
         if (res.status === 200) {
-          if (res.data.exists || !res.data.available) {
+          if (res.data.isValid === false) {
+            setPhoneStatus('invalid');
+          } else if (res.data.exists || !res.data.available) {
             setPhoneStatus('taken');
           } else {
             setPhoneStatus('available');
@@ -567,7 +571,7 @@ export default function Signup() {
           value={formData.email}
           onChange={e => setFormData({ ...formData, email: e.target.value })}
           style={
-            emailStatus === 'taken' || validationErrors.email
+            emailStatus === 'taken' || emailStatus === 'disposable' || emailStatus === 'invalid' || validationErrors.email
               ? { borderColor: 'var(--error-color)' }
               : emailStatus === 'available'
               ? { borderColor: '#2e7d32' }
@@ -576,7 +580,12 @@ export default function Signup() {
         />
         {emailStatus === 'checking' && (
           <div style={{ color: 'var(--secondary)', fontSize: '0.78rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-            <Loader size={12} className="spin" /> Vérification de la disponibilité...
+            <Loader size={12} className="spin" /> Vérification de l'adresse e-mail...
+          </div>
+        )}
+        {emailStatus === 'disposable' && (
+          <div style={{ color: '#d32f2f', fontSize: '0.78rem', marginTop: '0.25rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+            <X size={13} /> Les adresses e-mails temporaires ou jetables ne sont pas autorisées
           </div>
         )}
         {emailStatus === 'taken' && (
@@ -586,10 +595,10 @@ export default function Signup() {
         )}
         {emailStatus === 'available' && (
           <div style={{ color: '#2e7d32', fontSize: '0.78rem', marginTop: '0.25rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-            <Check size={13} /> Adresse e-mail disponible
+            <Check size={13} /> Adresse e-mail valide et disponible
           </div>
         )}
-        {validationErrors.email && emailStatus !== 'taken' && (
+        {validationErrors.email && emailStatus !== 'taken' && emailStatus !== 'disposable' && (
           <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.email}</div>
         )}
       </div>
@@ -616,7 +625,7 @@ export default function Signup() {
             style={{
               flex: 1,
               borderColor:
-                phoneStatus === 'taken' || validationErrors.phone
+                phoneStatus === 'taken' || phoneStatus === 'invalid' || validationErrors.phone
                   ? 'var(--error-color)'
                   : phoneStatus === 'available'
                   ? '#2e7d32'
@@ -629,6 +638,11 @@ export default function Signup() {
             <Loader size={12} className="spin" /> Vérification du numéro...
           </div>
         )}
+        {phoneStatus === 'invalid' && (
+          <div style={{ color: '#d32f2f', fontSize: '0.78rem', marginTop: '0.25rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+            <X size={13} /> Numéro de téléphone invalide pour ce pays
+          </div>
+        )}
         {phoneStatus === 'taken' && (
           <div style={{ color: '#d32f2f', fontSize: '0.78rem', marginTop: '0.25rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
             <X size={13} /> Ce numéro de téléphone est déjà utilisé
@@ -636,10 +650,10 @@ export default function Signup() {
         )}
         {phoneStatus === 'available' && (
           <div style={{ color: '#2e7d32', fontSize: '0.78rem', marginTop: '0.25rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-            <Check size={13} /> Numéro de téléphone disponible ({formData.phone})
+            <Check size={13} /> Numéro valide et disponible ({formData.phone})
           </div>
         )}
-        {validationErrors.phone && phoneStatus !== 'taken' && (
+        {validationErrors.phone && phoneStatus !== 'taken' && phoneStatus !== 'invalid' && (
           <div style={{ color: 'var(--error-color)', fontSize: '0.85rem', marginTop: '0.25rem' }}>{validationErrors.phone}</div>
         )}
       </div>

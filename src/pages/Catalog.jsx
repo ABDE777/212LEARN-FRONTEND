@@ -291,7 +291,7 @@ export default function Catalog() {
                   <p style={{ 
                     color: 'var(--secondary)', 
                     fontSize: '0.95rem', 
-                    marginBottom: '1rem',
+                    marginBottom: '0.75rem',
                     display: '-webkit-box',
                     WebkitLineClamp: 2,
                     WebkitBoxOrient: 'vertical',
@@ -299,6 +299,61 @@ export default function Catalog() {
                   }}>
                     {course.description}
                   </p>
+
+                  {/* ── Instructors ── */}
+                  {course.instructors?.length > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+                      {/* Avatar stack */}
+                      <div style={{ display: 'flex' }}>
+                        {course.instructors.slice(0, 3).map((item, i) => {
+                          const u = item.user || {};
+                          return u.avatar ? (
+                            <img
+                              key={u.id || i}
+                              src={u.avatar}
+                              alt={`${u.firstName} ${u.lastName}`}
+                              title={`${u.firstName} ${u.lastName}`}
+                              style={{
+                                width: 26, height: 26, borderRadius: '50%',
+                                border: '2px solid var(--bg-color)',
+                                objectFit: 'cover',
+                                marginLeft: i > 0 ? '-8px' : 0,
+                                zIndex: 10 - i,
+                              }}
+                            />
+                          ) : (
+                            <div
+                              key={u.id || i}
+                              title={`${u.firstName} ${u.lastName}`}
+                              style={{
+                                width: 26, height: 26, borderRadius: '50%',
+                                border: '2px solid var(--bg-color)',
+                                background: 'var(--primary)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: '0.65rem', fontWeight: 700, color: '#fff',
+                                marginLeft: i > 0 ? '-8px' : 0,
+                                zIndex: 10 - i,
+                              }}
+                            >
+                              {(u.firstName?.[0] || '?').toUpperCase()}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--secondary)' }}>
+                        {course.instructors
+                          .slice(0, 2)
+                          .map((item) => {
+                            const u = item.user || {};
+                            return `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Formateur';
+                          })
+                          .join(', ')}
+                        {course.instructors.length > 2 && ` +${course.instructors.length - 2}`}
+                      </span>
+                    </div>
+                  )}
+
+
                   <div style={{ 
                     display: 'flex', 
                     justifyContent: 'space-between', 

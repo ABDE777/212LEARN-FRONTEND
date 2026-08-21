@@ -571,10 +571,21 @@ export default function StudentDashboard() {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         {enrollments.map((item) => {
                           const course = item.course || item;
-                          // Real progress from the backend (completed lessons / total lessons).
                           const progressPercent = item.progress ?? 0;
                           const totalLessons = item.totalLessons ?? 0;
                           const completedLessons = item.completedLessons ?? 0;
+                          const paymentStatus = item.payment?.status || null;
+                          // Free courses have no payment record → always accessible
+                          const isPaid = !paymentStatus || paymentStatus === 'PAID';
+
+                          // Human-readable status pill config
+                          const statusConfig = {
+                            PAID:                 { label: '✅ Accès confirmé',        bg: '#d1fae5', color: '#065f46' },
+                            PENDING:              { label: '⏳ En attente de paiement', bg: '#fef3c7', color: '#92400e' },
+                            WAITING_VERIFICATION: { label: '🔎 En cours de validation', bg: '#dbeafe', color: '#1e40af' },
+                            REJECTED:             { label: '❌ Paiement rejeté',        bg: '#fee2e2', color: '#991b1b' },
+                          };
+                          const pill = paymentStatus ? statusConfig[paymentStatus] : null;
 
                           return (
                             <div
@@ -583,11 +594,12 @@ export default function StudentDashboard() {
                                 padding: '1.25rem',
                                 background: 'var(--bg-color, #f8fafc)',
                                 borderRadius: '14px',
-                                border: '1px solid var(--border-color, #e2e8f0)',
+                                border: `1px solid ${isPaid ? 'var(--border-color, #e2e8f0)' : '#fbbf24'}`,
                                 display: 'flex',
                                 gap: '1.25rem',
                                 alignItems: 'center',
                                 flexWrap: 'wrap',
+                                opacity: isPaid ? 1 : 0.85,
                               }}
                             >
                               {course.thumbnail ? (
@@ -621,37 +633,73 @@ export default function StudentDashboard() {
                                   Niveau: {course.level || 'Tous niveaux'}
                                 </p>
 
-                                {/* Progress Bar */}
-                                <div>
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem', fontSize: '0.8rem', color: 'var(--secondary)' }}>
-                                    <span>{completedLessons}/{totalLessons} leçons</span>
-                                    <span style={{ fontWeight: 600 }}>{progressPercent}%</span>
+                                {/* Payment status pill — only when not yet PAID */}
+                                {pill && (
+                                  <span style={{
+                                    display: 'inline-block',
+                                    padding: '0.2rem 0.65rem',
+                                    borderRadius: '999px',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 600,
+                                    background: pill.bg,
+                                    color: pill.color,
+                                    marginBottom: '0.6rem',
+                                  }}>
+                                    {pill.label}
+                                  </span>
+                                )}
+
+                                {/* Progress bar — only shown when access is confirmed */}
+                                {isPaid && (
+                                  <div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem', fontSize: '0.8rem', color: 'var(--secondary)' }}>
+                                      <span>{completedLessons}/{totalLessons} leçons</span>
+                                      <span style={{ fontWeight: 600 }}>{progressPercent}%</span>
+                                    </div>
+                                    <div style={{ height: '6px', background: 'var(--border-color, #e2e8f0)', borderRadius: '3px', overflow: 'hidden' }}>
+                                      <div
+                                        style={{
+                                          height: '100%',
+                                          background: 'var(--primary, #4f46e5)',
+                                          width: `${progressPercent}%`,
+                                          borderRadius: '3px',
+                                          transition: 'width 0.3s ease',
+                                        }}
+                                      />
+                                    </div>
                                   </div>
-                                  <div style={{ height: '6px', background: 'var(--border-color, #e2e8f0)', borderRadius: '3px', overflow: 'hidden' }}>
-                                    <div
-                                      style={{
-                                        height: '100%',
-                                        background: 'var(--primary, #4f46e5)',
-                                        width: `${progressPercent}%`,
-                                        borderRadius: '3px',
-                                        transition: 'width 0.3s ease',
-                                      }}
-                                    />
-                                  </div>
-                                </div>
+                                )}
                               </div>
 
                               <div style={{ textAlign: 'right', minWidth: '130px' }}>
                                 <p style={{ fontSize: '0.8rem', color: 'var(--secondary)', marginBottom: '0.5rem' }}>
-                                  Accès: {formatDate(item.enrolledAt)}
+                                  Inscrit: {formatDate(item.enrolledAt)}
                                 </p>
-                                <Button
-                                  variant="primary"
-                                  size="small"
-                                  onClick={() => handleContinueCourse(course.id)}
-                                >
-                                  Continuer
-                                </Button>
+                                {isPaid ? (
+                                  <Button
+                                    variant="primary"
+                                    size="small"
+                                    onClick={() => handleContinueCourse(course.id)}
+                                  >
+                                    Continuer
+                                  </Button>
+                                ) : (
+                                  <button
+                                    disabled
+                                    style={{
+                                      padding: '0.4rem 1rem',
+                                      borderRadius: '8px',
+                                      border: '1px solid #e2e8f0',
+                                      background: '#f1f5f9',
+                                      color: '#94a3b8',
+                                      fontSize: '0.82rem',
+                                      fontWeight: 600,
+                                      cursor: 'not-allowed',
+                                    }}
+                                  >
+                                    🔒 Accès bloqué
+                                  </button>
+                                )}
                               </div>
                             </div>
                           );

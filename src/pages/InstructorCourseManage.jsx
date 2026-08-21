@@ -112,6 +112,7 @@ function ResourcePanel({ lesson, addResource, deleteResource }) {
   const [linkUrl, setLinkUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState(''); // e.g. "2 / 3"
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const fileInputRef = useRef(null);
@@ -119,26 +120,33 @@ function ResourcePanel({ lesson, addResource, deleteResource }) {
   const resources = lesson.resources || [];
 
   const handleFileChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
     setError(null);
     setSuccess(null);
     setUploading(true);
     setUploadProgress(0);
+    setUploadStatus('');
 
     try {
-      // Correct flow (avoids Vercel 413 for large files):
-      // 1) sign on backend (JSON) → 2) upload browser→Cloudinary → 3) save URL (JSON)
       const { uploadLessonResource } = await import('../utils/uploadResource.js');
-      await uploadLessonResource({
-        lessonId: lesson.id,
-        file,
-        onProgress: setUploadProgress,
-      });
+
+      // Upload files sequentially so progress bars make sense
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        setUploadStatus(files.length > 1 ? `${i + 1} / ${files.length}` : '');
+        setUploadProgress(0);
+        await uploadLessonResource({
+          lessonId: lesson.id,
+          file,
+          onProgress: setUploadProgress,
+        });
+      }
 
       // Refresh curriculum to get updated resources
       await addResource(lesson.id, null);
-      setSuccess(`"${file.name}" uploadé avec succès.`);
+      const label = files.length === 1 ? `"${files[0].name}"` : `${files.length} fichiers`;
+      setSuccess(`${label} uploadé${files.length > 1 ? 's' : ''} avec succès.`);
       setMode(null);
     } catch (err) {
       setError(
@@ -221,13 +229,17 @@ function ResourcePanel({ lesson, addResource, deleteResource }) {
       {/* File upload panel */}
       {mode === 'file' && (
         <div style={{ marginBottom: '0.75rem', padding: '0.75rem', background: '#fff', borderRadius: '8px', border: '1px dashed var(--primary)' }}>
-          <p style={{ fontSize: '0.85rem', color: 'var(--secondary)', marginBottom: '0.5rem' }}>
-            Formats acceptés : vidéo, PDF, ZIP, image (max 200 MB via Cloudinary)
+          <p style={{ fontSize: '0.85rem', color: 'var(--secondary)', marginBottom: '0.25rem' }}>
+            Formats acceptés : vidéo (MP4/WebM), PDF, Word (.doc/.docx), ZIP, image — max 200 MB via Cloudinary.
+          </p>
+          <p style={{ fontSize: '0.8rem', color: 'var(--primary)', marginBottom: '0.5rem', fontStyle: 'italic' }}>
+            💡 Pour la vidéo de la leçon, uploadez un fichier vidéo ici.
           </p>
           <input
             ref={fileInputRef}
             type="file"
-            accept="video/*,.pdf,.zip,.png,.jpg,.jpeg,.gif,.webp"
+            accept="video/*,.pdf,.zip,.png,.jpg,.jpeg,.gif,.webp,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            multiple
             onChange={handleFileChange}
             disabled={uploading}
             style={{ fontSize: '0.9rem' }}
@@ -238,7 +250,7 @@ function ResourcePanel({ lesson, addResource, deleteResource }) {
                 <div style={{ width: `${uploadProgress}%`, height: '100%', background: 'var(--primary)', borderRadius: '4px', transition: 'width 0.2s' }} />
               </div>
               <p style={{ fontSize: '0.8rem', color: 'var(--secondary)', marginTop: '0.25rem' }}>
-                Upload en cours… {uploadProgress}%
+                Upload en cours… {uploadProgress}%{uploadStatus ? ` (fichier ${uploadStatus})` : ''}
               </p>
             </div>
           )}

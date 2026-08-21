@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { Users, BookOpen, Folder, Settings, User, LogOut, FileText, Pencil, Trash2, BarChart3, ShieldCheck, ShieldAlert, ChevronLeft, ChevronRight, RotateCcw, Plus, Mail, X, Loader, Wallet, Activity, Search, Award, Video, Check } from 'lucide-react';
+import { Users, BookOpen, Folder, Settings, User, LogOut, FileText, Pencil, Trash2, BarChart3, ShieldCheck, ShieldAlert, ChevronLeft, ChevronRight, RotateCcw, Plus, Mail, X, Loader, Wallet, Activity, Search, Award, Video, Check, DollarSign } from 'lucide-react';
 import {
   useAdminUsers,
   useAdminCourses,
@@ -24,6 +24,7 @@ import ChangePasswordForm from '../components/ChangePasswordForm';
 import SessionCalendar from '../components/SessionCalendar';
 import AdminContactMessages from '../components/AdminContactMessages';
 import AdminStatsTab from '../components/admin/AdminStatsTab';
+import AdminInstructorFinancialsTab from '../components/admin/AdminInstructorFinancialsTab';
 import PaymentsTab from '../components/admin/PaymentsTab';
 import { flattenCategories, getCourseInstructorLabel } from '../components/admin/adminCourseHelpers';
 import SystemHealthTab from '../components/admin/SystemHealthTab';
@@ -1132,6 +1133,14 @@ export default function AdminDashboard() {
               <span>Paiements</span>
             </button>
             <button
+              onClick={() => setActiveTab('instructor-financials')}
+              className={`sidebar-menu-btn ${activeTab === 'instructor-financials' ? 'active' : ''}`}
+              title="Revenus & Rémunération Formateurs"
+            >
+              <DollarSign size={18} />
+              <span>Revenus Formateurs</span>
+            </button>
+            <button
               onClick={() => setActiveTab('update-requests')}
               className={`sidebar-menu-btn ${activeTab === 'update-requests' ? 'active' : ''}`}
               title="Demandes de mise à jour"
@@ -2075,6 +2084,8 @@ export default function AdminDashboard() {
               {activeTab === 'stats' && <AdminStatsTab />}
 
               {activeTab === 'payments' && <PaymentsTab />}
+
+              {activeTab === 'instructor-financials' && <AdminInstructorFinancialsTab />}
 
               {activeTab === 'update-requests' && (
                 <div>
