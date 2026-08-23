@@ -12,6 +12,7 @@ import { useQuizAttempts } from '../hooks/useProgress';
 import Card from '../components/Card';
 import LoadingSpinner from '../components/LoadingSpinner';
 import LessonAssignments from '../components/LessonAssignments';
+import GroupChatRoom from '../components/GroupChatRoom';
 import { useAuth } from '../context/AuthContext';
 
 /* ─── helpers ─────────────────────────────────────────────────────────────── */
@@ -640,6 +641,7 @@ export default function ClassroomPlayer() {
 
   const [currentLesson, setCurrentLesson]   = useState(null);
   const [sidebarOpen, setSidebarOpen]       = useState(true);
+  const [showCourseChat, setShowCourseChat] = useState(false);
   const [completedLessons, setCompletedLessons] = useState(new Set());
   const [selectedQuizId, setSelectedQuizId] = useState(null); // inline quiz
   const [videoCompleted, setVideoCompleted] = useState(false); // unlocks next-lesson btn
@@ -1087,6 +1089,32 @@ export default function ClassroomPlayer() {
 
                 {/* Assignments */}
                 <LessonAssignments lessonId={lessonId} />
+
+                {/* Course discussion (shared with the instructor + enrolled students) */}
+                <div style={{ marginTop: '2rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowCourseChat((v) => !v)}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+                      padding: '0.65rem 1.25rem', borderRadius: '10px', cursor: 'pointer',
+                      border: '1px solid var(--border-color)', background: 'var(--surface-color)',
+                      color: 'var(--text-color)', fontWeight: 600, fontSize: '0.9rem',
+                    }}
+                  >
+                    <HelpCircle size={16} style={{ color: 'var(--primary)' }} />
+                    {showCourseChat ? 'Masquer la discussion du cours' : 'Discussion du cours'}
+                  </button>
+                  {showCourseChat && (
+                    <div style={{ marginTop: '1rem' }}>
+                      <GroupChatRoom
+                        chatBasePath={`/courses/${courseId}`}
+                        groupName="Discussion du cours"
+                        formateurName="Formateur"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </>
           ) : (
