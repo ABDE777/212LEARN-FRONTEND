@@ -21,11 +21,16 @@ function detectType(file) {
   throw new Error(`Type de fichier non supporté : ${file.type || file.name}`);
 }
 
-export async function uploadLessonResource({ lessonId, file, onProgress }) {
-  const type = detectType(file);
+/**
+ * Sign + upload a file straight to Cloudinary (bypassing the serverless 4.5 MB
+ * limit) and return its secure_url. Shared by lesson resources and meeting
+ * recordings.
+ */
+export async function uploadToCloudinary(file, { type, onProgress } = {}) {
+  const resolvedType = type || detectType(file);
 
   const signRes = await api.post('/uploads/cloudinary-sign', {
-    type,
+    type: resolvedType,
     filename: file.name,
     mimetype: file.type || undefined,
   });
@@ -71,12 +76,23 @@ export async function uploadLessonResource({ lessonId, file, onProgress }) {
   if (!cloud?.secure_url) {
     throw new Error(cloud?.error?.message || "L'upload Cloudinary a échoué.");
   }
+  return { secure_url: cloud.secure_url, type: resolvedType };
+}
 
-  const saveRes = await api.post(`/lessons/${lessonId}/resources`, {
-    type,
-    url: cloud.secure_url,
-  });
+export async function uploadLessonResource({ lessonId, file, onProgress }) {
+  const { secure_url, type } = await uploadToCloudinary(file, { onProgress });
+  const saveRes = await api.post(`/lessons/${lessonId}/resources`, { type, url: secure_url });
   return saveRes.data?.data?.resource || saveRes.data?.resource;
+}
+
+/**
+ * Upload a live-session recording and publish it as the meeting's replay.
+ * The backend attaches it to the course curriculum for enrolled students.
+ */
+export async function uploadMeetingRecording({ meetingId, file, onProgress }) {
+  const { secure_url } = await uploadToCloudinary(file, { type: 'video', onProgress });
+  const res = await api.post(`/meetings/${meetingId}/recording`, { recordingUrl: secure_url });
+  return res.data?.data?.meeting || res.data?.meeting;
 }
 
 export default uploadLessonResource;

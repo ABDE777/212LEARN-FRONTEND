@@ -1,10 +1,37 @@
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Video, Clock, Pencil, Trash2, X, Zap } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Video, Clock, Pencil, Trash2, X, Zap, Upload, Loader } from 'lucide-react';
 import ModalPortal from './ModalPortal';
+import { uploadMeetingRecording } from '../utils/uploadResource';
 
 function SessionCalendar({ meetings, onMeetingClick, onEditMeeting, onDeleteMeeting, readOnly = false }) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedMeeting, setSelectedMeeting] = useState(null);
+  const [recUploading, setRecUploading] = useState(false);
+  const [recProgress, setRecProgress] = useState(0);
+  const [recError, setRecError] = useState(null);
+
+  const handleRecordingFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !selectedMeeting) return;
+    setRecError(null);
+    setRecUploading(true);
+    setRecProgress(0);
+    try {
+      const updated = await uploadMeetingRecording({
+        meetingId: selectedMeeting.id,
+        file,
+        onProgress: setRecProgress,
+      });
+      // Reflect the published replay immediately in the open drawer.
+      setSelectedMeeting((m) => (m ? { ...m, recordingUrl: updated?.recordingUrl || m.recordingUrl } : m));
+    } catch (err) {
+      setRecError(err.response?.data?.error?.message || err.message || "Échec de l'upload.");
+    } finally {
+      setRecUploading(false);
+      setRecProgress(0);
+    }
+  };
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -383,6 +410,39 @@ function SessionCalendar({ meetings, onMeetingClick, onEditMeeting, onDeleteMeet
                     <Video size={16} />
                     Voir le replay
                   </a>
+                )}
+
+                {/* Instructor: upload the recorded session as a replay for students */}
+                {!readOnly && (
+                  <div style={{ marginTop: '0.25rem', padding: '0.85rem 1rem', border: '1px dashed var(--border-color)', borderRadius: '10px', background: 'var(--bg-color)' }}>
+                    <p style={{ margin: '0 0 0.5rem', fontSize: '0.82rem', fontWeight: 600, color: 'var(--secondary)' }}>
+                      {selectedMeeting.recordingUrl ? 'Remplacer l’enregistrement' : 'Ajouter l’enregistrement (replay)'}
+                    </p>
+                    <p style={{ margin: '0 0 0.6rem', fontSize: '0.76rem', color: 'var(--secondary)' }}>
+                      Après la session, enregistrez la vidéo dans la salle (bouton REC), puis déposez le fichier ici : il apparaîtra dans le cours pour les étudiants inscrits.
+                    </p>
+                    <label
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+                        padding: '0.5rem 1rem', borderRadius: '8px', cursor: recUploading ? 'wait' : 'pointer',
+                        background: 'var(--primary)', color: '#fff', fontSize: '0.85rem', fontWeight: 600,
+                        opacity: recUploading ? 0.7 : 1,
+                      }}
+                    >
+                      {recUploading ? <Loader size={15} className="spin" /> : <Upload size={15} />}
+                      {recUploading ? `Envoi… ${recProgress}%` : 'Choisir la vidéo'}
+                      <input
+                        type="file"
+                        accept="video/*"
+                        onChange={handleRecordingFile}
+                        disabled={recUploading}
+                        style={{ display: 'none' }}
+                      />
+                    </label>
+                    {recError && (
+                      <p style={{ margin: '0.5rem 0 0', fontSize: '0.8rem', color: 'var(--error-color)' }}>{recError}</p>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
