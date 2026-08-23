@@ -45,7 +45,9 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
   // ── Build the MiroTalk SFU room URL ──────────────────────────────────────
   // Base: your self-hosted server (VITE_MIROTALK_URL) or the public demo.
   const base = (import.meta.env.VITE_MIROTALK_URL || 'https://sfu.mirotalk.com').replace(/\/+$/, '');
-  const room = encodeURIComponent(`212learn-${meeting?.roomName || meeting?.id || 'salle'}`);
+  // Use the backend room slug as-is (it already starts with "212learn-") so the
+  // in-app iframe and the stored meetingUrl point to the exact same room.
+  const room = encodeURIComponent(meeting?.roomName || `212learn-${meeting?.id || 'salle'}`);
   const name = encodeURIComponent(displayName || (isInstructor ? 'Instructeur' : 'Participant'));
   // audio/video on; the participant shares their screen manually via the toolbar.
   const roomUrl = `${base}/join?room=${room}&name=${name}&audio=1&video=1&screen=0&hide=0&notify=0`;
@@ -245,7 +247,7 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
           title="Salle Virtuelle 212Learn"
           src={roomUrl}
           onLoad={() => setConnected(true)}
-          allow="camera; microphone; display-capture; fullscreen; autoplay; clipboard-write; speaker-selection"
+          allow="camera; microphone; display-capture; fullscreen; autoplay; clipboard-write"
           style={{ width: '100%', height: '100%', border: 'none' }}
         />
 
