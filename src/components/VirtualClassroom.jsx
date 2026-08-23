@@ -1,46 +1,37 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Wifi, WifiOff, Users, Maximize2, Minimize2, ExternalLink, PhoneOff, AlertTriangle } from 'lucide-react';
+import { X, Maximize2, Minimize2, ExternalLink, PhoneOff, Wifi } from 'lucide-react';
 import api from '../services/api';
 
 /**
  * VirtualClassroom
  * ─────────────────
- * Intègre Jitsi Meet via l'External API (iframe + JS bridge).
- * Le backend génère meetingUrl et JWT token pour JaaS authentication.
+ * Salle virtuelle basée sur MiroTalk SFU (auto-hébergé, gratuit, sans limite
+ * d'utilisateurs actifs/mois — contrairement à Jitsi/JaaS).
+ *
+ * La salle est simplement embarquée en <iframe>. L'URL de base vient de
+ * VITE_MIROTALK_URL (votre serveur MiroTalk SFU) ; à défaut, l'instance
+ * publique de démonstration est utilisée. Le nom de salle est déterministe
+ * par réunion, donc instructeur et étudiants rejoignent la même salle.
  *
  * Props:
  *  - meeting     : { id, title, meetingUrl, roomName, status }
  *  - displayName : nom de l'utilisateur courant
- *  - isInstructor: boolean — contrôles modérateur activés
+ *  - isInstructor: boolean
  *  - onClose     : callback quand l'utilisateur ferme la salle
  *  - onEndMeeting: callback quand l'instructeur termine la session
  */
 export default function VirtualClassroom({ meeting, displayName, isInstructor, onClose, onEndMeeting }) {
-  const jitsiContainerRef = useRef(null);
-  const apiRef = useRef(null);
-  const [apiLoaded, setApiLoaded] = useState(!!window.JitsiMeetExternalAPI);
-  const [participantCount, setParticipantCount] = useState(0);
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingError, setRecordingError] = useState(null); // instructor: plan/permission issue
-  const [recNoticeDismissed, setRecNoticeDismissed] = useState(false); // student consent notice
-  const recordingStartedRef = useRef(false); // guard: only auto-start once
+  const containerRef = useRef(null);
+  const [connected, setConnected] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState('connecting'); // connecting | connected | error
-  // The loading overlay sits on top of the Jitsi iframe. If the "joined" event
-  // never fires (e.g. the room shows an auth/pre-join screen), the overlay must
-  // still step aside so the user can see and interact with the real Jitsi UI.
-  const [overlayDismissed, setOverlayDismissed] = useState(false);
-  const [jwtToken, setJwtToken] = useState(null);
-  const [domain, setDomain] = useState('meet.jit.si');
-  const [roomName, setRoomName] = useState(null);
+
   // Anti-leak watermark: for students, stamp their identity over the video so any
   // screen recording is traceable. It drifts between corners so it can't simply
-  // be cropped out. (OS-level screen capture can't be blocked outright — this is
-  // deterrence + traceability, the same approach paid platforms use.)
+  // be cropped out. (OS-level capture can't be blocked — this is deterrence.)
   const [wmCorner, setWmCorner] = useState(0);
   useEffect(() => {
-    if (isInstructor) return;
+    if (isInstructor) return undefined;
     const t = setInterval(() => setWmCorner((c) => (c + 1) % 4), 8000);
     return () => clearInterval(t);
   }, [isInstructor]);
@@ -51,192 +42,22 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
     { bottom: '16%', left: '6%' },
   ][wmCorner];
 
-  // 1. Fetch JaaS join info from backend
+  // ── Build the MiroTalk SFU room URL ──────────────────────────────────────
+  // Base: your self-hosted server (VITE_MIROTALK_URL) or the public demo.
+  const base = (import.meta.env.VITE_MIROTALK_URL || 'https://sfu.mirotalk.com').replace(/\/+$/, '');
+  const room = encodeURIComponent(`212learn-${meeting?.roomName || meeting?.id || 'salle'}`);
+  const name = encodeURIComponent(displayName || (isInstructor ? 'Instructeur' : 'Participant'));
+  // audio/video on; the participant shares their screen manually via the toolbar.
+  const roomUrl = `${base}/join?room=${room}&name=${name}&audio=1&video=1&screen=0&hide=0&notify=0`;
+
+  // ── Students: poll meeting status so the room auto-closes when the ─────────
+  // instructor ends the session.
   useEffect(() => {
-    if (!meeting?.id) return;
-    
-    const fetchJoinInfo = async () => {
-      try {
-        const response = await api.get(`/meetings/${meeting.id}/join`);
-        const data = response.data?.data;
-        // domain + roomName apply whether or not a JWT is issued: public Jitsi
-        // (meet.jit.si) returns them with jwt = null.
-        if (data?.domain) setDomain(data.domain);
-        if (data?.roomName) setRoomName(data.roomName);
-        if (data?.jwt) setJwtToken(data.jwt);
-      } catch (err) {
-        console.error('Failed to fetch JaaS join info:', err);
-        // Continue without JWT for fallback to meet.jit.si
-      }
-    };
-    
-    fetchJoinInfo();
-  }, [meeting?.id]);
-
-  // 2. Charger le script Jitsi si pas encore présent
-  useEffect(() => {
-    if (window.JitsiMeetExternalAPI) {
-      setApiLoaded(true);
-      return;
-    }
-    
-    // Pour JaaS, charger le script avec l'AppID
-    // Extraire l'AppID depuis l'URL de la réunion si disponible
-    let scriptSrc = 'https://meet.jit.si/external_api.js'; // Fallback
-    
-    if (meeting?.meetingUrl) {
-      try {
-        const url = new URL(meeting.meetingUrl);
-        const pathParts = url.pathname.split('/').filter(Boolean);
-        // Si l'URL contient l'AppID (format JaaS), utiliser le script JaaS
-        if (pathParts.length >= 2 && url.hostname === '8x8.vc') {
-          const appId = pathParts[0];
-          scriptSrc = `https://8x8.vc/${appId}/external_api.js`;
-        }
-      } catch {}
-    }
-    
-    const script = document.createElement('script');
-    script.src = scriptSrc;
-    script.async = true;
-    script.onload = () => setApiLoaded(true);
-    script.onerror = () => setConnectionStatus('error');
-    document.head.appendChild(script);
-    return () => {
-      // Nettoyage uniquement si le script était en cours de chargement
-      if (!window.JitsiMeetExternalAPI) document.head.removeChild(script);
-    };
-  }, [meeting?.meetingUrl]);
-
-  // 3. Initialiser l'API Jitsi quand le script est chargé
-  useEffect(() => {
-    if (!apiLoaded || !jitsiContainerRef.current) return;
-
-    // Use domain and roomName from /join endpoint, or fallback to meetingUrl
-    let jitsiDomain = domain;
-    let jitsiRoomName = roomName;
-
-    if (!jitsiDomain || !jitsiRoomName) {
-      // Fallback to parsing meetingUrl
-      if (meeting?.meetingUrl) {
-        try {
-          const url = new URL(meeting.meetingUrl);
-          jitsiDomain = url.hostname;
-          jitsiRoomName = url.pathname.replace(/^\//, '') || meeting.roomName;
-        } catch {
-          jitsiDomain = 'meet.jit.si';
-          jitsiRoomName = meeting.roomName || meeting.meetingUrl.split('/').pop();
-        }
-      } else {
-        return; // No meeting info available
-      }
-    }
-
-    const apiOptions = {
-      roomName: jitsiRoomName,
-      parentNode: jitsiContainerRef.current,
-      width: '100%',
-      height: '100%',
-      configOverwrite: {
-        startWithAudioMuted: false,
-        startWithVideoMuted: false,
-        disableDeepLinking: true,
-        prejoinPageEnabled: false,
-        enableClosePage: false,
-        toolbarButtons: isInstructor
-          ? ['microphone', 'camera', 'desktop', 'fullscreen', 'participants-pane', 'chat', 'recording', 'security', 'raisehand', 'tileview', 'hangup']
-          : ['microphone', 'camera', 'desktop', 'fullscreen', 'participants-pane', 'chat', 'raisehand', 'tileview', 'hangup'],
-      },
-      interfaceConfigOverwrite: {
-        SHOW_JITSI_WATERMARK: false,
-        SHOW_WATERMARK_FOR_GUESTS: false,
-        SHOW_BRAND_WATERMARK: false,
-        TOOLBAR_ALWAYS_VISIBLE: false,
-        DISABLE_JOIN_LEAVE_NOTIFICATIONS: false,
-        MOBILE_APP_PROMO: false,
-        BRAND_WATERMARK_LINK: '',
-        APP_NAME: '212Learn — Salle Virtuelle',
-      },
-      userInfo: {
-        displayName: displayName || 'Participant',
-      },
-    };
-
-    // Add JWT token if available for JaaS
-    if (jwtToken) {
-      apiOptions.jwt = jwtToken;
-    }
-
-    const api = new window.JitsiMeetExternalAPI(jitsiDomain, apiOptions);
-
-    apiRef.current = api;
-
-    api.addEventListener('videoConferenceJoined', () => {
-      setConnectionStatus('connected');
-      setOverlayDismissed(true);
-      if (isInstructor) {
-        api.executeCommand('subject', meeting.title || 'Session 212Learn');
-        // Auto-start cloud (file) recording so the session is captured without
-        // the instructor having to remember. Requires the recording feature in
-        // the JaaS JWT (granted to moderators) and JaaS recording storage.
-        if (!recordingStartedRef.current) {
-          recordingStartedRef.current = true;
-          setTimeout(() => {
-            try { api.executeCommand('startRecording', { mode: 'file' }); } catch {}
-          }, 2500);
-        }
-      }
-    });
-
-    // Reflect the real recording state (also covers manual start/stop) and
-    // surface failures — e.g. a JaaS plan without recording reports an error
-    // here instead of turning recording on.
-    api.addEventListener('recordingStatusChanged', (e) => {
-      setIsRecording(Boolean(e?.on));
-      if (e?.error) {
-        setRecordingError(String(e.error));
-      } else if (e?.on) {
-        setRecordingError(null);
-      }
-    });
-
-    // Safety net: reveal the Jitsi iframe even if "joined" never fires (auth or
-    // pre-join screen), so the user is never trapped behind our loading overlay.
-    const revealTimer = setTimeout(() => setOverlayDismissed(true), 9000);
-
-    api.addEventListener('participantJoined', () => {
-      setParticipantCount((n) => n + 1);
-    });
-
-    api.addEventListener('participantLeft', () => {
-      setParticipantCount((n) => Math.max(0, n - 1));
-    });
-
-    api.addEventListener('readyToClose', () => {
-      onClose?.();
-    });
-
-    api.addEventListener('errorOccurred', () => {
-      setConnectionStatus('error');
-    });
-
-    return () => {
-      clearTimeout(revealTimer);
-      try { api.dispose(); } catch {}
-      apiRef.current = null;
-    };
-  }, [apiLoaded, domain, roomName, meeting?.meetingUrl, meeting?.roomName, meeting?.title, displayName, isInstructor, onClose, jwtToken]);
-
-  // 4. Polling du statut de la réunion pour les étudiants (auto-close quand l'instructeur termine)
-  useEffect(() => {
-    if (!meeting?.id || isInstructor) return; // Pas de polling pour l'instructeur
-
+    if (!meeting?.id || isInstructor) return undefined;
     const pollInterval = setInterval(async () => {
       try {
         const response = await api.get(`/meetings/${meeting.id}`);
         const currentMeeting = response.data?.data?.meeting;
-        
-        // Si la réunion est terminée (COMPLETED), fermer automatiquement
         if (currentMeeting?.status === 'COMPLETED') {
           clearInterval(pollInterval);
           onClose?.();
@@ -244,14 +65,13 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
       } catch (err) {
         console.error('Failed to poll meeting status:', err);
       }
-    }, 5000); // Vérifier toutes les 5 secondes
-
+    }, 5000);
     return () => clearInterval(pollInterval);
   }, [meeting?.id, isInstructor, onClose]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
-      jitsiContainerRef.current?.parentElement?.requestFullscreen?.();
+      containerRef.current?.parentElement?.requestFullscreen?.();
       setIsFullscreen(true);
     } else {
       document.exitFullscreen?.();
@@ -260,13 +80,9 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
   };
 
   // Render through a portal to <body> so the overlay escapes the dashboard's
-  // animated tab panel (a transformed ancestor would otherwise box this fixed
-  // element inside the tab, leaving the sidebar clickable — switching tabs then
-  // unmounts the live and disconnects the user). At the body level it truly
-  // covers the whole viewport, so navigation can't drop the session.
+  // animated tab panel and truly covers the whole viewport.
   return createPortal(
     <div
-      onContextMenu={(e) => e.preventDefault()}
       style={{
         position: 'fixed',
         inset: 0,
@@ -288,7 +104,6 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
         flexShrink: 0,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-          {/* Logo + title */}
           <div style={{
             padding: '4px 10px',
             background: 'linear-gradient(135deg, var(--primary), var(--accent))',
@@ -315,39 +130,19 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
             padding: '0.25rem 0.7rem', borderRadius: '9999px', fontSize: '0.72rem', fontWeight: 600,
-            background: connectionStatus === 'connected' ? 'rgba(40,167,69,0.15)' : connectionStatus === 'error' ? 'rgba(220,53,69,0.15)' : 'rgba(255,193,7,0.15)',
-            color: connectionStatus === 'connected' ? '#28a745' : connectionStatus === 'error' ? '#dc3545' : '#ffc107',
-            border: `1px solid ${connectionStatus === 'connected' ? 'rgba(40,167,69,0.3)' : connectionStatus === 'error' ? 'rgba(220,53,69,0.3)' : 'rgba(255,193,7,0.3)'}`,
+            background: connected ? 'rgba(40,167,69,0.15)' : 'rgba(255,193,7,0.15)',
+            color: connected ? '#28a745' : '#ffc107',
+            border: `1px solid ${connected ? 'rgba(40,167,69,0.3)' : 'rgba(255,193,7,0.3)'}`,
           }}>
-            {connectionStatus === 'connected' ? <Wifi size={11} /> : connectionStatus === 'error' ? <WifiOff size={11} /> : (
+            {connected ? <Wifi size={11} /> : (
               <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ffc107', animation: 'glowPulse 1s ease infinite', display: 'inline-block' }} />
             )}
-            {connectionStatus === 'connected' ? 'Connecté' : connectionStatus === 'error' ? 'Erreur' : 'Connexion…'}
+            {connected ? 'Connecté' : 'Connexion…'}
           </span>
-
-          {/* Recording indicator */}
-          {isRecording && (
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-              padding: '0.25rem 0.7rem', borderRadius: '9999px', fontSize: '0.72rem', fontWeight: 700,
-              background: 'rgba(220,53,69,0.15)', color: '#dc3545', border: '1px solid rgba(220,53,69,0.3)',
-            }}>
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#dc3545', animation: 'glowPulse 1s ease infinite', display: 'inline-block' }} />
-              REC
-            </span>
-          )}
-
-          {/* Participant count */}
-          {participantCount > 0 && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', color: 'rgba(255,255,255,0.6)', fontSize: '0.78rem' }}>
-              <Users size={13} />
-              {participantCount + 1} participants
-            </span>
-          )}
 
           {/* Open in new tab */}
           <a
-            href={meeting?.meetingUrl}
+            href={roomUrl}
             target="_blank"
             rel="noreferrer"
             title="Ouvrir dans un nouvel onglet"
@@ -402,11 +197,8 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
           {isInstructor && (
             <button
               onClick={() => {
-                if (window.confirm('Êtes-vous sûr de vouloir terminer cette session ? Cela enregistrera la session pour les étudiants.')) {
-                  // Explicitly stop recording first so JaaS finalizes the upload,
-                  // then end the meeting after a short grace period.
-                  try { apiRef.current?.executeCommand('stopRecording', 'file'); } catch {}
-                  setTimeout(() => onEndMeeting?.(meeting.id), 2000);
+                if (window.confirm('Êtes-vous sûr de vouloir terminer cette session ?')) {
+                  onEndMeeting?.(meeting.id);
                 }
               }}
               title="Terminer la session"
@@ -428,42 +220,10 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
         </div>
       </div>
 
-      {/* Instructor: recording failed to start (e.g. plan without recording) */}
-      {isInstructor && recordingError && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '0.6rem', flexShrink: 0,
-          padding: '0.6rem 1.25rem', background: 'rgba(220,53,69,0.14)',
-          borderBottom: '1px solid rgba(220,53,69,0.3)', color: '#ffb3ba', fontSize: '0.83rem',
-        }}>
-          <AlertTriangle size={15} style={{ color: '#dc3545', flexShrink: 0 }} />
-          <span style={{ flex: 1 }}>
-            L'enregistrement n'a pas pu démarrer ({recordingError}). Vérifiez que votre offre Jitsi/JaaS inclut l'enregistrement et qu'un stockage est configuré.
-          </span>
-          <button onClick={() => setRecordingError(null)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', padding: 2 }} aria-label="Fermer">
-            <X size={15} />
-          </button>
-        </div>
-      )}
-
-      {/* Student: transparency/consent notice that the session is recorded */}
-      {!isInstructor && isRecording && !recNoticeDismissed && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '0.6rem', flexShrink: 0,
-          padding: '0.6rem 1.25rem', background: 'rgba(220,53,69,0.12)',
-          borderBottom: '1px solid rgba(220,53,69,0.25)', color: 'rgba(255,255,255,0.85)', fontSize: '0.83rem',
-        }}>
-          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#dc3545', animation: 'glowPulse 1s ease infinite', display: 'inline-block', flexShrink: 0 }} />
-          <span style={{ flex: 1 }}>Cette session est enregistrée.</span>
-          <button onClick={() => setRecNoticeDismissed(true)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', padding: 2 }} aria-label="Fermer">
-            <X size={15} />
-          </button>
-        </div>
-      )}
-
-      {/* Jitsi container */}
-      <div style={{ flex: 1, position: 'relative' }}>
+      {/* MiroTalk SFU room */}
+      <div ref={containerRef} style={{ flex: 1, position: 'relative' }}>
         {/* Loading overlay */}
-        {connectionStatus === 'connecting' && !overlayDismissed && (
+        {!connected && (
           <div style={{
             position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
             alignItems: 'center', justifyContent: 'center', background: '#0f1117', zIndex: 1,
@@ -481,35 +241,13 @@ export default function VirtualClassroom({ meeting, displayName, isInstructor, o
           </div>
         )}
 
-        {/* Error overlay */}
-        {connectionStatus === 'error' && (
-          <div style={{
-            position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center', background: '#0f1117', zIndex: 1,
-            padding: '2rem',
-          }}>
-            <WifiOff size={48} color="#dc3545" style={{ marginBottom: '1rem' }} />
-            <p style={{ color: '#fff', fontWeight: 600, marginBottom: '0.5rem', fontSize: '1.1rem' }}>Impossible de rejoindre la salle</p>
-            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', textAlign: 'center', marginBottom: '1.5rem' }}>
-              Vérifiez votre connexion internet ou ouvrez le lien directement.
-            </p>
-            <a
-              href={meeting?.meetingUrl}
-              target="_blank"
-              rel="noreferrer"
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-                padding: '0.65rem 1.5rem', borderRadius: '10px',
-                background: 'var(--primary)', color: '#fff', textDecoration: 'none', fontWeight: 600,
-              }}
-            >
-              <ExternalLink size={16} />
-              Ouvrir dans le navigateur
-            </a>
-          </div>
-        )}
-
-        <div ref={jitsiContainerRef} style={{ width: '100%', height: '100%' }} />
+        <iframe
+          title="Salle Virtuelle 212Learn"
+          src={roomUrl}
+          onLoad={() => setConnected(true)}
+          allow="camera; microphone; display-capture; fullscreen; autoplay; clipboard-write; speaker-selection"
+          style={{ width: '100%', height: '100%', border: 'none' }}
+        />
 
         {/* Traceability watermark — students only, drifts to resist cropping */}
         {!isInstructor && (
