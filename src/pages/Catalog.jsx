@@ -222,7 +222,7 @@ export default function Catalog() {
               <CourseCardSkeleton key={idx} />
             ))}
           </div>
-        ) : courses.length === 0 ? (
+        ) : (courses.length === 0 && !coursesError) ? (
           <Card variant="default" padding="3rem" style={{ textAlign: 'center' }}>
             <h3 style={{ marginBottom: '1rem', color: 'var(--secondary)' }}>
               Aucun cours trouvé
