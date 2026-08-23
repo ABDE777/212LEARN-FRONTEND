@@ -103,7 +103,7 @@ function EditMeetingForm({ meeting, onSave, onCancel }) {
         <div style={{ padding: '1rem', background: 'rgba(193,101,47,0.08)', borderRadius: '8px', border: '1px solid rgba(193,101,47,0.15)' }}>
           <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Video size={16} style={{ color: 'var(--primary)' }} />
-            Cette session utilisera la classe virtuelle intégrée Jitsi 212Learn
+            Cette session utilisera la classe virtuelle intégrée 212Learn (MiroTalk)
           </p>
         </div>
       </div>
@@ -154,7 +154,7 @@ function ScheduleForm({ courses, initialCourseId, onScheduled }) {
       await createMeeting({
         title: title.trim(),
         meetingDate,
-        // No meetingUrl - will use in-app Jitsi virtual classroom
+        // No meetingUrl - will use in-app MiroTalk virtual classroom
       });
       setSuccess(true);
       onScheduled?.(courseId);
@@ -291,7 +291,7 @@ function ScheduleForm({ courses, initialCourseId, onScheduled }) {
               <div style={{ padding: '1rem', background: 'rgba(193,101,47,0.08)', borderRadius: '8px', border: '1px solid rgba(193,101,47,0.15)' }}>
                 <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Video size={16} style={{ color: 'var(--primary)' }} />
-                  Cette session utilisera la classe virtuelle intégrée Jitsi 212Learn
+                  Cette session utilisera la classe virtuelle intégrée 212Learn (MiroTalk)
                 </p>
               </div>
             </div>
