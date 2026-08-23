@@ -51,35 +51,9 @@ export default function Home() {
 
   const allCategories = flattenCategories(categories || []);
 
-  const featuredCourses = courses?.length > 0 ? courses.slice(0, 3) : [
-    {
-      id: 'demo-1',
-      title: 'Développement Web Fullstack avec React & Node.js',
-      description: 'Créez des applications web complètes, du front au back, avec les outils utilisés en entreprise.',
-      price: 299,
-      level: 'Intermédiaire',
-      category: { name: 'Développement Web' },
-      thumbnail: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=600&q=80',
-    },
-    {
-      id: 'demo-2',
-      title: 'Fondamentaux des Bases de Données SQL & PostgreSQL',
-      description: 'Apprenez à concevoir, interroger et sécuriser une base de données professionnelle.',
-      price: 199,
-      level: 'Débutant',
-      category: { name: 'Base de données' },
-      thumbnail: 'https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=600&q=80',
-    },
-    {
-      id: 'demo-3',
-      title: 'Algorithmique & Structures de Données',
-      description: 'Renforcez votre logique pour réussir examens, entretiens et projets complexes.',
-      price: 249,
-      level: 'Avancé',
-      category: { name: 'Programmation' },
-      thumbnail: 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=600&q=80',
-    },
-  ];
+  // Only real courses from the API — no demo/hardcoded fallback (avoids showing
+  // fake courses when the catalog is empty or the server is down).
+  const featuredCourses = (courses || []).slice(0, 3);
 
   const audience = [
     {
@@ -312,7 +286,8 @@ export default function Home() {
         })()}
       </section>
 
-      {/* Cours phares */}
+      {/* Cours phares — hidden entirely when there are no real courses */}
+      {featuredCourses.length > 0 && (
       <section className="section-animate home-section-padding" style={{ background: '#fff' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem', flexWrap: 'wrap', gap: '1rem' }}>
@@ -364,6 +339,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      )}
 
       {/* Comment ça marche */}
       <section className="section-animate home-section-padding" style={{ background: 'var(--surface-color)' }}>
