@@ -5,11 +5,8 @@ import { useAuth } from '../context/AuthContext';
 import CloudinaryImageUpload from './CloudinaryImageUpload';
 import api from '../services/api';
 
-export default function GroupChatRoom({ groupId, groupName, formateurName, onClose, chatBasePath }) {
+export default function GroupChatRoom({ groupId, groupName, formateurName, onClose }) {
   const { user } = useAuth();
-  // Serves both group chats (/groups/:id) and course chats (/courses/:id) —
-  // pass chatBasePath for the latter; otherwise it defaults to the group.
-  const basePath = chatBasePath || `/groups/${groupId}`;
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -26,18 +23,18 @@ export default function GroupChatRoom({ groupId, groupName, formateurName, onClo
   const fetchMessages = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const res = await api.get(`${basePath}/messages`);
+      const res = await api.get(`/groups/${groupId}/messages`);
       const data = res.data?.data || [];
       setMessages(data);
     } catch (err) {
-      console.warn('Error fetching chat messages:', err);
+      console.warn('Error fetching group messages:', err);
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [basePath]);
+  }, [groupId]);
 
   useEffect(() => {
-    if (groupId || chatBasePath) {
+    if (groupId) {
       fetchMessages();
       // Poll for new messages every 4 seconds for live chat feel
       const interval = setInterval(() => {
@@ -45,8 +42,7 @@ export default function GroupChatRoom({ groupId, groupName, formateurName, onClo
       }, 4000);
       return () => clearInterval(interval);
     }
-    return undefined;
-  }, [groupId, chatBasePath, fetchMessages]);
+  }, [groupId, fetchMessages]);
 
   useEffect(() => {
     scrollToBottom();
@@ -69,7 +65,7 @@ export default function GroupChatRoom({ groupId, groupName, formateurName, onClo
         }),
       };
 
-      const res = await api.post(`${basePath}/messages`, payload);
+      const res = await api.post(`/groups/${groupId}/messages`, payload);
 
       if (res.data?.success) {
         setInputText('');
@@ -100,7 +96,7 @@ export default function GroupChatRoom({ groupId, groupName, formateurName, onClo
   const handleDeleteMessage = async (messageId) => {
     if (!window.confirm('Voulez-vous vraiment supprimer ce message ?')) return;
     try {
-      await api.delete(`${basePath}/messages/${messageId}`);
+      await api.delete(`/groups/${groupId}/messages/${messageId}`);
       await fetchMessages(true);
     } catch (err) {
       console.warn('Error deleting message:', err);
