@@ -26,6 +26,36 @@ const CACHE_TTL_MS = 15000; // 15 seconds in-memory cache for GET queries
  */
 export const unwrap = (res) => (res?.data?.data !== undefined ? res.data.data : res?.data);
 
+// ── Legacy HTML-entity decoding ──────────────────────────────────────────────
+// An old backend sanitizer stored user text HTML-escaped (apostrophes as
+// &#x27;, quotes as &quot;, & as &amp;). The backend no longer encodes, but rows
+// created before the fix — and JSON fields never covered by the DB cleanup —
+// still carry entities. Decode them on the way in so text renders correctly
+// everywhere. React re-escapes on render, so this doesn't reintroduce any XSS.
+const ENTITY_RE = /&(?:#x27|#39|apos|quot|amp|lt|gt);/g;
+const ENTITY_MAP = {
+  '&#x27;': "'", '&#39;': "'", '&apos;': "'",
+  '&quot;': '"', '&amp;': '&', '&lt;': '<', '&gt;': '>',
+};
+const decodeEntitiesInString = (s) =>
+  s.includes('&') ? s.replace(ENTITY_RE, (m) => ENTITY_MAP[m] || m) : s;
+
+// Walk a parsed response body and decode entity sequences in every string.
+// Depth-guarded against pathological/cyclic payloads.
+const decodeEntitiesDeep = (value, depth = 0) => {
+  if (depth > 8 || value == null) return value;
+  if (typeof value === 'string') return decodeEntitiesInString(value);
+  if (Array.isArray(value)) {
+    for (let i = 0; i < value.length; i++) value[i] = decodeEntitiesDeep(value[i], depth + 1);
+    return value;
+  }
+  if (typeof value === 'object') {
+    for (const k of Object.keys(value)) value[k] = decodeEntitiesDeep(value[k], depth + 1);
+    return value;
+  }
+  return value;
+};
+
 /**
  * Clear cached API responses by URL prefix
  */
@@ -56,6 +86,12 @@ api.interceptors.request.use(
 // Response interceptor – handle caching, deduplication & 401 errors
 api.interceptors.response.use(
   response => {
+    // Decode any legacy HTML entities in the body so escaped text (e.g. an
+    // apostrophe stored as &#x27;) renders correctly. Runs before caching, so
+    // cached copies are decoded too.
+    if (response.data && typeof response.data === 'object') {
+      response.data = decodeEntitiesDeep(response.data);
+    }
     // Invalidate the GET cache on any mutation (POST, PUT, PATCH, DELETE).
     // Clearing everything is the safe choice: the cache is only a 15s perf
     // optimization, and a per-prefix scheme kept missing resources (groups,
