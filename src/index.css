@@ -697,6 +697,19 @@ button {
   box-shadow: var(--shadow-md);
 }
 
+/* Course detail: two columns on desktop, single column stacked on mobile. */
+.course-details-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+}
+
+@media (max-width: 900px) {
+  .course-details-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 768px) {
   .popular-courses-grid {
     display: flex;
