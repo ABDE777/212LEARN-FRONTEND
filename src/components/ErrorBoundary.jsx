@@ -21,6 +21,10 @@ const isChunkLoadError = (error) => {
   );
 };
 
+// Module-level guard: survives remounts within the same page load, so even if
+// sessionStorage is unavailable (private mode) we can never auto-reload twice.
+let autoReloadedThisLoad = false;
+
 export default class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
@@ -33,11 +37,12 @@ export default class ErrorBoundary extends Component {
 
   componentDidCatch(error) {
     if (isChunkLoadError(error)) {
-      // Reload once to pick up the new build's chunks; the flag prevents a loop
-      // if the reload somehow lands on the same error.
-      let alreadyReloaded = false;
-      try { alreadyReloaded = sessionStorage.getItem('chunk_reloaded') === '1'; } catch { /* ignore */ }
-      if (!alreadyReloaded) {
+      // Reload at most once to pick up the new build's chunks. Two independent
+      // guards (in-memory + sessionStorage) make an infinite reload impossible.
+      let storageReloaded = false;
+      try { storageReloaded = sessionStorage.getItem('chunk_reloaded') === '1'; } catch { /* ignore */ }
+      if (!autoReloadedThisLoad && !storageReloaded) {
+        autoReloadedThisLoad = true;
         try { sessionStorage.setItem('chunk_reloaded', '1'); } catch { /* ignore */ }
         window.location.reload();
         return;

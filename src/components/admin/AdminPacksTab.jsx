@@ -183,7 +183,7 @@ function PackForm({ pack, courses, onClose, onSaved }) {
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem', position: 'sticky', bottom: 0, background: '#fff', paddingTop: '1rem', paddingBottom: '0.25rem', borderTop: '1px solid var(--border-color)' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
           <button onClick={handleSave} disabled={loading} style={{ flex: 1, padding: '0.75rem', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             {loading ? <Loader size={16} className="spin" /> : <Check size={16} />} Enregistrer
           </button>
