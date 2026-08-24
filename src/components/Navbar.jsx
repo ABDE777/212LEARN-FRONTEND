@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LogOut, LogIn, ShoppingCart, Heart, Home, BookOpen, Info, LayoutDashboard, UserPlus, Plus, Trophy, Video, User, Lock, PhoneCall } from 'lucide-react';
+import { LogOut, LogIn, ShoppingCart, Heart, Home, BookOpen, Info, LayoutDashboard, UserPlus, Plus, Trophy, Video, User, Lock, PhoneCall, Package } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useCartContext } from '../context/CartContext';
@@ -591,6 +591,11 @@ function Navbar({ extraDockOptions = [] }) {
           <DockItem key="Cours" onClick={() => navigate('/courses')} title="Cours">
             <DockLabel>Cours</DockLabel>
             <DockIcon><BookOpen size={22} /></DockIcon>
+          </DockItem>
+
+          <DockItem key="Packs" onClick={() => navigate('/packs')} title="Packs">
+            <DockLabel>Packs</DockLabel>
+            <DockIcon><Package size={22} /></DockIcon>
           </DockItem>
 
           {/* Center: Animated 212Learn Logo */}
