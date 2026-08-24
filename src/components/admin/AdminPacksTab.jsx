@@ -107,7 +107,7 @@ function PackForm({ pack, courses, onClose, onSaved }) {
     } catch { /* error surfaced below */ }
   };
 
-  const inputStyle = { width: '100%', padding: 10, border: '1px solid var(--border-color)', borderRadius: 8, background: 'var(--bg-color)', color: 'var(--text-color)' };
+  const inputStyle = { width: '100%', padding: 10, border: '1px solid var(--border-color)', borderRadius: 8, background: 'var(--bg-color)', color: 'var(--text-color)', boxSizing: 'border-box' };
   const labelStyle = { display: 'block', marginBottom: 4, fontWeight: 500, color: 'var(--secondary)', fontSize: '0.9rem' };
 
   return (
@@ -136,7 +136,7 @@ function PackForm({ pack, courses, onClose, onSaved }) {
             <div style={{ fontSize: '0.82rem', color: 'var(--secondary)', marginBottom: '0.5rem' }}>
               Offre de lancement (optionnelle) — les premières places à prix réduit. Laissez vide pour un pack à prix fixe.
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(140px, 100%), 1fr))', gap: '0.75rem' }}>
               <div><label style={labelStyle}>Prix de lancement</label><input style={inputStyle} type="number" min="0" value={launchPrice} onChange={(e) => setLaunchPrice(e.target.value)} placeholder="ex : 499" /></div>
               <div><label style={labelStyle}>Nombre de places</label><input style={inputStyle} type="number" min="0" value={launchSeats} onChange={(e) => setLaunchSeats(e.target.value)} placeholder="ex : 5" /></div>
             </div>
@@ -183,7 +183,7 @@ function PackForm({ pack, courses, onClose, onSaved }) {
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem', position: 'sticky', bottom: 0, background: '#fff', paddingTop: '1rem', paddingBottom: '0.25rem', borderTop: '1px solid var(--border-color)' }}>
           <button onClick={handleSave} disabled={loading} style={{ flex: 1, padding: '0.75rem', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             {loading ? <Loader size={16} className="spin" /> : <Check size={16} />} Enregistrer
           </button>

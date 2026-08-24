@@ -273,6 +273,10 @@ function SessionCalendar({ meetings, onMeetingClick, onEditMeeting, onDeleteMeet
         </div>
       </div>
 
+      {/* Calendar scroll wrapper — a 7-column grid squishes on phones, so keep a
+          usable min width and scroll horizontally instead. */}
+      <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+      <div style={{ minWidth: '560px' }}>
       {/* Day Names */}
       <div style={{
         display: 'grid',
@@ -309,6 +313,8 @@ function SessionCalendar({ meetings, onMeetingClick, onEditMeeting, onDeleteMeet
         borderTop: 'none',
       }}>
         {renderCalendarDays()}
+      </div>
+      </div>
       </div>
 
       {/* Meeting Detail Drawer */}
