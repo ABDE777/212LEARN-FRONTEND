@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Globe } from 'lucide-react';
 import api from '../services/api';
+import { initialsAvatar } from '../utils/avatarPlaceholder';
 
 // Custom inline SVG icons for guaranteed cross-platform compatibility
 const LinkedinIcon = () => (
@@ -30,14 +31,14 @@ const ADMIN_FOUNDER_MEMBERS = [
     id: 'admin-1',
     name: 'Ibrahim Challal',
     role: 'FONDATEUR & ADMINISTRATEUR PRINCIPAL',
-    image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&h=500&fit=crop&q=80',
+    image: initialsAvatar('Ibrahim Challal'),
     social: { linkedin: 'https://linkedin.com', twitter: 'https://twitter.com' },
   },
   {
     id: 'admin-2',
     name: 'Abdel Monim Mazguora',
     role: 'CO-FONDATEUR & DIRECTEUR TECHNIQUE',
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&h=500&fit=crop&q=80',
+    image: initialsAvatar('Abdel Monim Mazguora'),
     social: { linkedin: 'https://linkedin.com', website: 'https://212learn.com' },
   },
 ];
@@ -58,7 +59,7 @@ export default function TeamShowcase({ members: propMembers }) {
               id: a.id,
               name: `${a.firstName || ''} ${a.lastName || ''}`.trim() || 'Admin 212',
               role: a.bio || 'ADMINISTRATEUR PLATEFORME 212LEARN',
-              image: a.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&h=500&fit=crop&q=80',
+              image: a.avatar || initialsAvatar(`${a.firstName || ''} ${a.lastName || ''}`),
               social: a.socialLinks || { linkedin: 'https://linkedin.com' },
             }));
             setDbAdmins(mapped);
