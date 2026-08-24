@@ -58,6 +58,18 @@ export default function AdminDashboard() {
     localStorage.setItem('admin_active_tab', newTab);
     setSearchParams({ tab: newTab }, { replace: true });
   };
+
+  // Sync the active tab with the URL so navigating here via ?tab=… (e.g. from
+  // the bottom dock menu) switches tabs even when already on this page.
+  useEffect(() => {
+    const t = searchParams.get('tab');
+    if (t) {
+      const normalized = (t === 'wafacash' || t === 'transfer') ? 'payments' : t;
+      setActiveTabState(normalized);
+      localStorage.setItem('admin_active_tab', normalized);
+    }
+  }, [searchParams]);
+
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [userSubTab, setUserSubTab] = useState('active');
   const [userPage, setUserPage] = useState(1);

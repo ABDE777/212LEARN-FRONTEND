@@ -56,6 +56,17 @@ export default function InstructorDashboard() {
     localStorage.setItem('instructor_active_tab', newTab);
     setSearchParams({ tab: newTab }, { replace: true });
   };
+
+  // Sync the active tab with the URL so navigating here via ?tab=… (e.g. from
+  // the bottom dock menu) switches tabs even when already on this page.
+  useEffect(() => {
+    const t = searchParams.get('tab');
+    if (t) {
+      setActiveTabState(t);
+      localStorage.setItem('instructor_active_tab', t);
+    }
+  }, [searchParams]);
+
   const { courses, loading, error } = useInstructorCourses();
   const { createCourse, loading: createLoading, error: createError } = useCreateCourse();
   const { logout } = useAuth();
