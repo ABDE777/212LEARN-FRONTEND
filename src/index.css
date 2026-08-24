@@ -698,15 +698,53 @@ button {
 }
 
 /* Course detail: two columns on desktop, single column stacked on mobile. */
+.course-detail-wrap {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
 .course-details-grid {
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 2rem;
 }
 
+.course-detail-title {
+  font-size: 2.5rem;
+  line-height: 1.15;
+}
+
 @media (max-width: 900px) {
+  .course-detail-wrap {
+    padding: 1rem;
+  }
+  /* Stack, and lift the purchase card (image + price + CTA) to the top so the
+     buy action is visible immediately instead of below the whole curriculum. */
   .course-details-grid {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+  .course-sidebar {
+    order: -1;
+  }
+  .course-sidebar-card {
+    position: static !important;
+  }
+  /* Inline Card padding is 2rem; tighten it on phones (needs !important to beat
+     the component's inline style). */
+  .course-card {
+    padding: 1.25rem !important;
+  }
+  .course-detail-title {
+    font-size: 1.55rem;
+  }
+  .course-meta {
+    gap: 0.75rem 1.25rem !important;
+  }
+  .course-meta > div {
+    font-size: 0.9rem;
   }
 }
 

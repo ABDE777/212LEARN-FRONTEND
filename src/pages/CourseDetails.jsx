@@ -153,7 +153,7 @@ export default function CourseDetails() {
       <StructuredData data={courseSchema} id="course-schema" />
       <Navbar />
 
-      <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem' }}>
+      <div className="course-detail-wrap">
         {/* Breadcrumb */}
         <div style={{ marginBottom: '2rem', fontSize: '0.9rem', color: 'var(--secondary)' }}>
           <Link to="/courses" style={{ color: 'var(--secondary)', textDecoration: 'none' }}>
@@ -167,7 +167,7 @@ export default function CourseDetails() {
           {/* Main Content */}
           <div>
             {/* Course Header */}
-            <Card variant="default" padding="2rem" style={{ marginBottom: '2rem' }}>
+            <Card variant="default" padding="2rem" className="course-card" style={{ marginBottom: '2rem' }}>
               <div style={{ marginBottom: '1rem' }}>
                 <span style={{ 
                   background: 'var(--bg-color)', 
@@ -180,14 +180,14 @@ export default function CourseDetails() {
                   {course.category?.name || 'Informatique'}
                 </span>
               </div>
-              <h1 style={{ fontSize: '2.5rem', marginBottom: '1rem', color: 'var(--text-color)' }}>
+              <h1 className="course-detail-title" style={{ marginBottom: '1rem', color: 'var(--text-color)' }}>
                 {course.title}
               </h1>
               <p style={{ fontSize: '1.1rem', color: 'var(--secondary)', lineHeight: 1.6, marginBottom: '1.5rem' }}>
                 {course.description}
               </p>
               
-              <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+              <div className="course-meta" style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--secondary)' }}>
                   <Clock size={20} />
                   <span>{(course.duration / 60) || '10'}h de contenu</span>
@@ -213,7 +213,7 @@ export default function CourseDetails() {
             </Card>
 
             {/* Curriculum */}
-            <Card variant="default" padding="2rem" style={{ marginBottom: '2rem' }}>
+            <Card variant="default" padding="2rem" className="course-card" style={{ marginBottom: '2rem' }}>
               <h2 style={{ marginBottom: '1.5rem', color: 'var(--secondary)' }}>
                 Programme du cours
               </h2>
@@ -257,7 +257,7 @@ export default function CourseDetails() {
 
             {/* Instructors */}
             {course.instructors?.length > 0 && (
-              <Card variant="default" padding="2rem">
+              <Card variant="default" padding="2rem" className="course-card">
                 <h2 style={{ marginBottom: '1.5rem', color: 'var(--secondary)' }}>
                   {course.instructors.length === 1 ? 'Votre instructeur' : 'Vos instructeurs'}
                 </h2>
@@ -288,8 +288,8 @@ export default function CourseDetails() {
           </div>
 
           {/* Sidebar */}
-          <div>
-            <Card variant="elevated" padding="0" style={{ position: 'sticky', top: '2rem' }}>
+          <div className="course-sidebar">
+            <Card variant="elevated" padding="0" className="course-sidebar-card" style={{ position: 'sticky', top: '2rem' }}>
               {course.thumbnail && (
                 <div
                   style={{
