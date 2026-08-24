@@ -67,7 +67,9 @@ export default function Checkout() {
 
   const handleWafaRequest = async () => {
     try {
-      const data = await requestWafaPayment(id);
+      // Pass the applied coupon so the backend charges the discounted price and
+      // records the coupon (otherwise the admin sees the full price, no coupon).
+      const data = await requestWafaPayment(id, appliedCoupon || '');
       setPaymentData(data);
       setWafaStep(2);
     } catch (error) {
@@ -77,7 +79,7 @@ export default function Checkout() {
 
   const handleTransferRequest = async () => {
     try {
-      const data = await requestTransferPayment(id);
+      const data = await requestTransferPayment(id, appliedCoupon || '');
       setPaymentData(data);
       setTransferStep(2);
     } catch (error) {

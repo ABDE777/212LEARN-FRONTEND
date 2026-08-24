@@ -271,6 +271,16 @@ export default function StudentDashboard() {
     setSearchParams({ tab: newTab }, { replace: true });
   };
 
+  // Keep the active tab in sync with the URL so navigating here via ?tab=…
+  // (e.g. from the bottom dock menu) switches tabs even when already on this page.
+  useEffect(() => {
+    const t = searchParams.get('tab');
+    if (t && t !== 'search') {
+      setActiveTabState(t);
+      localStorage.setItem('student_active_tab', t);
+    }
+  }, [searchParams]);
+
   const handleLogout = () => {
     logout();
     navigate('/login');

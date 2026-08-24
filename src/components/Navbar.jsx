@@ -12,6 +12,7 @@ const NAV_LINKS = [
   { to: '/', label: 'Accueil' },
   { to: '/about', label: 'À propos' },
   { to: '/courses', label: 'Cours' },
+  { to: '/packs', label: 'Packs' },
   { to: '/contact', label: 'Contact' },
 ];
 
@@ -124,6 +125,11 @@ function Navbar() {
       Icon: <Lock size={16} />,
       onClick: () => handleDockActionClick('security'),
     },
+    {
+      label: 'Déconnexion',
+      Icon: <LogOut size={16} />,
+      onClick: () => handleLogout(),
+    },
   ];
 
   const navStyle = {
@@ -211,7 +217,8 @@ function Navbar() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           {/* User menu (cart & wishlist now live inside the dropdown) */}
           {isAuthenticated ? (
-            <div ref={dropdownRef} style={{ position: 'relative' }}>
+            <>
+            <div ref={dropdownRef} className="nav-user-desktop" style={{ position: 'relative' }}>
               <button
                 onClick={() => setDropdownOpen((prev) => !prev)}
                 aria-expanded={dropdownOpen}
@@ -444,6 +451,41 @@ function Navbar() {
                 </div>
               )}
             </div>
+
+            {/* Mobile: direct icons instead of the dropdown (panier, souhaits, espace) */}
+            <div className="nav-user-mobile">
+              {isStudent && (
+                <>
+                  <button onClick={openCart} className="nav-quick-icon" aria-label="Mon panier" title="Mon panier">
+                    <ShoppingCart size={20} />
+                    {cartCount > 0 && (
+                      <span className="nav-quick-badge">{cartCount > 99 ? '99+' : cartCount}</span>
+                    )}
+                  </button>
+                  <Link to="/wishlist" className="nav-quick-icon" aria-label="Mes souhaits" title="Mes souhaits">
+                    <Heart size={20} />
+                    {wishlistCount > 0 && (
+                      <span className="nav-quick-badge">{wishlistCount > 99 ? '99+' : wishlistCount}</span>
+                    )}
+                  </Link>
+                </>
+              )}
+              <Link to={getDashboardPath(user?.role)} className="nav-quick-icon" aria-label="Mon espace" title="Mon espace">
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt="Mon espace"
+                    style={{ width: '34px', height: '34px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(193,101,47,0.35)' }}
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                  />
+                ) : (
+                  <span style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: '0.78rem' }}>
+                    {initials}
+                  </span>
+                )}
+              </Link>
+            </div>
+            </>
           ) : (
             <div className="nav-auth-buttons">
               <Link
@@ -625,8 +667,23 @@ function Navbar() {
           color: var(--primary);
           background: rgba(193, 101, 47, 0.09);
         }
+        /* Mobile quick-icons row (panier / souhaits / espace) — hidden on desktop */
+        .nav-user-mobile { display: none; align-items: center; gap: 0.25rem; }
+        .nav-quick-icon {
+          position: relative; display: inline-flex; align-items: center; justify-content: center;
+          width: 40px; height: 40px; border-radius: 50%; background: transparent; border: none;
+          cursor: pointer; color: var(--secondary); text-decoration: none; -webkit-tap-highlight-color: transparent;
+        }
+        .nav-quick-icon:active { background: rgba(193, 101, 47, 0.12); }
+        .nav-quick-badge {
+          position: absolute; top: 1px; right: 1px; min-width: 16px; height: 16px; padding: 0 4px;
+          border-radius: 999px; background: var(--primary); color: #fff; font-size: 0.62rem; font-weight: 700;
+          display: inline-flex; align-items: center; justify-content: center; line-height: 1;
+        }
         @media (max-width: 768px) {
           .nav-desktop-links { display: none !important; }
+          .nav-user-desktop { display: none !important; }
+          .nav-user-mobile { display: flex !important; }
         }
       `}</style>
     </>

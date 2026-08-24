@@ -28,6 +28,9 @@ const About = lazy(() => import('./pages/About'));
 const Contact = lazy(() => import('./pages/Contact'));
 const CourseDetails = lazy(() => import('./pages/CourseDetails'));
 const Checkout = lazy(() => import('./pages/Checkout'));
+const PacksCatalog = lazy(() => import('./pages/PacksCatalog'));
+const PackDetails = lazy(() => import('./pages/PackDetails'));
+const PackCheckout = lazy(() => import('./pages/PackCheckout'));
 const Cart = lazy(() => import('./pages/Cart'));
 const Wishlist = lazy(() => import('./pages/Wishlist'));
 const ClassroomPlayer = lazy(() => import('./pages/ClassroomPlayer'));
@@ -80,6 +83,9 @@ function App() {
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/courses/:id" element={<CourseDetails />} />
                 <Route path="/courses/:id/checkout" element={<Checkout />} />
+                <Route path="/packs" element={<PacksCatalog />} />
+                <Route path="/packs/:id" element={<PackDetails />} />
+                <Route path="/packs/:id/checkout" element={<PackCheckout />} />
 
                 {/* Protected Routes */}
                 <Route element={<ProtectedLayout />}>

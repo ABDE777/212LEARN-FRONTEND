@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import AnimatedLogo from '../components/AnimatedLogo';
+import { initialsAvatar } from '../utils/avatarPlaceholder';
 import SEOHead from '../components/SEOHead';
 import BackgroundBlobs from '../components/about/BackgroundBlobs';
 import SectionDivider from '../components/about/SectionDivider';
@@ -106,7 +107,7 @@ function About() {
         const courseCount = inst.coursesInstructed?.length || 1;
 
         return {
-          src: inst.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=640&h=640&fit=crop&q=80',
+          src: inst.avatar || initialsAvatar(name),
           alt: name,
           title: name,
           subtitle: subtitleText,
