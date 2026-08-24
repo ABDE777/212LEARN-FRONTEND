@@ -4,7 +4,7 @@ import Navbar from '../components/Navbar';
 import {
   BookOpen, Plus, Video, Users, User, LogOut,
   ChevronRight, ChevronLeft,
-  HelpCircle, X, BarChart3, Tag, MessageSquare,
+  HelpCircle, X, BarChart3, Tag, MessageSquare, DollarSign,
 } from 'lucide-react';
 import { useInstructorCourses, useCreateCourse } from '../hooks/useInstructorCourses';
 import { useInstructorAnalytics } from '../hooks/useInstructorAnalytics';
@@ -18,6 +18,7 @@ import AnalyticsTab from '../components/instructor/AnalyticsTab';
 import CouponsTab from '../components/instructor/CouponsTab';
 import StudentsTab from '../components/instructor/StudentsTab';
 import MeetingsTab from '../components/instructor/MeetingsTab';
+import InstructorEarningsTab from '../components/instructor/InstructorEarningsTab';
 import InstructorGroupChatSection from '../components/instructor/InstructorGroupChatSection';
 import ModalPortal from '../components/ModalPortal';
 
@@ -196,6 +197,7 @@ export default function InstructorDashboard() {
     { key: 'meetings',  icon: <Video size={18} />,      label: 'Sessions Live' },
     { key: 'students',  icon: <Users size={18} />,      label: 'Étudiants' },
     { key: 'coupons',   icon: <Tag size={18} />,        label: 'Coupons' },
+    { key: 'earnings',  icon: <DollarSign size={18} />, label: 'Revenus' },
     { key: 'profile',   icon: <User size={18} />,       label: 'Mon profil' },
   ];
 
@@ -377,6 +379,9 @@ export default function InstructorDashboard() {
               {activeTab === 'coupons' && (
                 <CouponsTab courses={courses} />
               )}
+
+              {/* Pack earnings */}
+              {activeTab === 'earnings' && <InstructorEarningsTab />}
             </div>
           )}
         </main>

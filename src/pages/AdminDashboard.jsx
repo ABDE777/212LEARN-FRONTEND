@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { Users, BookOpen, Folder, Settings, User, LogOut, FileText, Pencil, Trash2, BarChart3, ShieldCheck, ShieldAlert, ChevronLeft, ChevronRight, RotateCcw, Plus, Mail, X, Loader, Wallet, Activity, Search, Award, Video, Check, DollarSign } from 'lucide-react';
+import { Users, BookOpen, Folder, Settings, User, LogOut, FileText, Pencil, Trash2, BarChart3, ShieldCheck, ShieldAlert, ChevronLeft, ChevronRight, RotateCcw, Plus, Mail, X, Loader, Wallet, Activity, Search, Award, Video, Check, DollarSign, Package } from 'lucide-react';
 import {
   useAdminUsers,
   useAdminCourses,
@@ -30,6 +30,7 @@ import { flattenCategories, getCourseInstructorLabel } from '../components/admin
 import SystemHealthTab from '../components/admin/SystemHealthTab';
 import AuditLogsTab from '../components/admin/AuditLogsTab';
 import AdminSettingsTab from '../components/admin/AdminSettingsTab';
+import AdminPacksTab from '../components/admin/AdminPacksTab';
 import AdminCategoryCard from '../components/admin/AdminCategoryCard';
 import AdminCourseCard from '../components/admin/AdminCourseCard';
 import AdminEditCourseDrawer from '../components/admin/AdminEditCourseDrawer';
@@ -1060,6 +1061,7 @@ export default function AdminDashboard() {
           { label: 'Sessions', Icon: <Video size={16} />, onClick: () => setActiveTab('meetings') },
           { label: 'Statistiques', Icon: <BarChart3 size={16} />, onClick: () => setActiveTab('stats') },
           { label: 'Paiements', Icon: <Wallet size={16} />, onClick: () => setActiveTab('payments') },
+          { label: 'Packs', Icon: <Package size={16} />, onClick: () => setActiveTab('packs') },
           { label: 'Demandes', Icon: <FileText size={16} />, onClick: () => setActiveTab('update-requests') },
           { label: "Journal d'audit", Icon: <FileText size={16} />, onClick: () => setActiveTab('audit') },
           { label: 'Santé système', Icon: <Activity size={16} />, onClick: () => setActiveTab('health') },
@@ -1151,6 +1153,14 @@ export default function AdminDashboard() {
             >
               <DollarSign size={18} />
               <span>Revenus Formateurs</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('packs')}
+              className={`sidebar-menu-btn ${activeTab === 'packs' ? 'active' : ''}`}
+              title="Packs de cours, achats & revenus"
+            >
+              <Package size={18} />
+              <span>Packs</span>
             </button>
             <button
               onClick={() => setActiveTab('update-requests')}
@@ -2098,6 +2108,8 @@ export default function AdminDashboard() {
               {activeTab === 'payments' && <PaymentsTab />}
 
               {activeTab === 'instructor-financials' && <AdminInstructorFinancialsTab />}
+
+              {activeTab === 'packs' && <AdminPacksTab />}
 
               {activeTab === 'update-requests' && (
                 <div>

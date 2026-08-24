@@ -12,6 +12,7 @@ const NAV_LINKS = [
   { to: '/', label: 'Accueil' },
   { to: '/about', label: 'À propos' },
   { to: '/courses', label: 'Cours' },
+  { to: '/packs', label: 'Packs' },
   { to: '/contact', label: 'Contact' },
 ];
 
