@@ -4,6 +4,7 @@ import { usePacks, usePackActions, useRevenueShares } from '../../hooks/usePacks
 import api, { unwrap } from '../../services/api';
 import LoadingSpinner from '../LoadingSpinner';
 import ModalPortal from '../ModalPortal';
+import CloudinaryImageUpload from '../CloudinaryImageUpload';
 
 const money = (n, c = 'MAD') => `${Number(n || 0).toFixed(2)} ${c}`;
 
@@ -137,7 +138,14 @@ function PackForm({ pack, courses, onClose, onSaved }) {
         <div style={{ display: 'grid', gap: '1rem' }}>
           <div><label style={labelStyle}>Titre</label><input style={inputStyle} value={title} onChange={(e) => setTitle(e.target.value)} /></div>
           <div><label style={labelStyle}>Description</label><textarea style={{ ...inputStyle, minHeight: 70 }} value={description} onChange={(e) => setDescription(e.target.value)} /></div>
-          <div><label style={labelStyle}>Image (URL)</label><input style={inputStyle} value={thumbnail} onChange={(e) => setThumbnail(e.target.value)} placeholder="https://…" /></div>
+          <div>
+            <label style={labelStyle}>Image du pack</label>
+            <CloudinaryImageUpload
+              value={thumbnail}
+              onChange={(url) => setThumbnail(url)}
+              placeholder="Cliquez ou glissez une image du pack"
+            />
+          </div>
           <div><label style={labelStyle}>Prix normal (obligatoire) — payé après les places de lancement</label>
             <input style={inputStyle} type="number" min="0" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="ex : 549" /></div>
           <div style={{ padding: '0.75rem', border: '1px dashed var(--border-color)', borderRadius: 8 }}>
