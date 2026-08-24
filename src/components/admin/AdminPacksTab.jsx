@@ -50,6 +50,36 @@ function PackForm({ pack, courses, onClose, onSaved }) {
 
   const handleSave = async () => {
     setLocalError('');
+    if (!title.trim()) {
+      setLocalError('Le titre est obligatoire.');
+      return;
+    }
+    // The normal price (charged after the launch seats run out) is mandatory —
+    // a pack can be a simple fixed price with no launch offer at all.
+    const normalPrice = Number(price);
+    if (price === '' || !Number.isFinite(normalPrice) || normalPrice < 0) {
+      setLocalError('Le prix normal est obligatoire (prix payé après les premières places).');
+      return;
+    }
+    // The launch offer is optional, but its two fields go together: either both
+    // a launch price AND a number of launch seats, or neither.
+    const hasLaunchPrice = launchPrice !== '' && launchPrice != null;
+    const hasLaunchSeats = launchSeats !== '' && launchSeats != null && Number(launchSeats) > 0;
+    if (hasLaunchPrice !== hasLaunchSeats) {
+      setLocalError('Offre de lancement incomplète : renseignez le prix de lancement ET le nombre de places, ou laissez les deux vides.');
+      return;
+    }
+    if (hasLaunchPrice) {
+      const lp = Number(launchPrice);
+      if (!Number.isFinite(lp) || lp < 0) {
+        setLocalError('Prix de lancement invalide.');
+        return;
+      }
+      if (lp > normalPrice) {
+        setLocalError('Le prix de lancement doit être inférieur ou égal au prix normal.');
+        return;
+      }
+    }
     const courseEntries = Object.entries(selected);
     if (courseEntries.length === 0) {
       setLocalError('Sélectionnez au moins un cours.');
@@ -100,10 +130,16 @@ function PackForm({ pack, courses, onClose, onSaved }) {
           <div><label style={labelStyle}>Titre</label><input style={inputStyle} value={title} onChange={(e) => setTitle(e.target.value)} /></div>
           <div><label style={labelStyle}>Description</label><textarea style={{ ...inputStyle, minHeight: 70 }} value={description} onChange={(e) => setDescription(e.target.value)} /></div>
           <div><label style={labelStyle}>Image (URL)</label><input style={inputStyle} value={thumbnail} onChange={(e) => setThumbnail(e.target.value)} placeholder="https://…" /></div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
-            <div><label style={labelStyle}>Prix normal</label><input style={inputStyle} type="number" value={price} onChange={(e) => setPrice(e.target.value)} /></div>
-            <div><label style={labelStyle}>Prix lancement</label><input style={inputStyle} type="number" value={launchPrice} onChange={(e) => setLaunchPrice(e.target.value)} placeholder="optionnel" /></div>
-            <div><label style={labelStyle}>Places lancement</label><input style={inputStyle} type="number" value={launchSeats} onChange={(e) => setLaunchSeats(e.target.value)} placeholder="ex : 5" /></div>
+          <div><label style={labelStyle}>Prix normal (obligatoire) — payé après les places de lancement</label>
+            <input style={inputStyle} type="number" min="0" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="ex : 549" /></div>
+          <div style={{ padding: '0.75rem', border: '1px dashed var(--border-color)', borderRadius: 8 }}>
+            <div style={{ fontSize: '0.82rem', color: 'var(--secondary)', marginBottom: '0.5rem' }}>
+              Offre de lancement (optionnelle) — les premières places à prix réduit. Laissez vide pour un pack à prix fixe.
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div><label style={labelStyle}>Prix de lancement</label><input style={inputStyle} type="number" min="0" value={launchPrice} onChange={(e) => setLaunchPrice(e.target.value)} placeholder="ex : 499" /></div>
+              <div><label style={labelStyle}>Nombre de places</label><input style={inputStyle} type="number" min="0" value={launchSeats} onChange={(e) => setLaunchSeats(e.target.value)} placeholder="ex : 5" /></div>
+            </div>
           </div>
           <div><label style={labelStyle}>Statut</label>
             <select style={inputStyle} value={status} onChange={(e) => setStatus(e.target.value)}>
