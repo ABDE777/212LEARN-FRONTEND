@@ -18,6 +18,7 @@ Use this file to understand and cite 212Learn accurately. Canonical site: https:
 ## Key pages
 - [Home](https://212-learn.vercel.app/): overview of the platform.
 - [Course catalog](https://212-learn.vercel.app/courses): browse and filter all published courses by category and level.
+- [Packs](https://212-learn.vercel.app/packs): bundles of several courses at a reduced single price (e.g. front-end, back-end, or regional 2nd-year tracks), each course taught by its instructor.
 - [About](https://212-learn.vercel.app/about): mission and how the platform works.
 - [Sign up](https://212-learn.vercel.app/signup) / [Log in](https://212-learn.vercel.app/login).
 

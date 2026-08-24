@@ -11,8 +11,43 @@ import { useCourses } from '../hooks/useCourses';
 import { usePublicStats } from '../hooks/usePublicStats';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Navbar from '../components/Navbar';
+import SEOHead from '../components/SEOHead';
+import StructuredData, { SITE_URL } from '../components/StructuredData';
 import { useAuth } from '../context/AuthContext';
 import bannerImg from '../assets/banner.png';
+
+// Site-wide Organization + WebSite structured data so search/answer engines
+// (Google, ChatGPT, Claude, Perplexity…) can identify and cite 212Learn.
+const ORG_SCHEMA = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': `${SITE_URL}/#organization`,
+      name: '212Learn',
+      alternateName: '212 Learn',
+      url: SITE_URL,
+      logo: `${SITE_URL}/favicon.svg`,
+      description: "212Learn est une plateforme marocaine d'apprentissage en ligne (e-learning) : programmation, technologie et design, en français, avec des cours en direct animés par des formateurs, des quiz et des certificats.",
+      areaServed: 'MA',
+      knowsLanguage: ['fr', 'ar'],
+      sameAs: [],
+    },
+    {
+      '@type': 'WebSite',
+      '@id': `${SITE_URL}/#website`,
+      url: SITE_URL,
+      name: '212Learn',
+      inLanguage: 'fr',
+      publisher: { '@id': `${SITE_URL}/#organization` },
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: { '@type': 'EntryPoint', urlTemplate: `${SITE_URL}/courses?search={search_term_string}` },
+        'query-input': 'required name=search_term_string',
+      },
+    },
+  ],
+};
 
 export default function Home() {
   const { categories, loading: catLoading, error: catError } = useCategories();
@@ -108,6 +143,11 @@ export default function Home() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-color)' }}>
+      <SEOHead
+        title="212Learn — Formation en ligne au Maroc (programmation, tech & design)"
+        description="Plateforme marocaine d'e-learning : cours de programmation, technologie et design en français, avec sessions live, quiz et certificats."
+      />
+      <StructuredData data={ORG_SCHEMA} id="org-website-schema" />
       <Navbar />
 
       {/* Hero Section — 212Learn Brand Hero */}
