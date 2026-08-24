@@ -3,6 +3,7 @@ import { Package, Plus, Pencil, Trash2, X, Check, Wallet, DollarSign, Loader, Ro
 import { usePacks, usePackActions, useRevenueShares } from '../../hooks/usePacks';
 import api, { unwrap } from '../../services/api';
 import LoadingSpinner from '../LoadingSpinner';
+import ModalPortal from '../ModalPortal';
 
 const money = (n, c = 'MAD') => `${Number(n || 0).toFixed(2)} ${c}`;
 
@@ -111,8 +112,15 @@ function PackForm({ pack, courses, onClose, onSaved }) {
   const labelStyle = { display: 'block', marginBottom: 4, fontWeight: 500, color: 'var(--secondary)', fontSize: '0.9rem' };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(6px)', zIndex: 99999, display: 'flex', justifyContent: 'flex-end' }}>
-      <div style={{ width: 'min(560px, 100%)', height: '100%', background: '#fff', overflowY: 'auto', padding: '1.75rem' }}>
+    <ModalPortal>
+    <div
+      onClick={onClose}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(6px)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{ width: 'min(560px, 100%)', maxHeight: '90vh', background: '#fff', overflowY: 'auto', padding: '1.75rem', borderRadius: 16, boxShadow: '0 25px 50px -12px rgba(0,0,0,0.35)' }}
+      >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <h2 style={{ margin: 0, fontSize: '1.4rem', display: 'flex', alignItems: 'center', gap: 8 }}>
             <Package size={22} /> {pack ? 'Modifier le pack' : 'Nouveau pack'}
@@ -191,6 +199,7 @@ function PackForm({ pack, courses, onClose, onSaved }) {
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }
 
