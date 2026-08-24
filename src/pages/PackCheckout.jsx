@@ -11,7 +11,10 @@ import LoadingSpinner from '../components/LoadingSpinner';
 export default function PackCheckout() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  // Admins run the platform and instructors teach — neither can buy a pack (the
+  // backend rejects them too). Show a clear message instead of the buy flow.
+  const isStaff = ['admin', 'instructor'].includes(user?.role?.toLowerCase());
   const { pack, loading: packLoading, error: packError } = usePack(id);
   const { requestPurchase, submitPurchase, loading, error } = usePackActions();
 
@@ -72,6 +75,24 @@ export default function PackCheckout() {
         <div style={{ padding: '2rem', maxWidth: 800, margin: '0 auto' }}>
           <Card variant="default" padding="2rem" style={{ textAlign: 'center' }}>
             <p style={{ color: 'var(--error-color)', marginBottom: '1rem' }}>{packError || 'Pack introuvable.'}</p>
+            <Button variant="outline" onClick={() => navigate('/packs')}>Retour aux packs</Button>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (isStaff) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--bg-color)' }}>
+        <Navbar />
+        <div style={{ padding: '2rem', maxWidth: 800, margin: '0 auto' }}>
+          <Card variant="default" padding="2rem" style={{ textAlign: 'center' }}>
+            <Package size={40} color="var(--secondary)" style={{ marginBottom: '1rem' }} />
+            <h2 style={{ color: 'var(--text-color)', marginTop: 0 }}>{pack.title}</h2>
+            <p style={{ color: 'var(--secondary)', marginBottom: '1.5rem' }}>
+              Les administrateurs et formateurs ne peuvent pas acheter de pack.
+            </p>
             <Button variant="outline" onClick={() => navigate('/packs')}>Retour aux packs</Button>
           </Card>
         </div>
