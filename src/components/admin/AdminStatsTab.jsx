@@ -49,48 +49,48 @@ export default function AdminStatsTab() {
       label: 'Utilisateurs totaux',
       value: stats.totalUsers ?? 0,
       sub: `${stats.students ?? 0} étudiants`,
-      gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      gradient: 'linear-gradient(135deg, #1B4B5A 0%, #2d6b7e 100%)',
       icon: <Users size={20} />,
     },
     {
       label: 'Cours publiés',
       value: stats.activeCourses ?? 0,
       sub: `${stats.draftCourses ?? 0} en brouillon`,
-      gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+      gradient: 'linear-gradient(135deg, #C1652F 0%, #d98244 100%)',
       icon: <BookOpen size={20} />,
     },
     {
       label: 'Instructeurs',
       value: stats.instructors ?? 0,
       sub: `${stats.admins ?? 0} admin(s)`,
-      gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+      gradient: 'linear-gradient(135deg, #E8A33D 0%, #f0b968 100%)',
       icon: <TrendingUp size={20} />,
     },
     {
       label: 'Catégories',
       value: stats.totalCategories ?? 0,
       sub: 'Toutes actives',
-      gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+      gradient: 'linear-gradient(135deg, #2d6b7e 0%, #4a8a9e 100%)',
       icon: <Folder size={20} />,
     },
     {
       label: 'Revenu total',
       value: `${(stats.totalRevenue ?? 0).toLocaleString()} MAD`,
       sub: 'Paiements confirmés',
-      gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+      gradient: 'linear-gradient(135deg, #C1652F 0%, #E8A33D 100%)',
       icon: <DollarSign size={20} />,
     },
   ];
 
   const roles = [
-    { label: 'Étudiants', count: stats.students ?? 0, color: '#667eea' },
-    { label: 'Instructeurs', count: stats.instructors ?? 0, color: '#f5576c' },
-    { label: 'Administrateurs', count: stats.admins ?? 0, color: '#43e97b' },
+    { label: 'Étudiants', count: stats.students ?? 0, color: '#1B4B5A' },
+    { label: 'Instructeurs', count: stats.instructors ?? 0, color: '#C1652F' },
+    { label: 'Administrateurs', count: stats.admins ?? 0, color: '#E8A33D' },
   ];
 
   const courseBreakdown = [
-    { label: 'Publiés', count: stats.activeCourses ?? 0, color: '#43e97b' },
-    { label: 'Brouillons', count: stats.draftCourses ?? 0, color: '#fa709a' },
+    { label: 'Publiés', count: stats.activeCourses ?? 0, color: '#1B4B5A' },
+    { label: 'Brouillons', count: stats.draftCourses ?? 0, color: '#E8A33D' },
   ];
 
 
@@ -110,7 +110,7 @@ export default function AdminStatsTab() {
       {/* ── KPI hero cards ── */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(min(200px, 100%), 1fr))',
         gap: '1.25rem',
         marginBottom: '2rem',
       }}>
@@ -141,12 +141,12 @@ export default function AdminStatsTab() {
       </div>
 
       {/* ── Two-column detail section ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
 
         {/* Users breakdown */}
         <div style={{ background: 'var(--surface-color)', border: '1px solid var(--border-color)', borderRadius: '18px', padding: '1.5rem', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.5rem' }}>
-            <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'linear-gradient(135deg,#667eea,#764ba2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+            <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'linear-gradient(135deg,#1B4B5A,#2d6b7e)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
               <Users size={16} />
             </div>
             <div>
@@ -200,7 +200,7 @@ export default function AdminStatsTab() {
         {/* Courses breakdown */}
         <div style={{ background: 'var(--surface-color)', border: '1px solid var(--border-color)', borderRadius: '18px', padding: '1.5rem', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.5rem' }}>
-            <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'linear-gradient(135deg,#f093fb,#f5576c)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+            <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'linear-gradient(135deg,#C1652F,#d98244)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
               <BookOpen size={16} />
             </div>
             <div>
@@ -244,14 +244,14 @@ export default function AdminStatsTab() {
       </div>
 
       {/* ── Revenue + Platform health ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(260px, 100%), 1fr))', gap: '1.25rem' }}>
 
-        <div style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', borderRadius: '18px', padding: '1.75rem', color: '#fff', boxShadow: '0 8px 32px rgba(0,0,0,0.2)', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ background: 'linear-gradient(135deg, #1B4B5A 0%, #163b46 50%, #0e2b33 100%)', borderRadius: '18px', padding: '1.75rem', color: '#fff', boxShadow: '0 8px 32px rgba(0,0,0,0.2)', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(102,126,234,0.15)' }} />
           <div style={{ position: 'absolute', bottom: '-20px', left: '-20px', width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(250,112,154,0.12)' }} />
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem', position: 'relative' }}>
             <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(250,225,64,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <DollarSign size={18} style={{ color: '#fee140' }} />
+              <DollarSign size={18} style={{ color: '#E8A33D' }} />
             </div>
             <span style={{ fontWeight: 700, fontSize: '0.95rem', opacity: 0.9 }}>Revenu de la plateforme</span>
           </div>
@@ -264,7 +264,7 @@ export default function AdminStatsTab() {
 
         <div style={{ background: 'var(--surface-color)', border: '1px solid var(--border-color)', borderRadius: '18px', padding: '1.5rem', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
-            <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'linear-gradient(135deg,#43e97b,#38f9d7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+            <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'linear-gradient(135deg,#E8A33D,#f0b968)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
               <Activity size={16} />
             </div>
             <div>
@@ -274,9 +274,9 @@ export default function AdminStatsTab() {
           </div>
 
           {[
-            { label: 'Taux de publication', pct: totalCourses > 0 ? ((stats.activeCourses ?? 0) / totalCourses) * 100 : 0, color: '#43e97b' },
-            { label: 'Part étudiants', pct: ((stats.students ?? 0) / total) * 100, color: '#667eea' },
-            { label: 'Catégories utilisées', pct: Math.min(100, ((stats.totalCategories ?? 0) / 20) * 100), color: '#f5576c' },
+            { label: 'Taux de publication', pct: totalCourses > 0 ? ((stats.activeCourses ?? 0) / totalCourses) * 100 : 0, color: '#1B4B5A' },
+            { label: 'Part étudiants', pct: ((stats.students ?? 0) / total) * 100, color: '#C1652F' },
+            { label: 'Catégories utilisées', pct: Math.min(100, ((stats.totalCategories ?? 0) / 20) * 100), color: '#E8A33D' },
           ].map((m, i) => (
             <Bar key={i} pct={m.pct} color={m.color} label={m.label} />
           ))}
@@ -288,12 +288,12 @@ export default function AdminStatsTab() {
             </div>
             <div style={{ width: '1px', background: 'var(--border-color)' }} />
             <div style={{ flex: 1, textAlign: 'center' }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#43e97b' }}>{stats.activeCourses ?? 0}</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1B4B5A' }}>{stats.activeCourses ?? 0}</div>
               <div style={{ fontSize: '0.75rem', color: 'var(--secondary)', fontWeight: 600 }}>Publiés</div>
             </div>
             <div style={{ width: '1px', background: 'var(--border-color)' }} />
             <div style={{ flex: 1, textAlign: 'center' }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#667eea' }}>{stats.totalUsers ?? 0}</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#C1652F' }}>{stats.totalUsers ?? 0}</div>
               <div style={{ fontSize: '0.75rem', color: 'var(--secondary)', fontWeight: 600 }}>Membres</div>
             </div>
           </div>

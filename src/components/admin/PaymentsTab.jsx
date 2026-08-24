@@ -456,7 +456,7 @@ export default function PaymentsTab() {
               {/* Drawer Body */}
               <div style={{ padding: '2rem', overflowY: 'auto', flex: 1 }}>
                 {/* Info Grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(150px, 100%), 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
                   {[
                     { label: 'Étudiant', value: student ? `${student.firstName || ''} ${student.lastName || ''}`.trim() || student.email : '—' },
                     { label: 'Email', value: student?.email || '—' },
@@ -494,7 +494,7 @@ export default function PaymentsTab() {
                     <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#2e7d32', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
                       🎟️ Coupon de réduction utilisé
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(150px, 100%), 1fr))', gap: '0.75rem' }}>
                       <div>
                         <div style={{ fontSize: '0.75rem', color: '#2e7d32', marginBottom: '0.25rem' }}>Code</div>
                         <div style={{ fontWeight: 600, color: '#1b5e20', fontFamily: 'monospace' }}>{p.coupon.code}</div>
