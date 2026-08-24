@@ -16,7 +16,7 @@ const NAV_LINKS = [
   { to: '/contact', label: 'Contact' },
 ];
 
-function Navbar() {
+function Navbar({ extraDockOptions = [] }) {
   const { user, isAuthenticated, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -131,6 +131,19 @@ function Navbar() {
       onClick: () => handleLogout(),
     },
   ];
+
+  // When a dashboard page passes its own tab links (admin/instructor/student have
+  // many more pages than the generic list), show those in the dock (+) menu so
+  // every role can actually reach all its pages on mobile. Always append logout.
+  const dockMenuOptions = extraDockOptions.length > 0
+    ? [
+        ...extraDockOptions.map((opt) => ({
+          ...opt,
+          onClick: () => { setDockMenuOpen(false); opt.onClick?.(); },
+        })),
+        { label: 'Déconnexion', Icon: <LogOut size={16} />, onClick: () => handleLogout() },
+      ]
+    : allDockMenuOptions;
 
   const navStyle = {
     display: 'flex',
@@ -533,7 +546,7 @@ function Navbar() {
                 padding: '0.2rem',
               }}
             >
-              {allDockMenuOptions.map((option, index) => (
+              {dockMenuOptions.map((option, index) => (
                 <motion.button
                   key={option.label || index}
                   initial={{ opacity: 0, x: 15 }}
