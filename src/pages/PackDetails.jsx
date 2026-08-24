@@ -46,7 +46,7 @@ export default function PackDetails() {
       <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '2rem' }}>
         <Link to="/packs" style={{ color: 'var(--secondary)', textDecoration: 'none', fontSize: '0.9rem' }}>← Tous les packs</Link>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: '2rem', marginTop: '1rem', alignItems: 'start' }}>
+        <div className="course-details-grid" style={{ marginTop: '1rem', alignItems: 'start' }}>
           <div>
             <div style={{ height: 220, borderRadius: 12, marginBottom: '1.5rem', background: pack.thumbnail ? `url(${pack.thumbnail}) center/cover` : 'linear-gradient(135deg, #1B4B5A, #C1652F)' }} />
             <h1 style={{ fontSize: '2rem', color: 'var(--secondary)', margin: '0 0 0.5rem 0', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
