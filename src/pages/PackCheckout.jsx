@@ -88,7 +88,7 @@ export default function PackCheckout() {
       <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '2rem' }}>
         <h1 style={{ fontSize: '2rem', marginBottom: '2rem', color: 'var(--secondary)' }}>Acheter le pack</h1>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '2rem' }}>
+        <div className="course-details-grid">
           <div>
             <Card variant="default" padding="2rem">
               <h2 style={{ marginBottom: '1.5rem', color: 'var(--secondary)' }}>Informations de paiement</h2>

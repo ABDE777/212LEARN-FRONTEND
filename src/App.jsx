@@ -46,6 +46,7 @@ const NotFound = lazy(() => import('./pages/NotFound'));
 import Footer from './components/Footer';
 import CartDrawer from './components/CartDrawer';
 import LoadingSpinner from './components/LoadingSpinner';
+import ErrorBoundary from './components/ErrorBoundary';
 
 const HIDDEN_FOOTER_PATHS = [
   '/student/dashboard',
@@ -69,6 +70,7 @@ function App() {
         <CartProvider>
           <WishlistProvider>
             <Router>
+              <ErrorBoundary>
               <Suspense fallback={<LoadingSpinner />}>
               <Routes>
                 {/* Public Routes */}
@@ -120,6 +122,7 @@ function App() {
                 <Route path="*" element={<NotFound />} />
               </Routes>
               </Suspense>
+              </ErrorBoundary>
               <CartDrawer />
               <FooterWrapper />
             </Router>
