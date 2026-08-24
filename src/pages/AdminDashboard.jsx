@@ -2097,7 +2097,7 @@ export default function AdminDashboard() {
               {activeTab === 'settings' && <AdminSettingsTab />}
 
               {['profile', 'security'].includes(activeTab) && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '2rem', alignItems: 'start' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(380px, 100%), 1fr))', gap: '2rem', alignItems: 'start' }}>
                   <ProfileEditForm />
                   <ChangePasswordForm />
                 </div>
