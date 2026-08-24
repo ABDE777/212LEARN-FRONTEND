@@ -20,7 +20,16 @@ export default function Home() {
   const { stats, loading: statsLoading } = usePublicStats();
   const { user, isAuthenticated } = useAuth();
 
+  // Reveal-on-scroll: .section-animate starts at opacity:0 and becomes visible
+  // once the observer adds .in-view. Sections that render AFTER async data loads
+  // (e.g. "Cours populaires") aren't in the DOM on first mount, so re-run this
+  // whenever the data that gates them changes — otherwise they'd stay invisible.
   useEffect(() => {
+    if (typeof IntersectionObserver === 'undefined') {
+      // No observer support: just show everything.
+      document.querySelectorAll('.section-animate').forEach((el) => el.classList.add('in-view'));
+      return;
+    }
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -29,9 +38,10 @@ export default function Home() {
       },
       { threshold: 0.12 }
     );
-    document.querySelectorAll('.section-animate').forEach((el) => observer.observe(el));
+    // Observe only sections not yet revealed (already-in-view ones keep their class).
+    document.querySelectorAll('.section-animate:not(.in-view)').forEach((el) => observer.observe(el));
     return () => observer.disconnect();
-  }, []);
+  }, [courses, categories, stats]);
 
   const getDashboardPath = (role) => {
     const normalizedRole = role?.toUpperCase();
