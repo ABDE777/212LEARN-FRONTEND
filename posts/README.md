@@ -5,6 +5,7 @@ fond crème `#F4EADD`, terracotta `#C1652F`, teal `#1B4B5A`, mustard `#E8A33D`, 
 polices Space Grotesk / DM Sans / JetBrains Mono).
 
 Toutes les images sont exportées en **2×** (haute définition) pour un rendu net sur mobile.
+Aucune URL d'application n'apparaît sur les visuels : seule la marque **212 LEARN** est affichée.
 
 ## `courses/` — Carrousel des cours (1080 × 1080)
 
@@ -27,6 +28,19 @@ Carrousel Instagram complet, à publier dans l'ordre `00` → `14` :
 | `12-Cloud.png` | Application Cloud native (Docker/K8s) · 249 MAD |
 | `13-ProjetSynthese.png` | Projet de synthèse · 99 MAD |
 | `14-CTA.png` | Appel à l'action — « Prêt à coder ? » |
+
+## `recap/` — Récap tous les cours (1080 × 1350)
+
+- `AllCourses.png` — un seul visuel listant **les 13 cours** avec leurs prix, groupés
+  par **Année 1 · Fondations** et **Année 2 · Spécialisation**.
+
+## `formateur/` — Cours + formateur (1080 × 1350)
+
+Variante d'un post de cours mettant en avant le **formateur** (photo + nom + rôle).
+
+- `Backend-Abdelmounim.png` — exemple : cours « Développement back-end » présenté par
+  Abdelmounim. La pastille photo est un **placeholder** en attendant la vraie photo du
+  formateur (à intégrer en `object-fit: cover`).
 
 ## `packs/` — Posts des packs (1080 × 1080)
 
