@@ -38,9 +38,11 @@ Carrousel Instagram complet, à publier dans l'ordre `00` → `14` :
 
 Variante d'un post de cours mettant en avant le **formateur** (photo + nom + rôle).
 
-- `Backend-Abdelmounim.png` — exemple : cours « Développement back-end » présenté par
-  Abdelmounim. La pastille photo est un **placeholder** en attendant la vraie photo du
-  formateur (à intégrer en `object-fit: cover`).
+- `Frontend-Abdelmounim.png` — « Développement front-end » · formateur **Abdelmounim** · 299 MAD
+- `Agile-Abdelmounim.png` — « Approche agile » · formateur **Abdelmounim** · 249 MAD
+
+Pour ajouter d'autres formateurs : déposer leur photo dans `posts/formateur/_photos/`
+et générer le visuel du/des cours qu'ils enseignent (même gabarit).
 
 ## `packs/` — Posts des packs (1080 × 1080)
 
