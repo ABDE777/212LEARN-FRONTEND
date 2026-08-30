@@ -31,7 +31,7 @@ export default function InstructorEarningsTab() {
     <div>
       <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem' }}>Mes revenus (packs)</h2>
       <p style={{ color: 'var(--secondary)', marginTop: 0 }}>
-        Part nette qui vous revient sur les packs vendus, après la commission de 20 % de la plateforme. Les paiements sont effectués manuellement par l'administration.
+        Part nette qui vous revient sur les packs vendus, après la commission de la plateforme (indiquée par vente ci-dessous). Les paiements sont effectués manuellement par l'administration.
       </p>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', margin: '1.5rem 0' }}>

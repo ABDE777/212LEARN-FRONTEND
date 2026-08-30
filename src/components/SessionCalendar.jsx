@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Video, Clock, Pencil, Trash2, X, Zap, Upload, Loader } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Video, Clock, Pencil, Trash2, X, Zap, Upload, Loader, Download, Maximize2 } from 'lucide-react';
 import ModalPortal from './ModalPortal';
+import api from '../services/api';
 import { uploadMeetingRecording } from '../utils/uploadResource';
 
 function SessionCalendar({ meetings, onMeetingClick, onEditMeeting, onDeleteMeeting, readOnly = false }) {
@@ -9,6 +10,28 @@ function SessionCalendar({ meetings, onMeetingClick, onEditMeeting, onDeleteMeet
   const [recUploading, setRecUploading] = useState(false);
   const [recProgress, setRecProgress] = useState(0);
   const [recError, setRecError] = useState(null);
+  // Curriculum picker: attach the recording as a chosen lesson's main video.
+  const [sections, setSections] = useState([]);
+  const [targetLessonId, setTargetLessonId] = useState('');
+  const [replayOpen, setReplayOpen] = useState(false);
+
+  // Load the course curriculum (sections → lessons) for the open meeting so the
+  // instructor can pick which existing lesson the recording becomes the video of.
+  useEffect(() => {
+    const courseId = selectedMeeting?.courseId;
+    if (!courseId || readOnly) { setSections([]); setTargetLessonId(''); return; }
+    let active = true;
+    (async () => {
+      try {
+        const res = await api.get(`/courses/${courseId}/curriculum`, { skipCache: true });
+        const secs = res.data?.data?.sections || res.data?.data?.curriculum?.sections || res.data?.sections || [];
+        if (active) setSections(Array.isArray(secs) ? secs : []);
+      } catch {
+        if (active) setSections([]);
+      }
+    })();
+    return () => { active = false; };
+  }, [selectedMeeting?.courseId, readOnly]);
 
   const handleRecordingFile = async (e) => {
     const file = e.target.files?.[0];
@@ -22,6 +45,7 @@ function SessionCalendar({ meetings, onMeetingClick, onEditMeeting, onDeleteMeet
         meetingId: selectedMeeting.id,
         file,
         onProgress: setRecProgress,
+        lessonId: targetLessonId || undefined,
       });
       // Reflect the published replay immediately in the open drawer.
       setSelectedMeeting((m) => (m ? { ...m, recordingUrl: updated?.recordingUrl || m.recordingUrl } : m));
@@ -396,10 +420,9 @@ function SessionCalendar({ meetings, onMeetingClick, onEditMeeting, onDeleteMeet
                    'Planifiée'}
                 </div>
                 {selectedMeeting.recordingUrl && (
-                  <a
-                    href={selectedMeeting.recordingUrl}
-                    target="_blank"
-                    rel="noreferrer"
+                  <button
+                    type="button"
+                    onClick={() => setReplayOpen(true)}
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
@@ -408,14 +431,16 @@ function SessionCalendar({ meetings, onMeetingClick, onEditMeeting, onDeleteMeet
                       borderRadius: '8px',
                       background: 'var(--secondary)',
                       color: '#fff',
-                      textDecoration: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
                       fontSize: '0.9rem',
                       fontWeight: 600,
+                      width: 'fit-content',
                     }}
                   >
                     <Video size={16} />
                     Voir le replay
-                  </a>
+                  </button>
                 )}
 
                 {/* Instructor: upload the recorded session as a replay for students */}
@@ -427,6 +452,22 @@ function SessionCalendar({ meetings, onMeetingClick, onEditMeeting, onDeleteMeet
                     <p style={{ margin: '0 0 0.6rem', fontSize: '0.76rem', color: 'var(--secondary)' }}>
                       Après la session, enregistrez la vidéo dans la salle (bouton REC), puis déposez le fichier ici : il apparaîtra dans le cours pour les étudiants inscrits.
                     </p>
+                    {/* Choose the existing lesson this recording becomes the main video of. */}
+                    <select
+                      value={targetLessonId}
+                      onChange={(e) => setTargetLessonId(e.target.value)}
+                      disabled={recUploading}
+                      style={{ width: '100%', marginBottom: '0.6rem', padding: '0.5rem 0.6rem', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.82rem', background: '#fff', color: 'var(--text-color)' }}
+                    >
+                      <option value="">Section « Sessions enregistrées » (par défaut)</option>
+                      {sections.map((sec) => (
+                        <optgroup key={sec.id} label={sec.title || 'Section'}>
+                          {(sec.lessons || []).map((les) => (
+                            <option key={les.id} value={les.id}>{les.title || 'Leçon'} — vidéo principale</option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
                     <label
                       style={{
                         display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
@@ -588,6 +629,58 @@ function SessionCalendar({ meetings, onMeetingClick, onEditMeeting, onDeleteMeet
             )}
           </div>
         </div>
+        </ModalPortal>
+      )}
+
+      {/* Replay modal — plays inline with Download + Fullscreen (no new tab). */}
+      {replayOpen && selectedMeeting?.recordingUrl && (
+        <ModalPortal>
+          <div
+            style={{ position: 'fixed', inset: 0, background: 'rgba(43,38,34,0.55)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: '1.5rem' }}
+            onClick={() => setReplayOpen(false)}
+          >
+            <div
+              style={{ background: 'var(--bg-color)', borderRadius: '16px', padding: '1rem', width: '100%', maxWidth: '900px', boxShadow: 'var(--shadow-lg, 0 20px 60px rgba(0,0,0,0.3))' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--secondary)', fontWeight: 700 }}>
+                  Replay — {selectedMeeting.title}
+                </h3>
+                <button type="button" onClick={() => setReplayOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--secondary)' }}>
+                  <X size={20} />
+                </button>
+              </div>
+              <video
+                id="session-replay-video"
+                src={selectedMeeting.recordingUrl}
+                controls
+                controlsList="nodownload"
+                style={{ width: '100%', maxHeight: '70vh', borderRadius: '10px', background: '#000' }}
+              />
+              <div style={{ display: 'flex', gap: '0.6rem', marginTop: '0.75rem', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const v = document.getElementById('session-replay-video');
+                    if (v?.requestFullscreen) v.requestFullscreen();
+                  }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-color)' }}
+                >
+                  <Maximize2 size={15} /> Plein écran
+                </button>
+                <a
+                  href={selectedMeeting.recordingUrl}
+                  download
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '8px', background: 'var(--primary)', color: '#fff', textDecoration: 'none', fontWeight: 700, fontSize: '0.85rem' }}
+                >
+                  <Download size={15} /> Télécharger
+                </a>
+              </div>
+            </div>
+          </div>
         </ModalPortal>
       )}
     </div>

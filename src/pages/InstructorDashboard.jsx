@@ -19,6 +19,7 @@ import CouponsTab from '../components/instructor/CouponsTab';
 import StudentsTab from '../components/instructor/StudentsTab';
 import MeetingsTab from '../components/instructor/MeetingsTab';
 import InstructorEarningsTab from '../components/instructor/InstructorEarningsTab';
+import InstructorGroupsTab from '../components/instructor/InstructorGroupsTab';
 import InstructorGroupChatSection from '../components/instructor/InstructorGroupChatSection';
 import ModalPortal from '../components/ModalPortal';
 
@@ -44,11 +45,14 @@ export default function InstructorDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
+  // 'earnings' was merged into 'analytics' — redirect any old links.
+  const normalizeTab = (t) => (t === 'earnings' ? 'analytics' : t);
+
   const [activeTab, setActiveTabState] = useState(() => {
     const tabFromUrl = searchParams.get('tab');
-    if (tabFromUrl) return tabFromUrl;
+    if (tabFromUrl) return normalizeTab(tabFromUrl);
     const tabFromStorage = localStorage.getItem('instructor_active_tab');
-    if (tabFromStorage) return tabFromStorage;
+    if (tabFromStorage) return normalizeTab(tabFromStorage);
     return 'courses';
   });
 
@@ -63,8 +67,9 @@ export default function InstructorDashboard() {
   useEffect(() => {
     const t = searchParams.get('tab');
     if (t) {
-      setActiveTabState(t);
-      localStorage.setItem('instructor_active_tab', t);
+      const nt = normalizeTab(t);
+      setActiveTabState(nt);
+      localStorage.setItem('instructor_active_tab', nt);
     }
   }, [searchParams]);
 
@@ -192,12 +197,12 @@ export default function InstructorDashboard() {
   const TABS = [
     { key: 'courses',   icon: <BookOpen size={18} />,  label: 'Mes cours' },
     { key: 'chat',      icon: <MessageSquare size={18} />, label: 'Chat Groupe (IA)' },
-    { key: 'analytics', icon: <BarChart3 size={18} />,   label: 'Analytics' },
+    { key: 'analytics', icon: <BarChart3 size={18} />,   label: 'Revenus & Analytics' },
     { key: 'quizzes',   icon: <HelpCircle size={18} />, label: 'Quiz' },
     { key: 'meetings',  icon: <Video size={18} />,      label: 'Sessions Live' },
     { key: 'students',  icon: <Users size={18} />,      label: 'Étudiants' },
+    { key: 'groups',    icon: <Users size={18} />,      label: 'Groupes' },
     { key: 'coupons',   icon: <Tag size={18} />,        label: 'Coupons' },
-    { key: 'earnings',  icon: <DollarSign size={18} />, label: 'Revenus' },
     { key: 'profile',   icon: <User size={18} />,       label: 'Mon profil' },
   ];
 
@@ -348,16 +353,21 @@ export default function InstructorDashboard() {
               )}
 
 
-              {/* Analytics */}
+              {/* Revenus & Analytics (course analytics + pack earnings, merged) */}
               {activeTab === 'analytics' && (
-                <AnalyticsTab
-                  revenueData={revenueData}
-                  studentsData={studentsData}
-                  completionData={completionData}
-                  loading={analyticsLoading}
-                  error={analyticsError}
-                  refetch={refetchAnalytics}
-                />
+                <>
+                  <AnalyticsTab
+                    revenueData={revenueData}
+                    studentsData={studentsData}
+                    completionData={completionData}
+                    loading={analyticsLoading}
+                    error={analyticsError}
+                    refetch={refetchAnalytics}
+                  />
+                  <div style={{ marginTop: '2rem' }}>
+                    <InstructorEarningsTab />
+                  </div>
+                </>
               )}
 
               {/* Meetings */}
@@ -368,6 +378,11 @@ export default function InstructorDashboard() {
               {/* Students */}
               {activeTab === 'students' && (
                 <StudentsTab courses={courses} />
+              )}
+
+              {/* Groups (instructor self-service) */}
+              {activeTab === 'groups' && (
+                <InstructorGroupsTab courses={courses} />
               )}
 
               {/* Quizzes */}
@@ -381,7 +396,6 @@ export default function InstructorDashboard() {
               )}
 
               {/* Pack earnings */}
-              {activeTab === 'earnings' && <InstructorEarningsTab />}
             </div>
           )}
         </main>

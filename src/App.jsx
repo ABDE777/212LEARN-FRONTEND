@@ -1,11 +1,11 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 
 // Context
 import { AuthProvider } from './context/AuthContext';
-import { ToastProvider } from './context/ToastContext';
+import { ToastProvider, useToast } from './context/ToastContext';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
 
@@ -63,10 +63,29 @@ function FooterWrapper() {
   return hide ? null : <Footer />;
 }
 
+// Surface a toast whenever the API returns 429 (dispatched by the axios
+// interceptor). Lives inside ToastProvider so it can use the toast context.
+function RateLimitToastBridge() {
+  const { showInfo } = useToast();
+  useEffect(() => {
+    let last = 0;
+    const onRateLimited = (e) => {
+      const now = Date.now();
+      if (now - last < 4000) return; // collapse bursts
+      last = now;
+      showInfo(e.detail?.message || 'Trop de requêtes. Veuillez réessayer dans un instant.');
+    };
+    window.addEventListener('api:ratelimited', onRateLimited);
+    return () => window.removeEventListener('api:ratelimited', onRateLimited);
+  }, [showInfo]);
+  return null;
+}
+
 function App() {
   return (
     <AuthProvider>
       <ToastProvider>
+        <RateLimitToastBridge />
         <CartProvider>
           <WishlistProvider>
             <Router>

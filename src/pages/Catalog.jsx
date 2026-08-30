@@ -54,13 +54,14 @@ export default function Catalog() {
     wishlistItems.map((item) => item.course?.id ?? item.courseId ?? item.id)
   );
 
-  // Flatten nested categories into a single array
-  const flattenCategories = (cats) => {
+  // Flatten nested categories, tagging each with its depth so children can be
+  // shown indented under their parent in the filter dropdown.
+  const flattenCategories = (cats, depth = 0) => {
     let result = [];
     for (const cat of cats) {
-      result.push(cat);
+      result.push({ ...cat, depth });
       if (cat.children && cat.children.length > 0) {
-        result = result.concat(flattenCategories(cat.children));
+        result = result.concat(flattenCategories(cat.children, depth + 1));
       }
     }
     return result;
@@ -148,7 +149,7 @@ export default function Catalog() {
               <option value="">Toutes les catégories</option>
               {allCategories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
-                  {cat.name}
+                  {cat.depth > 0 ? `${'  '.repeat(cat.depth)}└ ${cat.name}` : cat.name}
                 </option>
               ))}
             </select>
@@ -247,7 +248,7 @@ export default function Catalog() {
                   {/* Thumbnail Banner */}
                   <div
                     style={{
-                      height: '170px',
+                      aspectRatio: '16 / 9',
                       background: course.thumbnail
                         ? `url(${course.thumbnail}) center/cover no-repeat`
                         : 'linear-gradient(135deg, #1B4B5A 0%, #2A6F84 55%, #C1652F 100%)',

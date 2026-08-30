@@ -48,7 +48,7 @@ export default function PackDetails() {
 
         <div className="course-details-grid" style={{ marginTop: '1rem', alignItems: 'start' }}>
           <div>
-            <div style={{ height: 220, borderRadius: 12, marginBottom: '1.5rem', background: pack.thumbnail ? `url(${pack.thumbnail}) center/cover` : 'linear-gradient(135deg, #1B4B5A, #C1652F)' }} />
+            <div style={{ aspectRatio: '16 / 9', borderRadius: 12, marginBottom: '1.5rem', background: pack.thumbnail ? `url(${pack.thumbnail}) center/cover` : 'linear-gradient(135deg, #1B4B5A, #C1652F)' }} />
             <h1 style={{ fontSize: '2rem', color: 'var(--secondary)', margin: '0 0 0.5rem 0', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
               <Package size={26} color="var(--primary)" /> {pack.title}
             </h1>
@@ -66,7 +66,7 @@ export default function PackDetails() {
                 const instName = inst ? `${inst.firstName || ''} ${inst.lastName || ''}`.trim() : null;
                 return (
                   <Card key={pc.id} variant="default" padding="1rem" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 8, flexShrink: 0, background: pc.course?.thumbnail ? `url(${pc.course.thumbnail}) center/cover` : 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: 72, aspectRatio: '16 / 9', borderRadius: 8, flexShrink: 0, background: pc.course?.thumbnail ? `url(${pc.course.thumbnail}) center/cover` : 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {!pc.course?.thumbnail && <BookOpen size={20} color="#fff" />}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
