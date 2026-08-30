@@ -221,7 +221,7 @@ export default function PackCheckout() {
           <Card variant="elevated" padding="2rem" style={{ position: 'sticky', top: '2rem', alignSelf: 'start' }}>
             <h2 style={{ marginBottom: '1.5rem', color: 'var(--secondary)' }}>Résumé</h2>
             <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)' }}>
-              <div style={{ width: 56, height: 56, borderRadius: 8, flexShrink: 0, background: pack.thumbnail ? `url(${pack.thumbnail}) center/cover` : 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 72, aspectRatio: '16 / 9', borderRadius: 8, flexShrink: 0, background: pack.thumbnail ? `url(${pack.thumbnail}) center/cover` : 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {!pack.thumbnail && <Package size={22} color="#fff" />}
               </div>
               <div>

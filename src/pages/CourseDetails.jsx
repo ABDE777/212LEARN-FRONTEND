@@ -293,7 +293,7 @@ export default function CourseDetails() {
               {course.thumbnail && (
                 <div
                   style={{
-                    height: '200px',
+                    aspectRatio: '16 / 9',
                     background: `url(${course.thumbnail}) center/cover`,
                     borderRadius: '16px 16px 0 0'
                   }}

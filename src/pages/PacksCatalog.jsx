@@ -63,7 +63,7 @@ export default function PacksCatalog() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
             {packs.map((pack) => (
               <Card key={pack.id} variant="elevated" padding="0" style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ height: 150, background: pack.thumbnail ? `url(${pack.thumbnail}) center/cover` : 'linear-gradient(135deg, #1B4B5A, #C1652F)' }} />
+                <div style={{ aspectRatio: '16 / 9', background: pack.thumbnail ? `url(${pack.thumbnail}) center/cover` : 'linear-gradient(135deg, #1B4B5A, #C1652F)' }} />
                 <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1 }}>
                   <h3 style={{ margin: 0, color: 'var(--text-color)', fontSize: '1.15rem' }}>{pack.title}</h3>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--secondary)', fontSize: '0.9rem' }}>

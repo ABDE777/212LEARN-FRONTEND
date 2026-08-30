@@ -168,25 +168,25 @@ function About() {
       icon: Target,
       title: 'Exigence pédagogique',
       desc: 'Des programmes structurés, des objectifs clairs et un contenu révisé pour rester utile et à jour.',
-      accent: 'linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)',
+      accent: 'linear-gradient(135deg, #C1652F 0%, #E8A33D 100%)',
     },
     {
       icon: Heart,
       title: 'Proximité humaine',
       desc: 'Derrière chaque cours : des instructeurs, des lives et un suivi — pas seulement des vidéos anonymes.',
-      accent: 'linear-gradient(135deg, #e056fd 0%, #f5576c 100%)',
+      accent: 'linear-gradient(135deg, #1B4B5A 0%, #2A6F84 100%)',
     },
     {
       icon: Zap,
       title: 'Pratique avant tout',
       desc: 'Exercices, projets et évaluations pour transformer la théorie en compétences concrètes.',
-      accent: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+      accent: 'linear-gradient(135deg, #E8A33D 0%, #C1652F 100%)',
     },
     {
       icon: Globe,
       title: 'Accessibilité',
       desc: 'Apprendre depuis chez soi, à son rythme, avec une interface simple et un parcours compréhensible.',
-      accent: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+      accent: 'linear-gradient(135deg, #1B4B5A 0%, #C1652F 100%)',
     },
   ];
 
