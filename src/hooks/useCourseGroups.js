@@ -25,6 +25,21 @@ export const useCourseGroups = () => {
     }
   };
 
+  const createGroup = async (courseId, name, description = '') => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await api.post('/groups', { courseId, name, description });
+      return response.data?.data?.group || response.data?.group || null;
+    } catch (err) {
+      const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to create group';
+      setError(msg);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getGroupStudents = async (groupId) => {
     setLoading(true);
     setError(null);
@@ -68,5 +83,5 @@ export const useCourseGroups = () => {
     }
   };
 
-  return { getCourseGroups, getGroupStudents, addStudentToGroup, removeStudentFromGroup, loading, error };
+  return { getCourseGroups, createGroup, getGroupStudents, addStudentToGroup, removeStudentFromGroup, loading, error };
 };

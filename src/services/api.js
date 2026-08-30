@@ -112,6 +112,14 @@ api.interceptors.response.use(
   async error => {
     const status = error.response?.status;
     const url = error.config?.url || '';
+
+    // Rate limited: a soft "slow down" — never a logout. Surface a toast so the
+    // user knows to retry, then reject to the caller as usual.
+    if (status === 429 && typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('api:ratelimited', {
+        detail: { message: error.response?.data?.error?.message || 'Trop de requêtes. Veuillez réessayer dans un instant.' },
+      }));
+    }
     // Auth endpoints legitimately return 401 (wrong password, expired reset
     // link…) — those belong to the calling form, don't force a logout/redirect.
     const isAuthEndpoint = /\/auth\/(login|register|forgot-password|reset-password|verify-email|restore-account)/.test(url);

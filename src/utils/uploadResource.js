@@ -89,9 +89,13 @@ export async function uploadLessonResource({ lessonId, file, onProgress }) {
  * Upload a live-session recording and publish it as the meeting's replay.
  * The backend attaches it to the course curriculum for enrolled students.
  */
-export async function uploadMeetingRecording({ meetingId, file, onProgress }) {
+export async function uploadMeetingRecording({ meetingId, file, onProgress, lessonId }) {
   const { secure_url } = await uploadToCloudinary(file, { type: 'video', onProgress });
-  const res = await api.post(`/meetings/${meetingId}/recording`, { recordingUrl: secure_url });
+  // When a lessonId is given, the backend makes the recording that lesson's
+  // main video; otherwise it files it under the auto "Sessions enregistrées".
+  const body = { recordingUrl: secure_url };
+  if (lessonId) body.lessonId = lessonId;
+  const res = await api.post(`/meetings/${meetingId}/recording`, body);
   return res.data?.data?.meeting || res.data?.meeting;
 }
 

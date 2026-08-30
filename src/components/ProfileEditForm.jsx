@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import api from '../services/api';
 import PortfolioEditor from './PortfolioEditor';
+import Modal from './Modal';
 
 // Social links shown in the profile header. Keys match socialLinks.
 const HEADER_SOCIAL = [
@@ -255,6 +256,9 @@ export default function ProfileEditForm() {
   const certifications = user?.certifications || [];
   const diplomas = user?.diplomas || [];
   const hasSocials = HEADER_SOCIAL.some(({ key }) => user?.socialLinks?.[key]);
+  // Certificate/diploma media opens in a modal (not a new tab).
+  const [previewMedia, setPreviewMedia] = useState(null);
+  const isPdf = (u) => /\.pdf(\?|#|$)/i.test(u || '');
 
   const credCard = (Icon, row, orgField) => (
     <div className="pv-cred" key={`${row.title}-${row.year}`}>
@@ -263,13 +267,51 @@ export default function ProfileEditForm() {
         <div className="pv-cred-title">{row.title || 'Sans titre'}</div>
         <div className="pv-cred-sub">{[row[orgField], row.year].filter(Boolean).join(' · ') || '—'}</div>
       </div>
-      {row.fileUrl && <a className="pv-cred-link" href={row.fileUrl} target="_blank" rel="noopener noreferrer"><FileText size={14} /> Voir</a>}
+      {row.fileUrl && (
+        <button
+          type="button"
+          className="pv-cred-link"
+          onClick={() => setPreviewMedia({ url: row.fileUrl, title: row.title || 'Document' })}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', font: 'inherit', color: 'inherit' }}
+        >
+          <FileText size={14} /> Voir
+        </button>
+      )}
     </div>
   );
   const emptyNote = (t) => <p className="pv-empty">{t}</p>;
 
+  const mediaPreviewModal = previewMedia && (
+    <Modal isOpen onClose={() => setPreviewMedia(null)} title={previewMedia.title} size="large">
+      {isPdf(previewMedia.url) ? (
+        <iframe
+          src={previewMedia.url}
+          title={previewMedia.title}
+          style={{ width: '100%', height: '70vh', border: 'none', borderRadius: '12px', background: '#fff' }}
+        />
+      ) : (
+        <img
+          src={previewMedia.url}
+          alt={previewMedia.title}
+          style={{ display: 'block', maxWidth: '100%', maxHeight: '70vh', margin: '0 auto', borderRadius: '12px' }}
+        />
+      )}
+      <div style={{ marginTop: '1rem', textAlign: 'right' }}>
+        <a
+          href={previewMedia.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px', background: 'var(--primary)', color: '#fff', fontWeight: 700, textDecoration: 'none', fontSize: '0.88rem' }}
+        >
+          <FileText size={15} /> Ouvrir dans un nouvel onglet
+        </a>
+      </div>
+    </Modal>
+  );
+
   return (
     <div style={{ width: '100%' }}>
+      {mediaPreviewModal}
       <style>{`
         .pf2-hero { position:relative; overflow:hidden; border-radius:22px; margin-bottom:1.5rem; color:#fff;
           background:linear-gradient(130deg, var(--secondary) 0%, var(--primary) 62%, var(--accent) 128%); padding:clamp(1.5rem,4vw,2.4rem); box-shadow:0 18px 46px -26px rgba(27,75,90,.55); }
