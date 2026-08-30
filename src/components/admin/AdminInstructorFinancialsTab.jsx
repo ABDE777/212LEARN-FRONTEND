@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { 
   DollarSign, 
   Users, 
@@ -22,6 +22,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { useAdminInstructorFinancials } from '../../hooks/useAdminStats';
+import { useAdminSettings } from '../../hooks/useAdminSettings';
 import LoadingSpinner from '../LoadingSpinner';
 
 export default function AdminInstructorFinancialsTab() {
@@ -33,7 +34,26 @@ export default function AdminInstructorFinancialsTab() {
     refetch 
   } = useAdminInstructorFinancials(true);
 
+  // The commission rate is a GLOBAL setting: seed the slider from the stored
+  // value and persist changes so analytics/earnings everywhere reflect it live.
+  const { settings, save: saveSettings, saving: savingRate } = useAdminSettings();
   const [sharePercentage, setSharePercentage] = useState(70);
+  const [savedShare, setSavedShare] = useState(70);
+  useEffect(() => {
+    if (settings && typeof settings.instructorSharePct === 'number') {
+      setSharePercentage(settings.instructorSharePct);
+      setSavedShare(settings.instructorSharePct);
+    }
+  }, [settings]);
+
+  const persistShare = async () => {
+    const pct = Math.min(100, Math.max(0, Number(sharePercentage) || 0));
+    try {
+      await saveSettings({ instructorSharePct: pct });
+      setSavedShare(pct);
+    } catch { /* error surfaced by the hook */ }
+  };
+
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all'); // all | has_revenue | has_groups | no_groups
   const [selectedInstructorId, setSelectedInstructorId] = useState(null);
@@ -247,6 +267,30 @@ export default function AdminInstructorFinancialsTab() {
             <span>Formateur : <strong style={{ color: '#059669' }}>{sharePercentage}%</strong></span>
             <span>Plateforme : <strong style={{ color: 'var(--primary)' }}>{100 - sharePercentage}%</strong></span>
           </div>
+
+          {/* Persist the rate globally so analytics/earnings pages update live */}
+          <button
+            type="button"
+            onClick={persistShare}
+            disabled={savingRate || sharePercentage === savedShare}
+            style={{
+              marginTop: '0.15rem',
+              padding: '7px 0',
+              borderRadius: '8px',
+              border: 'none',
+              background: sharePercentage === savedShare ? 'rgba(0,0,0,0.06)' : 'var(--primary)',
+              color: sharePercentage === savedShare ? 'var(--secondary)' : '#fff',
+              fontWeight: 700,
+              fontSize: '0.8rem',
+              cursor: savingRate || sharePercentage === savedShare ? 'default' : 'pointer',
+            }}
+          >
+            {savingRate
+              ? 'Enregistrement…'
+              : sharePercentage === savedShare
+                ? `Taux global : ${savedShare}%`
+                : 'Enregistrer le taux global'}
+          </button>
         </div>
       </div>
 

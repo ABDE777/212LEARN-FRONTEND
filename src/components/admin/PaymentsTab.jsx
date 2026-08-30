@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { XCircle, Wallet, Loader, Download, Clock, CheckCircle, Building2, Search, RotateCcw, Printer, X } from 'lucide-react';
 import { useWafacash } from '../../hooks/useWafacash';
 import { useTransfer } from '../../hooks/useTransfer';
+import { usePackActions } from '../../hooks/usePacks';
 import LoadingSpinner from '../LoadingSpinner';
 
 export default function PaymentsTab() {
@@ -11,9 +12,11 @@ export default function PaymentsTab() {
   // can route to the right API.
   const { getPendingPayments, verifyPayment } = useWafacash();
   const { getPendingTransfers, verifyTransferPayment } = useTransfer();
+  const { getPendingPurchases, verifyPurchase } = usePackActions();
 
   const [wafaRows, setWafaRows] = useState([]);
   const [transferRows, setTransferRows] = useState([]);
+  const [packRows, setPackRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(null);
 
@@ -39,18 +42,23 @@ export default function PaymentsTab() {
     setLoading(true);
     setLoadError(null);
     try {
-      const [w, t] = await Promise.all([
+      const [w, t, pk] = await Promise.all([
         getPendingPayments('all').catch(() => null),
         getPendingTransfers('all').catch(() => null),
+        getPendingPurchases('all').catch(() => null),
       ]);
       setWafaRows(extractList(w).map((p) => ({ ...p, method: 'wafacash' })));
       setTransferRows(extractList(t).map((p) => ({ ...p, method: 'transfer' })));
+      // Pack purchases live in a separate table with their own verify endpoint;
+      // surface them here so submitted pack payments are visible to the admin.
+      const packList = pk?.purchases || pk?.data?.purchases || extractList(pk);
+      setPackRows((Array.isArray(packList) ? packList : []).map((p) => ({ ...p, method: 'pack' })));
     } catch {
       setLoadError('Impossible de charger les paiements.');
     } finally {
       setLoading(false);
     }
-  }, [getPendingPayments, getPendingTransfers]);
+  }, [getPendingPayments, getPendingTransfers, getPendingPurchases]);
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
@@ -64,7 +72,7 @@ export default function PaymentsTab() {
       const student = p.enrollment?.user || p.user || p.student;
       const hay = [
         student?.firstName, student?.lastName, student?.email,
-        p.enrollment?.course?.title || p.course?.title,
+        p.enrollment?.course?.title || p.course?.title || p.pack?.title,
         p.transactionReference, p.paymentReference, p.reference, p.mtcn, p.rib,
       ].filter(Boolean).join(' ').toLowerCase();
       if (!hay.includes(q)) return false;
@@ -83,12 +91,14 @@ export default function PaymentsTab() {
 
   const wafaFiltered = useMemo(() => wafaRows.filter(matchesFilters), [wafaRows, matchesFilters]);
   const transferFiltered = useMemo(() => transferRows.filter(matchesFilters), [transferRows, matchesFilters]);
+  const packFiltered = useMemo(() => packRows.filter(matchesFilters), [packRows, matchesFilters]);
 
   const handleVerify = async (p, action) => {
     setVerifyLoading(p.id + action);
     setActionMsg(null);
     try {
       if (p.method === 'wafacash') await verifyPayment(p.id, action, notes[p.id] || '');
+      else if (p.method === 'pack') await verifyPurchase(p.id, action, notes[p.id] || '');
       else await verifyTransferPayment(p.id, action, notes[p.id] || '');
       setActionMsg({
         type: 'success',
@@ -286,23 +296,30 @@ export default function PaymentsTab() {
     );
   };
 
+  // Per-method visual metadata (label / icon / accent) for chips + section heads.
+  const METHOD_META = {
+    wafacash: { label: 'Wafacash', section: 'Wafacash', Icon: Wallet, color: 'var(--secondary)', bg: 'rgba(27,75,90,0.1)' },
+    transfer: { label: 'Virement', section: 'Virements', Icon: Building2, color: '#9a6b12', bg: 'rgba(232,163,61,0.15)' },
+    pack:     { label: 'Pack', section: 'Packs', Icon: Wallet, color: '#7c3aed', bg: 'rgba(124,58,237,0.12)' },
+  };
+
   const methodChip = (method) => {
-    const isW = method === 'wafacash';
+    const m = METHOD_META[method] || METHOD_META.wafacash;
     return (
-      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '3px 10px', borderRadius: '999px', fontSize: '0.74rem', fontWeight: 700, background: isW ? 'rgba(27,75,90,0.1)' : 'rgba(232,163,61,0.15)', color: isW ? 'var(--secondary)' : '#9a6b12' }}>
-        {isW ? <Wallet size={12} /> : <Building2 size={12} />}{isW ? 'Wafacash' : 'Virement'}
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '3px 10px', borderRadius: '999px', fontSize: '0.74rem', fontWeight: 700, background: m.bg, color: m.color }}>
+        <m.Icon size={12} />{m.label}
       </span>
     );
   };
 
   const renderSection = (method, rows) => {
-    const isW = method === 'wafacash';
+    const m = METHOD_META[method] || METHOD_META.wafacash;
     return (
       <div style={{ marginBottom: '2rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.85rem' }}>
-          {isW ? <Wallet size={20} color="var(--secondary)" /> : <Building2 size={20} color="#9a6b12" />}
+          <m.Icon size={20} color={m.color} />
           <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-color)' }}>
-            {isW ? 'Wafacash' : 'Virements'}
+            {m.section}
           </h3>
           <span style={{ background: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: '999px', padding: '2px 10px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--secondary)' }}>
             {rows.length}
@@ -329,7 +346,7 @@ export default function PaymentsTab() {
                 <tbody>
                   {rows.map((p) => {
                     const student = p.enrollment?.user || p.user || p.student;
-                    const course = p.enrollment?.course || p.course;
+                    const course = p.enrollment?.course || p.course || p.pack;
                     const refCode = p.transactionReference || p.paymentReference || p.reference || '—';
                     return (
                       <tr
@@ -369,18 +386,16 @@ export default function PaymentsTab() {
     );
   };
 
-  const pillStyle = (active) => ({
-    padding: '0.5rem 1.15rem', borderRadius: '99px',
-    border: `1.5px solid ${active ? 'var(--primary)' : 'var(--border-color)'}`,
-    background: active ? 'var(--primary)' : '#fff',
-    color: active ? '#fff' : 'var(--text-color)',
-    fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
-    boxShadow: active ? '0 4px 12px rgba(27,75,90,0.2)' : 'none', transition: 'all 0.15s ease',
-  });
+  const filterSelectStyle = {
+    padding: '0.5rem 0.8rem', border: '1px solid var(--border-color)', borderRadius: '8px',
+    fontSize: '0.88rem', color: 'var(--text-color)', background: '#fff', cursor: 'pointer',
+    minWidth: '180px', fontWeight: 600,
+  };
   const dateInputStyle = { padding: '0.5rem 0.7rem', border: '1px solid var(--border-color)', borderRadius: '8px', fontSize: '0.85rem', color: 'var(--text-color)' };
 
   const showWafa = methodFilter === 'all' || methodFilter === 'wafacash';
   const showTransfer = methodFilter === 'all' || methodFilter === 'transfer';
+  const showPack = methodFilter === 'all' || methodFilter === 'pack';
 
   return (
     <div style={{ width: '100%' }}>
@@ -618,19 +633,26 @@ export default function PaymentsTab() {
 
       {/* ── Advanced filter bar ────────────────────────────── */}
       <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '14px', padding: '1rem 1.15rem', marginBottom: '1.5rem', boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
-        {/* Méthode */}
-        <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', minWidth: '70px' }}>Méthode</span>
-          {[{ id: 'all', label: '🌐 Toutes' }, { id: 'wafacash', label: '💳 Wafacash' }, { id: 'transfer', label: '🏦 Virement' }].map((m) => (
-            <button key={m.id} onClick={() => setMethodFilter(m.id)} style={pillStyle(methodFilter === m.id)}>{m.label}</button>
-          ))}
-        </div>
-        {/* Statut */}
-        <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', minWidth: '70px' }}>Statut</span>
-          {[{ id: 'all', label: '🌐 Tous' }, { id: 'pending', label: '⏳ En attente' }, { id: 'PAID', label: '✅ Payés' }, { id: 'REJECTED', label: '❌ Rejetés' }].map((s) => (
-            <button key={s.id} onClick={() => setStatusFilter(s.id)} style={pillStyle(statusFilter === s.id)}>{s.label}</button>
-          ))}
+        {/* Méthode + Statut as compact labeled dropdowns */}
+        <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Méthode</span>
+            <select value={methodFilter} onChange={(e) => setMethodFilter(e.target.value)} style={filterSelectStyle}>
+              <option value="all">Toutes les méthodes</option>
+              <option value="wafacash">Wafacash</option>
+              <option value="transfer">Virement</option>
+              <option value="pack">Pack</option>
+            </select>
+          </label>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Statut</span>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={filterSelectStyle}>
+              <option value="all">Tous les statuts</option>
+              <option value="pending">En attente</option>
+              <option value="PAID">Payés</option>
+              <option value="REJECTED">Rejetés</option>
+            </select>
+          </label>
         </div>
         {/* Recherche + dates */}
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -675,6 +697,7 @@ export default function PaymentsTab() {
         <>
           {showWafa && renderSection('wafacash', wafaFiltered)}
           {showTransfer && renderSection('transfer', transferFiltered)}
+          {showPack && renderSection('pack', packFiltered)}
         </>
       )}
 

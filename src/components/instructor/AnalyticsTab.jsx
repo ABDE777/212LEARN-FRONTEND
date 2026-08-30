@@ -293,7 +293,7 @@ export default function AnalyticsTab({ revenueData, studentsData, completionData
           )}
 
           {/* ── Monthly net revenue trend ─────────────── */}
-          <SectionCard title="Rémunération Mensuelle Nette" subtitle="Vos gains nets perçus sur les 12 derniers mois (70% des ventes)" icon={BarChart3}>
+          <SectionCard title="Rémunération Mensuelle Nette" subtitle={`Vos gains nets perçus sur les 12 derniers mois (${sharePct}% des ventes)`} icon={BarChart3}>
             <MonthlyRevenueChart monthly={monthly} currency={currency} />
           </SectionCard>
 
